@@ -1,0 +1,13 @@
+# Build output
+dist/
+.angular/
+
+# Dependencies
+node_modules/
+
+# Cypress
+cypress/videos/
+cypress/screenshots/
+
+# Gherkin feature files (no Prettier parser)
+*.feature
