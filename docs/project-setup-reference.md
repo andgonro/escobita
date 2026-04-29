@@ -348,7 +348,8 @@ This section covers all GitHub Copilot customisation: instructions, reference do
 │   ├── qa-assistant.agent.md
 │   ├── architect-assistant.agent.md
 │   ├── developer-assistant.agent.md
-│   └── reviewer-assistant.agent.md
+│   ├── reviewer-assistant.agent.md
+│   └── security-assistant.agent.md
 ├── instructions/                   # Auto-loaded coding guidelines
 │   ├── angular-developer.instructions.md
 │   ├── angular-new-app.instructions.md
@@ -593,6 +594,7 @@ THIS IS AN ABSOLUTE, NON-NEGOTIABLE RULE. It overrides every other instruction..
 | Architect Assistant          | Mermaid diagram syntax only (in `design.md` and `tasks.md`) |
 | Developer Assistant          | Full source code (the only coding agent)                    |
 | Reviewer Assistant           | Mermaid diagram syntax only (in `review-report.md`)         |
+| Security Assistant           | None — plain English prose only (no code, no Mermaid)       |
 
 **2. File-Write Scope Restriction**
 
@@ -626,7 +628,11 @@ All agents present a plan/summary and wait for explicit user confirmation before
 
 ```
 PrM → QA → Architect → Developer → Reviewer
-                                    ↑ (auto-invoked after each task)
+                                ↑        ↑
+                        (auto-invoked)  (auto-invoked)
+                                    Security
+                               (auto-invoked by both
+                                Developer & Reviewer)
 ```
 
 ### Agent Details
@@ -713,15 +719,15 @@ agents: ['Explore']
 ```yaml
 # Frontmatter
 name: Developer Assistant
-description: Implements feature tasks from tasks.md following the architecture in design.md and Angular best practices. Automatically invokes the Reviewer Assistant after each task to validate the implementation.
+description: Implements feature tasks from tasks.md following the architecture in design.md and Angular best practices. Automatically invokes the Reviewer Assistant and Security Assistant after each task.
 argument-hint: 'Path to the feature spec folder and task, e.g. docs/specs/my-epic/my-feature T-3'
 tools: ['vscode', 'execute', 'read', 'agent', 'edit', 'search', 'web', 'todo']
-agents: ['Explore', 'Reviewer Assistant']
+agents: ['Explore', 'Reviewer Assistant', 'Security Assistant']
 ```
 
 - **Role:** The implementation engine — turns architecture and tasks into working, tested code
 - **Writes code:** **Yes** (the only agent with code-writing permission)
-- **Workflow:** Context Loading → Implementation Planning (present plan, wait for approval) → Implementation (scaffold with CLI, write code, write tests) → Verification (`ng build`, `ng lint`, `ng test`) → Task Status Update → **Automatic Review** (invokes Reviewer Assistant) → Review Response → Next Task
+- **Workflow:** Context Loading → Implementation Planning (present plan, wait for approval) → Implementation (scaffold with CLI, write code, write tests) → Verification (`ng build`, `ng lint`, `ng test`) → Task Status Update → **Automatic Review** (invokes Reviewer Assistant) → **Automatic Security Scan** (invokes Security Assistant) → Review Response → Next Task
 - **Key behaviours:**
   - Works one task at a time (T-X). Never starts T-X+1 before T-X is reviewed.
   - Uses `ng generate` for all scaffolding
@@ -729,7 +735,8 @@ agents: ['Explore', 'Reviewer Assistant']
   - Reads `.github/instructions/` reference docs before implementing each pattern
   - Writes meaningful tests (see Test Writing Standards below)
   - **Automatically invokes `@reviewer-assistant` after every task** — review is not optional
-  - Critical/Major review findings must be resolved or explicitly deferred before moving on
+  - **Automatically invokes `@security-assistant` after the Reviewer completes** — security scan is not optional
+  - Critical/Major review findings OR Critical/High security findings must be resolved or explicitly deferred before moving on
 - **Test writing standards:**
   - **Unit tests:** Test behaviour (inputs → rendered output, state changes → UI updates), not existence. Include edge cases. Traceable to FR-X.X/US-X.
   - **E2E tests:** Match Gherkin from `bdd-test.md` exactly. Real browser actions + meaningful assertions. Never empty/no-op step defs.
@@ -745,7 +752,7 @@ name: Reviewer Assistant
 description: Validates implementation against spec documentation, architecture design, BDD scenarios, and Angular best practices. Produces a review report with findings and architecture comparison diagrams.
 argument-hint: 'Path to the feature spec folder and review mode, e.g. docs/specs/my-epic/my-feature [full|task T-3]'
 tools: ['vscode', 'read', 'agent', 'edit', 'search', 'web', 'todo']
-agents: ['Explore']
+agents: ['Explore', 'Security Assistant']
 ```
 
 - **Role:** Final quality gate — validates that what was planned is what was built
@@ -753,7 +760,7 @@ agents: ['Explore']
 - **Review modes:**
   - `full` — comprehensive review of entire feature implementation
   - `task T-X` — incremental review of a specific task (auto-triggered by Developer)
-- **Workflow:** Discovery (read all spec docs + research implementation) → Analysis (5 dimensions) → Clarification → Report Generation → Iteration
+- **Workflow:** Discovery (read all spec docs + research implementation) → Analysis (5 dimensions) → **Security Sweep** (invokes Security Assistant in same mode) → Clarification → Report Generation → Iteration
 - **Five review dimensions:**
   1. **Code Quality & Angular Best Practices** — signals usage, DI patterns, component selectors, form strategy, accessibility
   2. **Spec Compliance** — FR-X.X fulfilment, US-X acceptance criteria, NFR-X.X adherence
@@ -761,7 +768,7 @@ agents: ['Explore']
   4. **Test Coverage Alignment** — SC-XX scenarios have step definitions, feature files exist, unit tests cover critical paths
   5. **Test Quality & Meaningfulness** — catches superficial assertions (Major), empty step defs (Major), tautological tests (Major), happy-path-only coverage (Minor), disconnected tests (Minor), hardcoded expectations (Minor)
 - **Output files** (under `docs/specs/{epic-id}/{feature-id}/`):
-  - `review-report.md` — Executive Summary, Architecture Comparison (planned vs actual Mermaid diagrams + drift analysis), Findings (RV-XX with Category/Severity/Related/Description/Expected/Actual/Recommendation/Impact), Traceability Matrix, Spec Compliance Summary, Task Completion Summary, Test Coverage Summary, Test Quality Summary, Recommendations
+  - `review-report.md` — Executive Summary, Architecture Comparison (planned vs actual Mermaid diagrams + drift analysis), Findings (RV-XX with Category/Severity/Related/Description/Expected/Actual/Recommendation/Impact), Traceability Matrix (including SEC-XX cross-references), Spec Compliance Summary, Task Completion Summary, Test Coverage Summary, Test Quality Summary, **Security Cross-Reference** section, Recommendations
 - **Finding severity levels:**
   - **Critical:** Blocks release (unmet requirement, security vulnerability, broken functionality)
   - **Major:** Fix before merge (design deviation, false-confidence tests, best practice violation)
@@ -769,6 +776,44 @@ agents: ['Explore']
   - **Note:** Informational (worth knowing, no action required)
 - **Invocation:** `@reviewer-assistant docs/specs/core/scoring-system full` or `@reviewer-assistant docs/specs/core/scoring-system task T-3`
 - **Tone:** Constructive, neutral, evidence-based, honest about test quality
+
+#### Agent 6: Security Assistant
+
+```yaml
+# Frontmatter
+name: Security Assistant
+description: Analyses Angular/TypeScript implementation for security vulnerabilities — OWASP Top 10, Angular-specific risks, credential exposure, dependency vulnerabilities, auth patterns, and transport security. Produces a security-report.md with SEC-XX findings tagged to OWASP categories.
+argument-hint: 'Path to the feature spec folder and review mode, e.g. docs/specs/my-epic/my-feature [full|task T-3]'
+tools: ['vscode', 'execute', 'read', 'agent', 'edit', 'search', 'web', 'todo']
+agents: ['Explore']
+```
+
+- **Role:** Security analysis gate — identifies vulnerabilities before code is deployed
+- **Writes code:** No (strict no-code policy; no Mermaid either — plain English prose only)
+- **Permitted terminal commands:** `npm audit` and `npm audit --json` **only**. All other terminal commands are forbidden.
+- **Review modes:**
+  - `full` — comprehensive security analysis of the entire feature
+  - `task T-X` — incremental scan scoped to files affected by a specific task
+- **Workflow:** Discovery (read all spec docs + research implementation with Explore subagent) → `npm audit --json` → Analysis (6 dimensions) → Clarification → Report Generation → Iteration
+- **Six security dimensions:**
+  1. **OWASP Top 10:2021 Code-Level Violations** — A01 through A10 mapped to Angular/TypeScript patterns
+  2. **Angular-Specific Security** — `bypassSecurityTrust*` usage, `[innerHTML]` bindings, open redirects, template injection, direct DOM manipulation
+  3. **Credential & Secret Exposure** — hardcoded API keys, tokens, passwords in source or environment files; sensitive data in logs
+  4. **Dependency Vulnerabilities** — `npm audit` CVEs with package/version/fix-availability details
+  5. **Auth & Authorisation Patterns** — route guard coverage, token storage strategy (localStorage vs memory vs HttpOnly cookie), session lifecycle
+  6. **Transport & Header Security** — HTTPS enforcement, CSP, CORS, SameSite cookies, HSTS, Referrer-Policy
+- **Output files** (under `docs/specs/{epic-id}/{feature-id}/`):
+  - `security-report.md` — Risk Summary, Dependency Vulnerabilities (npm audit table), Findings (SEC-XX with OWASP category/severity/affected component/description/risk/expected/recommendation+links), Auth & Authorisation Summary, Transport Security Summary, Spec Security Compliance, Traceability Matrix, Prioritised Recommendations
+- **Finding severity levels (CVSS-aligned):**
+  - **Critical:** Actively exploitable — full account takeover, data exfiltration, system compromise. Fix before any deployment.
+  - **High:** Exploitable with moderate effort. Fix before release.
+  - **Medium:** Reduces defence-in-depth. Fix next sprint.
+  - **Low:** Minor concern, limited exploitability in isolation.
+  - **Info:** Informational observation, not a vulnerability.
+- **OWASP tagging:** Every finding tagged with the A0X:2021 category it falls under
+- **Invocation:** `@security-assistant docs/specs/core/scoring-system full` or `@security-assistant docs/specs/core/scoring-system task T-3`
+- **Auto-invocation:** The Developer Assistant invokes it after each Reviewer checkpoint; the Reviewer Assistant invokes it before finalising `review-report.md`
+- **Tone:** Rigorous, evidence-based, constructive, precise
 
 ### Pipeline Invocation — Full Workflow Example
 
@@ -782,31 +827,35 @@ agents: ['Explore']
 # Step 3: Design the architecture (Architect → design.md, tasks.md)
 @architect-assistant docs/specs/core/scoring-system
 
-# Step 4: Implement task by task (Developer → code + tests, auto-triggers Reviewer)
+# Step 4: Implement task by task (Developer → code + tests, auto-triggers Reviewer + Security)
 @developer-assistant docs/specs/core/scoring-system T-1
 @developer-assistant docs/specs/core/scoring-system T-2
 @developer-assistant docs/specs/core/scoring-system T-3
 
 # Step 5: Final comprehensive review (optional, for release validation)
 @reviewer-assistant docs/specs/core/scoring-system full
+
+# Step 6: Standalone security audit (optional, on-demand)
+@security-assistant docs/specs/core/scoring-system full
 ```
 
 ### ID Scheme & Traceability
 
 All artifacts use cross-referenced ID schemes for full traceability:
 
-| ID        | Source             | Meaning                    | Created By |
-| --------- | ------------------ | -------------------------- | ---------- |
-| `FR-X.X`  | `spec.md`          | Functional Requirement     | PrM        |
-| `TR-X.X`  | `spec.md`          | Technical Requirement      | PrM        |
-| `NFR-X.X` | `spec.md`          | Non-Functional Requirement | PrM        |
-| `US-X`    | `user-stories.md`  | User Story                 | PrM        |
-| `SC-XX`   | `bdd-test.md`      | BDD Scenario               | QA         |
-| `AD-X`    | `design.md`        | Architectural Decision     | Architect  |
-| `T-X`     | `tasks.md`         | Implementation Task        | Architect  |
-| `RV-XX`   | `review-report.md` | Review Finding             | Reviewer   |
+| ID        | Source               | Meaning                    | Created By |
+| --------- | -------------------- | -------------------------- | ---------- |
+| `FR-X.X`  | `spec.md`            | Functional Requirement     | PrM        |
+| `TR-X.X`  | `spec.md`            | Technical Requirement      | PrM        |
+| `NFR-X.X` | `spec.md`            | Non-Functional Requirement | PrM        |
+| `US-X`    | `user-stories.md`    | User Story                 | PrM        |
+| `SC-XX`   | `bdd-test.md`        | BDD Scenario               | QA         |
+| `AD-X`    | `design.md`          | Architectural Decision     | Architect  |
+| `T-X`     | `tasks.md`           | Implementation Task        | Architect  |
+| `RV-XX`   | `review-report.md`   | Review Finding             | Reviewer   |
+| `SEC-XX`  | `security-report.md` | Security Finding           | Security   |
 
-**Traceability chain:** `FR-X.X` → `US-X` → `SC-XX` → `AD-X` → `T-X` → `RV-XX`
+**Traceability chain:** `FR-X.X` → `US-X` → `SC-XX` → `AD-X` → `T-X` → `RV-XX` + `SEC-XX`
 
 Every artifact references back to its source requirements, creating an unbroken chain from business need to implementation validation.
 
@@ -820,7 +869,8 @@ docs/specs/{epic-id}/{feature-id}/
 ├── bdd-test.md          ← QA Agent
 ├── design.md            ← Architect Agent
 ├── tasks.md             ← Architect Agent
-└── review-report.md     ← Reviewer Agent
+├── review-report.md     ← Reviewer Agent
+└── security-report.md   ← Security Agent
 ```
 
 ---

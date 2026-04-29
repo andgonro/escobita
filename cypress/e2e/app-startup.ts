@@ -1,13 +1,13 @@
-import { Given, When, Then } from '@badeball/cypress-cucumber-preprocessor';
+import { Given, Then } from '@badeball/cypress-cucumber-preprocessor';
 
-Given('the application is running', () => {
-  // No-op: the dev server is expected to be running via baseUrl
-});
-
-When('I visit the home page', () => {
+Given('I open the application root URL', () => {
   cy.visit('/');
 });
 
-Then('I should see the application title', () => {
-  cy.contains('escobita');
+Then('I should see the lobby heading', () => {
+  cy.contains('h1', 'La Escobini Kapitxorna').should('be.visible');
+});
+
+Then('the URL should remain on the lobby route', () => {
+  cy.location('pathname').should('eq', '/');
 });
