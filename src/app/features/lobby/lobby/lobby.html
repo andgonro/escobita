@@ -1,0 +1,153 @@
+<main class="lobby-layout">
+  <section class="hero" aria-labelledby="lobby-title">
+    <div class="hero-card">
+      <p class="eyebrow">Juego de cartas tradicional</p>
+      <h1 id="lobby-title">La Escobini Kapitxorna</h1>
+      <p class="hero-copy">Configura la partida y empieza a jugar.</p>
+
+      <div class="hero-decoration" data-testid="hero-decoration" aria-hidden="true">
+        <span>OROS</span>
+        <span>COPAS</span>
+        <span>ESPADAS</span>
+        <span>BASTOS</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="setup-panel" aria-label="Configuracion de la partida">
+    <h2>Configurar partida</h2>
+
+    <fieldset class="mode-selector">
+      <legend>Modo de juego</legend>
+
+      <label class="radio-chip" for="mode-single">
+        <input
+          id="mode-single"
+          type="radio"
+          name="game-mode"
+          data-testid="mode-single"
+          [checked]="isSinglePlayerMode()"
+          (change)="setMode('Single Player')"
+          (keydown.arrowright)="setMode('Multiplayer')"
+          (keydown.arrowdown)="setMode('Multiplayer')"
+        />
+        <span>Un Jugador</span>
+      </label>
+
+      <label class="radio-chip" for="mode-multiplayer">
+        <input
+          id="mode-multiplayer"
+          type="radio"
+          name="game-mode"
+          data-testid="mode-multiplayer"
+          [checked]="!isSinglePlayerMode()"
+          (change)="setMode('Multiplayer')"
+          (keydown.arrowleft)="setMode('Single Player')"
+          (keydown.arrowup)="setMode('Single Player')"
+        />
+        <span>Multi jugador</span>
+      </label>
+    </fieldset>
+
+    @if (isSinglePlayerMode()) {
+      <div class="field-group">
+        <label for="single-player-name">Nombre del jugador</label>
+        <input
+          id="single-player-name"
+          type="text"
+          data-testid="single-player-name"
+          [formField]="singlePlayerForm.name"
+          (blur)="onSingleNameBlur()"
+          [attr.aria-invalid]="singleNameErrorVisible()"
+          [attr.aria-describedby]="singleNameErrorVisible() ? 'single-player-name-error' : null"
+        />
+        @if (singleNameErrorVisible()) {
+          <p
+            id="single-player-name-error"
+            data-testid="single-player-name-error"
+            class="error-text"
+            role="alert"
+          >
+            El nombre es obligatorio.
+          </p>
+        }
+      </div>
+
+      <div class="field-group ai-opponent">
+        <p class="field-label">Oponente IA</p>
+        <p class="ai-name" data-testid="ai-name">Laia</p>
+      </div>
+
+      <div class="field-group">
+        <label for="ai-difficulty">Dificultad</label>
+        <select
+          id="ai-difficulty"
+          data-testid="ai-difficulty"
+          [value]="aiDifficulty()"
+          (change)="onDifficultyChange($any($event.target).value)"
+        >
+          <option value="Easy">Easy</option>
+          <option value="Medium">Medium</option>
+          <option value="Hard">Hard</option>
+        </select>
+      </div>
+    } @else {
+      <div class="field-group">
+        <label for="player-count">Cantidad de jugadores</label>
+        <select
+          id="player-count"
+          data-testid="player-count"
+          [value]="multiplayerPlayerCount()"
+          (change)="onPlayerCountChange($any($event.target).value)"
+        >
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+        </select>
+      </div>
+
+      <div class="multiplayer-fields">
+        @for (playerIndex of visibleMultiplayerIndexes(); track playerIndex) {
+          <div class="field-group">
+            <label [for]="'multiplayer-name-' + (playerIndex + 1)">
+              Jugador {{ playerIndex + 1 }}
+            </label>
+            <input
+              [id]="'multiplayer-name-' + (playerIndex + 1)"
+              type="text"
+              [attr.data-testid]="'multiplayer-name-' + (playerIndex + 1)"
+              [formField]="multiplayerForm.playerNames[playerIndex]"
+              (blur)="onMultiplayerNameBlur(playerIndex)"
+              [attr.aria-invalid]="isMultiplayerNameErrorVisible(playerIndex)"
+              [attr.aria-describedby]="
+                isMultiplayerNameErrorVisible(playerIndex)
+                  ? 'multiplayer-name-error-' + (playerIndex + 1)
+                  : null
+              "
+            />
+            @if (isMultiplayerNameErrorVisible(playerIndex)) {
+              <p
+                [id]="'multiplayer-name-error-' + (playerIndex + 1)"
+                [attr.data-testid]="'multiplayer-name-error-' + (playerIndex + 1)"
+                class="error-text"
+                role="alert"
+              >
+                El nombre es obligatorio.
+              </p>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <button
+      type="button"
+      class="play-button"
+      data-testid="play-button"
+      [disabled]="isPlayDisabled()"
+      (click)="startGame()"
+    >
+      Jugar
+    </button>
+  </section>
+</main>
