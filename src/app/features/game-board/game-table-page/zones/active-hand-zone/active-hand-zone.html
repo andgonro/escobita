@@ -1,0 +1,21 @@
+<section class="active-hand-zone" data-testid="active-hand-zone" aria-label="Active hand zone">
+  @for (card of handCardsSignal(); track $index; let cardIndex = $index) {
+    <div
+      class="active-hand-card"
+      [attr.data-testid]="'active-hand-card-' + cardIndex"
+      [attr.aria-pressed]="isSelected(card) ? 'true' : 'false'"
+    >
+      <button
+        type="button"
+        class="hand-card-button"
+        [attr.data-testid]="'hand-card-' + cardIndex"
+        [attr.aria-label]="handCardLabel(card)"
+        [attr.aria-pressed]="isSelected(card) ? 'true' : 'false'"
+        [disabled]="!interactionEnabledSignal()"
+        (click)="selectHandCard(card)"
+      >
+        <app-card-visual [card]="card" [selected]="isSelected(card)"></app-card-visual>
+      </button>
+    </div>
+  }
+</section>

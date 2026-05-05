@@ -1,0 +1,22 @@
+<section
+  class="center-table-zone"
+  data-testid="center-table-zone"
+  aria-label="Center table zone"
+  role="listbox"
+  aria-multiselectable="true"
+>
+  @for (card of tableCardsSignal(); track $index; let cardIndex = $index) {
+    <button
+      type="button"
+      class="table-card"
+      [attr.data-testid]="'table-card-' + cardIndex"
+      [attr.aria-label]="tableCardLabel(card)"
+      role="option"
+      [attr.aria-selected]="isSelected(card) ? 'true' : 'false'"
+      [disabled]="!interactionEnabledSignal()"
+      (click)="toggleTableCard(card)"
+    >
+      <app-card-visual [card]="card" [selected]="isSelected(card)"></app-card-visual>
+    </button>
+  }
+</section>

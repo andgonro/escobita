@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { partidaSessionGuard } from './core/guards/partida-session.guard';
 
 export const routes: Routes = [
   {
@@ -7,9 +8,10 @@ export const routes: Routes = [
   },
   {
     path: 'partida',
+    canMatch: [partidaSessionGuard],
     loadComponent: () =>
-      import('./features/game-board/game-board-placeholder/game-board-placeholder').then(
-        (module) => module.GameBoardPlaceholder,
+      import('./features/game-board/game-table-page/game-table-page').then(
+        (module) => module.GameTablePage,
       ),
   },
 ];

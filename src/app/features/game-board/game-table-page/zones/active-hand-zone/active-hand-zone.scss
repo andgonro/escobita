@@ -1,0 +1,36 @@
+:host {
+  display: block;
+}
+
+.active-hand-zone {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.active-hand-card {
+  inline-size: clamp(2.75rem, 19vw, 4.5rem);
+  block-size: clamp(3.75rem, 27vw, 5.5rem);
+  display: block;
+}
+
+.hand-card-button {
+  width: 100%;
+  height: 100%;
+  min-inline-size: 2.75rem;
+  min-block-size: 2.75rem;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 0.5rem;
+  background: transparent;
+  overflow: hidden;
+}
+
+.card-rank,
+.card-suit {
+  display: block;
+}

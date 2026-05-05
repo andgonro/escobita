@@ -1,0 +1,39 @@
+<section class="play-action-bar" data-testid="play-action-bar" aria-label="Play actions">
+  @if (multiplayerSignal()) {
+    <label class="play-action-bar__handoff-toggle" for="handoff-toggle-input">
+      <input
+        id="handoff-toggle-input"
+        type="checkbox"
+        data-testid="handoff-toggle"
+        aria-label="Enable turn handoff"
+        [checked]="handoffEnabledSignal()"
+        (change)="onHandoffToggleChanged($event)"
+      />
+      <span>Enable turn handoff</span>
+    </label>
+  }
+
+  <div class="play-action-bar__actions">
+    <button
+      type="button"
+      data-testid="submit-play"
+      aria-label="Submit play"
+      [disabled]="submitPlayDisabled()"
+      (click)="onSubmitPlay()"
+    >
+      Submit play
+    </button>
+
+    <button
+      type="button"
+      data-testid="confirm-turn"
+      aria-label="Confirm turn"
+      [disabled]="confirmTurnDisabled()"
+      (click)="onConfirmTurn()"
+    >
+      Confirm turn
+    </button>
+  </div>
+
+  <p data-testid="play-validation-message" tabindex="-1">{{ validationMessageSignal() }}</p>
+</section>

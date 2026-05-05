@@ -1,0 +1,33 @@
+:host {
+  display: block;
+}
+
+.center-table-zone {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(2.75rem, 4.5rem));
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 10rem;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  background: rgba(20, 67, 45, 0.65);
+}
+
+.table-card {
+  min-height: clamp(2.75rem, 18vw, 5.5rem);
+  min-width: 2.75rem;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 0.5rem;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.25rem;
+  overflow: hidden;
+}
+
+.card-rank,
+.card-suit {
+  display: block;
+}

@@ -1,0 +1,21 @@
+<section
+  class="turn-handoff-overlay"
+  data-testid="turn-handoff-overlay"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Turn handoff required"
+>
+  <p class="turn-handoff-overlay__title">Pass the device to the next player</p>
+  <p class="turn-handoff-overlay__instructions">Confirm once the next player is ready.</p>
+  <p class="turn-handoff-overlay__next-turn" data-testid="next-turn-reveal" aria-hidden="true">
+    Next turn: {{ nextPlayerNameSignal() }}
+  </p>
+  <button
+    type="button"
+    data-testid="handoff-acknowledge"
+    aria-label="Acknowledge handoff and reveal next turn"
+    (click)="acknowledgeHandoff()"
+  >
+    Reveal next turn
+  </button>
+</section>

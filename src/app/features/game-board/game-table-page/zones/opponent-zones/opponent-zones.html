@@ -1,0 +1,21 @@
+<section
+  class="opponent-zones"
+  data-testid="opponent-zones"
+  [class.opponent-zones--one]="opponentsSignal().length === 1"
+  [class.opponent-zones--two]="opponentsSignal().length === 2"
+  [class.opponent-zones--three]="opponentsSignal().length >= 3"
+>
+  @for (opponent of opponentsSignal(); track opponent.id; let opponentIndex = $index) {
+    <article
+      class="opponent-seat"
+      [attr.data-testid]="'opponent-seat-' + opponentIndex"
+      [attr.data-seat-position]="seatPosition(opponentIndex)"
+      [class.opponent-seat--north]="seatPosition(opponentIndex) === 'north'"
+      [class.opponent-seat--west]="seatPosition(opponentIndex) === 'west'"
+      [class.opponent-seat--east]="seatPosition(opponentIndex) === 'east'"
+    >
+      <p class="opponent-name">{{ opponent.name }}</p>
+      <p class="opponent-captured">Captured: {{ opponent.capturedPile.length }}</p>
+    </article>
+  }
+</section>

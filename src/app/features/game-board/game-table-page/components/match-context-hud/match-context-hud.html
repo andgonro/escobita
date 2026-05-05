@@ -1,0 +1,41 @@
+<header
+  class="context-header"
+  [attr.data-testid]="contextHeaderTestIdSignal()"
+  [attr.aria-hidden]="handoffActiveSignal() ? 'true' : null"
+  [attr.inert]="handoffActiveSignal() ? '' : null"
+>
+  <p data-testid="active-player-indicator">Active player: {{ activePlayerNameSignal() }}</p>
+
+  <div class="scoreboard" data-testid="scoreboard-indicator" aria-label="Match scores">
+    @for (entry of scoreEntriesSignal(); track entry.id; let scoreIndex = $index) {
+      <p class="score-item" [attr.data-testid]="'score-item-' + scoreIndex">
+        <span class="score-label">{{ entry.name }}</span>
+        <span class="score-value">{{ entry.score }}</span>
+      </p>
+    }
+
+    @if (scoreEntriesSignal().length === 0) {
+      <p class="score-empty">Scores pending</p>
+    }
+  </div>
+
+  <p data-testid="turn-phase-indicator">Turn phase: {{ turnPhaseSignal() }}</p>
+
+  @if (escobaOutcomeSignal(); as escobaOutcome) {
+    <p data-testid="escoba-outcome-indicator" class="escoba-outcome-indicator">
+      Escoba: {{ escobaOutcome.playerName }} ({{ escobaOutcome.escobaCount }})
+    </p>
+  }
+
+  @if (roundResultSignal(); as roundResult) {
+    <p data-testid="round-outcome-indicator" class="round-outcome-indicator">
+      Round {{ roundResult.roundNumber }} resolved. Top score: {{ roundTopScoreSignal() }}
+    </p>
+  }
+
+  @if (matchWinnerSignal(); as matchWinner) {
+    <p data-testid="match-winner-indicator" class="match-winner-indicator">
+      Match winner: {{ matchWinner.name }}
+    </p>
+  }
+</header>

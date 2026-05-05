@@ -118,6 +118,16 @@ function freezeGameState(state: GameState): GameState {
   }) as GameState;
 }
 
+export type EngineE2eFixture = 'escoba-visibility' | 'round-winner-visibility';
+
+export interface EngineE2eFixtureResult {
+  escobaPlayerName?: string;
+  escobaCount?: number;
+  roundNumber?: number;
+  winnerName?: string;
+  topScore?: number;
+}
+
 // ---------------------------------------------------------------------------
 // Service
 // ---------------------------------------------------------------------------
@@ -142,6 +152,79 @@ export class GameEngine {
     if (!s) return null;
     return s.players[s.turnIndex] ?? null;
   });
+
+  /**
+   * Applies deterministic fixture snapshots for Cypress E2E setup through a controlled, public seam.
+   * This avoids test-time private signal mutation from outside the service boundary.
+   */
+  applyE2eFixture(fixture: EngineE2eFixture): EngineE2eFixtureResult {
+    if (!isDevMode()) {
+      throw new Error('[GameEngine] applyE2eFixture is only available in dev mode.');
+    }
+
+    const state = this._state();
+    if (!state) {
+      throw new Error('[GameEngine] applyE2eFixture requires an initialized game state.');
+    }
+
+    if (fixture === 'escoba-visibility') {
+      const escobaPlayer = state.players[0] ?? null;
+      if (!escobaPlayer) {
+        throw new Error('[GameEngine] escoba fixture requires at least one player.');
+      }
+
+      const escobaCount = Math.max(1, escobaPlayer.escobaCount + 1);
+      const escobaState: GameState = {
+        ...state,
+        table: [],
+        lastCapturerId: escobaPlayer.id,
+        players: state.players.map((player) => {
+          if (player.id !== escobaPlayer.id) {
+            return player;
+          }
+
+          return {
+            ...player,
+            escobaCount,
+          };
+        }),
+      };
+
+      this._state.set(freezeGameState(escobaState));
+
+      return {
+        escobaPlayerName: escobaPlayer.name,
+        escobaCount,
+      };
+    }
+
+    const winner = state.players[0] ?? null;
+    if (!winner) {
+      throw new Error('[GameEngine] round/winner fixture requires at least one player.');
+    }
+
+    const roundResult: RoundResult = {
+      roundNumber: state.roundNumber + 41,
+      playerScores: state.players.map((player, playerIndex) => ({
+        playerId: player.id,
+        escobas: playerIndex === 0 ? 2 : 0,
+        mostCards: playerIndex === 0 ? 1 : 0,
+        mostOros: playerIndex === 0 ? 1 : 0,
+        mostSevens: playerIndex === 0 ? 1 : 0,
+        sieteDiVelo: 0,
+        total: playerIndex === 0 ? 13 : 1,
+      })),
+    };
+
+    this._roundResult.set(roundResult);
+    this._matchWinner.set(winner);
+
+    return {
+      roundNumber: roundResult.roundNumber,
+      winnerName: winner.name,
+      topScore: roundResult.playerScores[0]?.total ?? 0,
+    };
+  }
 
   // ---------------------------------------------------------------------------
   // T-8: initGame

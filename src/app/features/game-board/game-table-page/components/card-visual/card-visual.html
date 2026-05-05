@@ -1,0 +1,13 @@
+<figure
+  class="card-visual"
+  data-testid="card-visual"
+  [attr.aria-label]="semanticLabel()"
+  [class.card-visual--selected]="selectedSignal()"
+>
+  <img
+    class="card-visual-image"
+    data-testid="card-visual-image"
+    [src]="imagePath()"
+    [alt]="semanticLabel()"
+  />
+</figure>

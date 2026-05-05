@@ -1,0 +1,68 @@
+:host {
+  display: block;
+}
+
+.context-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(241, 226, 189, 0.24);
+  background: rgba(4, 11, 9, 0.72);
+  backdrop-filter: blur(2px);
+}
+
+.scoreboard {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.score-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin: 0;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(241, 226, 189, 0.2);
+}
+
+.score-label {
+  font-weight: 600;
+}
+
+.score-value {
+  font-weight: 700;
+}
+
+.score-empty {
+  margin: 0;
+}
+
+.escoba-outcome-indicator,
+.round-outcome-indicator,
+.match-winner-indicator {
+  margin: 0;
+  grid-column: 1 / -1;
+  padding: 0.375rem 0.5rem;
+  border-radius: 0.5rem;
+  background: rgba(241, 226, 189, 0.16);
+  font-weight: 600;
+}
+
+@media (max-width: 700px) {
+  .context-header {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: start;
+    gap: 0.625rem;
+  }
+
+  .scoreboard {
+    justify-content: flex-start;
+  }
+}

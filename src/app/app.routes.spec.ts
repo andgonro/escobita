@@ -1,5 +1,7 @@
 import { routes } from './app.routes';
+import { partidaSessionGuard } from './core/guards/partida-session.guard';
 import { GameBoardPlaceholder } from './features/game-board/game-board-placeholder/game-board-placeholder';
+import { GameTablePage } from './features/game-board/game-table-page/game-table-page';
 import { Lobby } from './features/lobby/lobby/lobby';
 
 // Covers: FR-1.1, FR-1.4, TR-1.1, TR-1.2, TR-1.3
@@ -19,7 +21,7 @@ describe('app routes', () => {
     expect(loaded).toBe(Lobby);
   });
 
-  it('registers a named game board placeholder route', async () => {
+  it('registers a named game table route', async () => {
     const gameBoardRoute = routes.find((route) => route.path === 'partida');
 
     expect(gameBoardRoute).toBeDefined();
@@ -30,6 +32,10 @@ describe('app routes', () => {
     }
 
     const loaded = await gameBoardRoute.loadComponent();
-    expect(loaded).toBe(GameBoardPlaceholder);
+    expect(loaded).toBe(GameTablePage);
+    expect(loaded).not.toBe(GameBoardPlaceholder);
+    expect(gameBoardRoute.canMatch).toBeDefined();
+    expect(Array.isArray(gameBoardRoute.canMatch)).toBe(true);
+    expect(gameBoardRoute.canMatch).toContain(partidaSessionGuard);
   });
 });

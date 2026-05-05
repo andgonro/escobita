@@ -1,0 +1,103 @@
+.game-table-page {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(10rem, 1fr) auto auto;
+  gap: clamp(0.5rem, 2.4vw, 0.75rem);
+  padding: clamp(0.5rem, 2.8vw, 1rem);
+  color: #f7f3e8;
+  background-image: url('/tapete.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.game-table-page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(180deg, rgba(4, 14, 10, 0.58) 0%, rgba(3, 10, 8, 0.72) 100%),
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 55%);
+}
+
+.game-table-page > * {
+  position: relative;
+  z-index: 1;
+}
+
+.game-table-page--handoff-active app-match-context-hud,
+.game-table-page--handoff-active [data-testid='session-indicator'],
+.game-table-page--handoff-active .table-layout-shell,
+.game-table-page--handoff-active app-play-action-bar {
+  filter: blur(8px);
+  pointer-events: none;
+  user-select: none;
+}
+
+[data-testid='session-indicator'] {
+  margin: 0;
+}
+
+.table-layout-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(10rem, 1fr) auto;
+  gap: clamp(0.5rem, 2.4vw, 0.75rem);
+  min-height: 100%;
+}
+
+.layout-opponents,
+.layout-center,
+.layout-active-hand,
+app-opponent-zones,
+app-center-table-zone,
+app-active-hand-zone,
+.actions {
+  display: block;
+}
+
+.layout-opponents {
+  align-self: start;
+}
+
+.layout-center,
+app-center-table-zone {
+  align-self: center;
+}
+
+.layout-active-hand,
+app-active-hand-zone {
+  align-self: end;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.actions button {
+  border: 0;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  font-weight: 600;
+  color: #173a2a;
+  background: #f1e2bd;
+}
+
+[data-testid='play-validation-message'] {
+  margin: 0;
+  min-height: 1.5rem;
+}
+
+@media (max-width: 480px) {
+  .game-table-page {
+    grid-template-rows: auto auto minmax(12rem, 1fr) auto auto;
+  }
+}

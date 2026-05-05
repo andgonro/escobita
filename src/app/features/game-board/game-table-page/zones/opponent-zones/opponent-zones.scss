@@ -1,0 +1,68 @@
+:host {
+  display: block;
+}
+
+.opponent-zones {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.opponent-zones--one {
+  grid-template-areas: '. north .';
+}
+
+.opponent-zones--two {
+  grid-template-areas: 'west . east';
+}
+
+.opponent-zones--three {
+  grid-template-areas: 'west north east';
+}
+
+.opponent-seat {
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0.5rem 0.75rem;
+}
+
+.opponent-seat--north {
+  grid-area: north;
+  justify-self: center;
+  width: min(100%, 16rem);
+}
+
+.opponent-seat--west {
+  grid-area: west;
+}
+
+.opponent-seat--east {
+  grid-area: east;
+}
+
+.opponent-name,
+.opponent-captured {
+  margin: 0;
+}
+
+@media (max-width: 700px) {
+  .opponent-zones,
+  .opponent-zones--one,
+  .opponent-zones--two,
+  .opponent-zones--three {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'north'
+      'west'
+      'east';
+  }
+
+  .opponent-seat,
+  .opponent-seat--north,
+  .opponent-seat--west,
+  .opponent-seat--east {
+    width: 100%;
+    justify-self: stretch;
+  }
+}

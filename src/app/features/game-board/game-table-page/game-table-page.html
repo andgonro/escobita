@@ -1,0 +1,78 @@
+<section
+  class="game-table-page"
+  [class.game-table-page--handoff-active]="showTurnHandoffOverlay()"
+  data-testid="game-table-page"
+>
+  <app-match-context-hud
+    [activePlayerName]="activePlayerName()"
+    [scoreEntries]="scoreEntries()"
+    [turnPhase]="turnPhase()"
+    [escobaOutcome]="escobaOutcome()"
+    [roundResult]="roundResult()"
+    [matchWinner]="matchWinner()"
+    [handoffActive]="showTurnHandoffOverlay()"
+    [contextHeaderTestId]="contextHeaderTestId()"
+  ></app-match-context-hud>
+
+  <app-a11y-live-region [message]="liveAnnouncement()"></app-a11y-live-region>
+
+  <p
+    data-testid="session-indicator"
+    [attr.aria-hidden]="showTurnHandoffOverlay() ? 'true' : null"
+    [attr.inert]="showTurnHandoffOverlay() ? '' : null"
+  >
+    Session configuration: {{ hasSessionConfiguration() ? 'ready' : 'missing' }}
+  </p>
+
+  <div
+    class="table-layout-shell"
+    data-testid="table-layout-shell"
+    [attr.aria-hidden]="showTurnHandoffOverlay() ? 'true' : null"
+    [attr.inert]="showTurnHandoffOverlay() ? '' : null"
+  >
+    <div class="layout-opponents" data-testid="layout-opponents">
+      <app-opponent-zones [opponents]="opponents()"></app-opponent-zones>
+    </div>
+
+    <div class="layout-center" data-testid="layout-center">
+      <app-center-table-zone
+        [tableCards]="tableCards()"
+        [selectedTableCards]="selectedTableCards()"
+        [interactionEnabled]="interactionEnabled()"
+        (tableCardToggled)="onTableCardToggled($event)"
+      ></app-center-table-zone>
+    </div>
+
+    <div class="layout-active-hand" data-testid="layout-active-hand">
+      <app-active-hand-zone
+        [handCards]="activeHandCards()"
+        [selectedHandCard]="selectedHandCard()"
+        [interactionEnabled]="interactionEnabled()"
+        (handCardSelected)="onHandCardSelected($event)"
+      ></app-active-hand-zone>
+    </div>
+  </div>
+
+  <app-play-action-bar
+    [canSubmitPlay]="canSubmitPlay()"
+    [isCaptureSelectionValid]="isCaptureSelectionValid()"
+    [turnPhase]="turnPhase()"
+    [validationMessage]="validationMessage()"
+    [multiplayer]="isMultiplayer()"
+    [handoffEnabled]="handoffEnabled()"
+    (submitPlayClicked)="submitPlay()"
+    (confirmTurnClicked)="confirmTurn()"
+    (handoffToggleChanged)="onHandoffToggleChanged($event)"
+    [attr.aria-hidden]="showTurnHandoffOverlay() ? 'true' : null"
+    [attr.inert]="showTurnHandoffOverlay() ? '' : null"
+  ></app-play-action-bar>
+
+  @if (showTurnHandoffOverlay()) {
+    <app-turn-handoff-overlay
+      [nextPlayerName]="activePlayerName()"
+      (handoffAcknowledged)="onHandoffAcknowledged()"
+    ></app-turn-handoff-overlay>
+  } @else {
+    <p data-testid="next-turn-reveal">Next turn: {{ activePlayerName() }}</p>
+  }
+</section>
