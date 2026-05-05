@@ -122,11 +122,11 @@ The Game Engine Core defines all data models and business rules required to play
 
 **FR-9.2** — If exactly one player has 15 or more points, that player is declared the match winner and the game ends.
 
-**FR-9.3** — If multiple players simultaneously reach or exceed 15 points in the same round, the player with the highest accumulated score is the winner.
+**FR-9.3** — If multiple players simultaneously reach or exceed 15 points in the same round, the player with the strictly highest accumulated score is the sole winner and the game ends.
 
-**FR-9.4** — If multiple players simultaneously reach or exceed 15 points and share the highest score (a perfect tie at match level), a new round is played. This continues until one player leads after a round.
+**FR-9.4** — If multiple players simultaneously reach or exceed 15 points and share the exact same highest score (a perfect tie at match level), all tied players are declared co-winners and the game ends. No additional round is played to break the tie.
 
-**FR-9.5** — The engine must expose a Signal indicating the match winner (null if the match is ongoing) so that the UI can react to the end-of-game condition.
+**FR-9.5** — The engine must expose a Signal indicating the match winner or winners (null if the match is ongoing). When the match ends with a single winner, the signal carries that one player. When the match ends with co-winners, the signal carries all tied players. The UI reacts to this signal transitioning from null to a non-null value to detect end-of-game.
 
 ---
 
@@ -192,7 +192,7 @@ The Game Engine Core defines all data models and business rules required to play
 - Current active player entity
 - Current turn phase (awaiting card play, or awaiting confirmation)
 - Current round result (null until a round completes)
-- Match winner (null until the match ends)
+- Match winner or co-winners (null until the match ends; a list of one or more players when the match concludes)
 
 **TR-4.4** — The service exposes the following public methods:
 

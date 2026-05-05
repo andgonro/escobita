@@ -29,20 +29,21 @@
 
 **As a** player,
 **I want** to see a clear "Match Over" overlay when the match is won,
-**So that** I know the game is conclusively finished and which player won.
+**So that** I know the game is conclusively finished and which player or players won.
 
 ### Acceptance Criteria
 
 - [ ] When the final round ends with a winner, the round-complete state is shown first: the full per-player score breakdown for that round is visible, and a "View Winner" button appears in place of "Start Next Round".
 - [ ] The match-over overlay does not appear automatically; it only appears after the player activates the "View Winner" button.
 - [ ] Once the "View Winner" button is activated, a full-screen "Match Over" overlay appears on top of all game table content.
-- [ ] The overlay displays the winner's name prominently.
+- [ ] The overlay displays the winner's name prominently. If two or more players are co-winners (tied at the same score at or above 15), all winners' names are displayed with equal prominence.
 - [ ] The overlay displays the final accumulated match scores for all players.
+- [ ] In the co-winner case, no additional round is played; the match ends immediately with all tied players declared as winners.
 - [ ] The underlying game table content (HUD, board zones, action bar) is visually obscured and inert to pointer and keyboard interaction while the overlay is active.
 - [ ] The overlay cannot be dismissed by clicking outside of it, pressing Escape, or any gesture other than the two explicit exit actions.
 - [ ] The overlay has an accessible role and name so that assistive technology identifies it as a modal dialog on appearance.
 - [ ] When the overlay appears, focus moves into it.
-- [ ] A live-region announcement is made identifying the match winner.
+- [ ] A live-region announcement is made identifying the match winner or co-winners.
 - [ ] The "Start Next Round" button is not accessible or reachable in any way while the match-over overlay is active.
 
 ---

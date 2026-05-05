@@ -42,11 +42,11 @@ This feature adds the UI continuation workflow that allows players to progress t
 
 ### FR-3: Match-Over State Recognition
 
-**FR-3.1** — The match-over UI state is entered only when the player explicitly activates the "View Winner" button from the final round-complete state (FR-2.7). The match-over overlay does not appear automatically when `matchWinner` becomes non-null; it is always preceded by the round result screen. `matchWinner` itself can only become non-null at the end of a complete round — after all remaining table cards have been awarded, all five scoring categories have been computed, and accumulated match scores have been updated for every player. It is never set mid-round as a result of an escoba or any individual card play. A player who scores an escoba mid-round that brings their running total to 15 or more is not yet a winner; the win condition is only evaluated once the round fully ends. If at that point another player ends with a strictly higher accumulated score (even if that player's total crossed 15 later in the same round), the higher-scoring player is declared the winner.
+**FR-3.1** — The match-over UI state is entered only when the player explicitly activates the "View Winner" button from the final round-complete state (FR-2.7). The match-over overlay does not appear automatically when `matchWinner` becomes non-null; it is always preceded by the round result screen. The match winner signal can only become non-null at the end of a complete round — after all remaining table cards have been awarded, all five scoring categories have been computed, and accumulated match scores have been updated for every player. It is never set mid-round as a result of an escoba or any individual card play. A player who scores an escoba mid-round that brings their running total to 15 or more is not yet a winner; the win condition is only evaluated once the round fully ends. If one player ends with the strictly highest score, that player is the sole winner. If two or more players end the round sharing the same highest score at or above 15, all tied players are declared co-winners and the game ends — no additional round is played to break the tie.
 
 **FR-3.2** — In the match-over state, a full-screen "Match Over" overlay must appear on top of all game table content.
 
-**FR-3.3** — The overlay must display the winner's name prominently and clearly.
+**FR-3.3** — The overlay must display the winner's name prominently and clearly. If two or more players are co-winners, all winners' names must be displayed with equal prominence.
 
 **FR-3.4** — The overlay must display the final accumulated match scores for all players (not round scores — the total points each player has earned across all rounds of the match).
 
@@ -146,7 +146,7 @@ This feature adds the UI continuation workflow that allows players to progress t
 
 **NFR-1.1** — The "Start Next Round" button must never be visible while `matchWinner` is non-null. The "View Winner" button must never be visible while `matchWinner` is null. The two buttons are mutually exclusive and never both visible at the same time.
 
-**NFR-1.2** — The match-over overlay must never be visible while `matchWinner` is null, and must never appear without the player first having seen and acknowledged the final round result via the "View Winner" action.
+**NFR-1.2** — The match-over overlay must never be visible while the match winner signal is null, and must never appear without the player first having seen and acknowledged the final round result via the "View Winner" action. In the co-winner case, the overlay must correctly display all winning players.
 
 **NFR-1.3** — "Play Again" must produce a genuinely fresh game state: round 1, all accumulated match scores at 0, new shuffled deck, and new initial deal. The engine's `initGame()` implementation guarantees this.
 

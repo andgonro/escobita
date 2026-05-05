@@ -27,17 +27,18 @@ The game engine fully implements multi-round play (FR-10.1–FR-10.3 of the game
 
 ### User Experience Impact
 
-Without this feature, a match cannot progress beyond round 1. With it, the full game arc becomes playable: rounds continue until one player reaches 15 accumulated points with a clear lead, the match-over overlay then appears, and the player can return to lobby or immediately rematch with the same team.
+Without this feature, a match cannot progress beyond round 1. With it, the full game arc becomes playable: rounds continue until the match ends — either when one player holds the highest score at or above 15 (sole winner), or when two or more players share the exact same highest score at or above 15 (co-winners, game ends immediately with no tiebreaker round). In all cases the match-over overlay then appears, and the player can return to the lobby or immediately rematch with the same team.
 
 ---
 
 ## High-Level Approach
 
-- After a round ends and no winner has been declared, a "Start Next Round" button appears in the round result area of the HUD, alongside the existing round number and top score text.
-- The board (table cards, opponent zones, active hand zone) remains visible and inspectable. Since all hands are empty after a round ends, the engine's own state naturally prevents any accidental card plays; no artificial locking is needed.
-- The per-player round score breakdown (points by category) is shown alongside the button so players can review results before continuing.
-- Activating "Start Next Round" calls `gameEngine.startNextRound()`. The engine resets `roundResult` to null, deals fresh cards, and the board enters round N+1 in the normal play state.
-- When `matchWinner` becomes non-null, a full-screen "Match Over" overlay appears over the game table, following the same layering and inert/aria-hidden pattern already used by the existing `TurnHandoffOverlay`. The overlay shows the winner's name, the final match scores for all players, and two explicit exit actions.
+- After a round ends, a round-complete state is shown first regardless of whether a winner has been declared. The per-player round score breakdown (points by category) is always visible before the match-over overlay can appear.
+- When no winner has been declared, a "Start Next Round" button appears alongside the breakdown. Activating it calls `gameEngine.startNextRound()`, resets `roundResult` to null, deals fresh cards, and the board enters round N+1.
+- When the round ends with a winner (sole or co-winners), a "View Winner" button appears instead of "Start Next Round". Activating it is the only way the "Match Over" overlay opens — the overlay never appears automatically.
+- The board (table cards, opponent zones, active hand zone) remains visible and inspectable in the round-complete state. Since all hands are empty, the engine naturally prevents accidental card plays; no artificial locking is needed.
+- The "Match Over" overlay follows the same layering and inert/aria-hidden pattern as the existing `TurnHandoffOverlay`. It shows the winner's name — or all co-winners' names with equal prominence if two or more players share the top score — the final accumulated match scores for all players, and two explicit exit actions.
+- A co-winner outcome ends the match immediately. No additional round is played to break the tie.
 - "Return to Lobby" navigates to the root route. The `GameSession` configuration is preserved so the lobby form re-opens pre-filled with the last session's settings.
 - "Play Again" calls `gameEngine.initGame()` directly with the current session configuration, starting a fresh round 1 match without going through the lobby. The match-over overlay dismisses and the board shows the new initial deal.
 - No changes are made to `GameSession`, game engine rules, scoring logic, or the routing guard.
@@ -46,9 +47,9 @@ Without this feature, a match cannot progress beyond round 1. With it, the full 
 
 ## Deliverables
 
-- Updated `MatchContextHud` component to expose a "Start Next Round" button (visible when `roundResult` is non-null and `matchWinner` is null) and a full per-player round score breakdown panel.
+- Updated `MatchContextHud` component to expose a "Start Next Round" button (visible when `roundResult` is non-null and `matchWinner` is null), a "View Winner" button (visible when both `roundResult` and the match winner signal are non-null), and a full per-player round score breakdown panel.
 - A new `MatchOverOverlay` standalone component for the match-over state, following the `TurnHandoffOverlay` structural pattern.
-- Updated `GameTablePage` to wire the new button event to `startNextRound()`, to show/hide the match-over overlay based on `matchWinner`, to handle the "Play Again" reinitialisation call, and to handle the "Return to Lobby" navigation.
+- Updated `GameTablePage` to wire the "Start Next Round" event to `startNextRound()`, to open the match-over overlay only when the player activates "View Winner" (not automatically from the engine signal), to handle the "Play Again" reinitialisation call, and to handle the "Return to Lobby" navigation.
 - New unit and integration tests covering round-result gating, next-round transitions, match-over display conditions, and Play Again reinitialisation.
 - New Cypress BDD scenarios for the next-round continuation path and the match-over overlay path.
 
@@ -58,5 +59,5 @@ Without this feature, a match cannot progress beyond round 1. With it, the full 
 
 - "Play Again" must bypass the existing bootstrap guard in `bootstrapEngineStateFromSession()`, which skips `initGame()` if engine state is already non-null. The implementation must call `gameEngine.initGame()` directly and unconditionally when the player activates "Play Again".
 - The `TurnHandoffOverlay` component provides the closest existing reference pattern for the `MatchOverOverlay` (full-screen positioning, inert background, focus management, output-only interface).
-- This feature depends exclusively on engine methods and signals that are already implemented and fully tested (T-11, SC-68 through SC-77 of the game-engine core spec).
+- This feature depends on engine methods and signals that are already implemented and fully tested (T-11, SC-68 through SC-77 of the game-engine core spec), with one exception: the existing `matchWinner` signal carries a single `Player | null` value. Supporting co-winners requires changing this to `Player[] | null`. This is a breaking change to the engine's public signal contract and requires coordinated updates to `checkWinCondition`, the signal type, its unit tests, and all consumers.
 - The round score breakdown requires `RoundResult.playerScores` data, which the engine populates completely. Player names must be resolved by cross-referencing `playerScores[].playerId` with the players array in `GameState`.
