@@ -20,7 +20,7 @@ interface GameEnginePort {
   turnPhase: () => TurnPhase;
   activePlayer: () => Player | null;
   roundResult: () => RoundResult | null;
-  matchWinner: () => Player | null;
+  matchWinner: () => Player[] | null;
   playCard: (card: Card, captureSubset: Card[]) => void;
   confirmTurn: () => void;
 }
@@ -84,14 +84,16 @@ interface Stubs {
   setTurnIndex: (turnIndex: number) => void;
   setEscobaOutcome: (playerId: string, escobaCount: number) => void;
   setRoundResult: (roundResult: RoundResult | null) => void;
-  setMatchWinner: (winner: Player | null) => void;
+  setMatchWinner: (winner: Player[] | null) => void;
+  setMatchScores: (matchScores: Record<string, number>) => void;
+  setState: (state: GameState | null) => void;
 }
 
 function createStubs(turnPhase: TurnPhase, selectedCard: Card | null): Stubs {
   const stateSignal = signal<GameState | null>(makeState());
   const turnPhaseSignal = signal<TurnPhase>(turnPhase);
   const roundResultSignal = signal<RoundResult | null>(null);
-  const matchWinnerSignal = signal<Player | null>(null);
+  const matchWinnerSignal = signal<Player[] | null>(null);
   const selectedHandCardSignal = signal<Card | null>(selectedCard);
   const selectedTableCardsSignal = signal<Card[]>([tableCardA, tableCardB]);
   const canSubmitPlaySignal = signal(selectedCard !== null);
@@ -184,8 +186,25 @@ function createStubs(turnPhase: TurnPhase, selectedCard: Card | null): Stubs {
     roundResultSignal.set(roundResult);
   };
 
-  const setMatchWinner = (winner: Player | null): void => {
+  const setMatchWinner = (winner: Player[] | null): void => {
     matchWinnerSignal.set(winner);
+  };
+
+  const setMatchScores = (matchScores: Record<string, number>): void => {
+    stateSignal.update((state) => {
+      if (!state) {
+        return state;
+      }
+
+      return {
+        ...state,
+        matchScores: { ...matchScores },
+      };
+    });
+  };
+
+  const setState = (state: GameState | null): void => {
+    stateSignal.set(state);
   };
 
   return {
@@ -199,6 +218,8 @@ function createStubs(turnPhase: TurnPhase, selectedCard: Card | null): Stubs {
     setEscobaOutcome,
     setRoundResult,
     setMatchWinner,
+    setMatchScores,
+    setState,
   };
 }
 
@@ -206,6 +227,21 @@ describe('GameTablePage', () => {
   let component: GameTablePage;
   let fixture: ComponentFixture<GameTablePage>;
   let stubs: Stubs;
+
+  interface RoundScoreBreakdownEntry {
+    playerName: string;
+    escobas: number;
+    mostCards: number;
+    mostOros: number;
+    mostSevens: number;
+    sieteDiVelo: number;
+    total: number;
+  }
+
+  interface MatchScoreEntry {
+    playerName: string;
+    score: number;
+  }
 
   const getByTestId = <T extends HTMLElement>(testId: string): T => {
     const element = fixture.nativeElement.querySelector(`[data-testid="${testId}"]`) as T | null;
@@ -220,6 +256,15 @@ describe('GameTablePage', () => {
     const activeElement = document.activeElement as HTMLElement | null;
     expect(activeElement).not.toBeNull();
     expect(activeElement?.getAttribute('data-testid')).toBe(expectedTestId);
+  };
+
+  const readProtectedSignal = <T>(propertyName: string): T | undefined => {
+    const candidate = (component as unknown as Record<string, unknown>)[propertyName];
+    if (typeof candidate !== 'function') {
+      return undefined;
+    }
+
+    return (candidate as () => T)();
   };
 
   const configureAndCreate = async (turnPhase: TurnPhase, selectedCard: Card | null) => {
@@ -445,13 +490,15 @@ describe('GameTablePage', () => {
         },
       ],
     });
-    stubs.setMatchWinner({
-      id: 'p2',
-      name: 'Bob',
-      hand: [],
-      capturedPile: [],
-      escobaCount: 0,
-    });
+    stubs.setMatchWinner([
+      {
+        id: 'p2',
+        name: 'Bob',
+        hand: [],
+        capturedPile: [],
+        escobaCount: 0,
+      },
+    ]);
     await fixture.whenStable();
 
     const roundOutcome = getByTestId<HTMLElement>('round-outcome-indicator');
@@ -460,5 +507,254 @@ describe('GameTablePage', () => {
     expect(roundOutcome.textContent ?? '').toContain('Round 1');
     expect(roundOutcome.textContent ?? '').toContain('Top score: 2');
     expect(winnerOutcome.textContent ?? '').toContain('Bob');
+  });
+
+  it('T-2 / FR-2.1 / FR-2.2 - computes continuation button visibility from round and winner states', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    const completedRound: RoundResult = {
+      roundNumber: 2,
+      playerScores: [
+        {
+          playerId: 'p1',
+          escobas: 1,
+          mostCards: 1,
+          mostOros: 0,
+          mostSevens: 0,
+          sieteDiVelo: 0,
+          total: 2,
+        },
+      ],
+    };
+
+    const winner: Player[] = [
+      {
+        id: 'p1',
+        name: 'Alice',
+        hand: [],
+        capturedPile: [],
+        escobaCount: 0,
+      },
+    ];
+
+    stubs.setRoundResult(null);
+    stubs.setMatchWinner(null);
+    await fixture.whenStable();
+
+    expect(readProtectedSignal<boolean>('showStartNextRoundButton')).toBe(false);
+    expect(readProtectedSignal<boolean>('showViewWinnerButton')).toBe(false);
+
+    stubs.setRoundResult(completedRound);
+    stubs.setMatchWinner(null);
+    await fixture.whenStable();
+
+    expect(readProtectedSignal<boolean>('showStartNextRoundButton')).toBe(true);
+    expect(readProtectedSignal<boolean>('showViewWinnerButton')).toBe(false);
+
+    stubs.setRoundResult(null);
+    stubs.setMatchWinner(winner);
+    await fixture.whenStable();
+
+    expect(readProtectedSignal<boolean>('showStartNextRoundButton')).toBe(false);
+    expect(readProtectedSignal<boolean>('showViewWinnerButton')).toBe(false);
+
+    stubs.setRoundResult(completedRound);
+    stubs.setMatchWinner(winner);
+    await fixture.whenStable();
+
+    expect(readProtectedSignal<boolean>('showStartNextRoundButton')).toBe(false);
+    expect(readProtectedSignal<boolean>('showViewWinnerButton')).toBe(true);
+  });
+
+  it('T-2 / FR-1.3 - builds roundScoreBreakdown entries with resolved player names and all score fields', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    expect(readProtectedSignal<RoundScoreBreakdownEntry[]>('roundScoreBreakdown')).toEqual([]);
+
+    stubs.setRoundResult({
+      roundNumber: 1,
+      playerScores: [
+        {
+          playerId: 'p1',
+          escobas: 2,
+          mostCards: 1,
+          mostOros: 1,
+          mostSevens: 0,
+          sieteDiVelo: 1,
+          total: 5,
+        },
+        {
+          playerId: 'p2',
+          escobas: 0,
+          mostCards: 0,
+          mostOros: 0,
+          mostSevens: 1,
+          sieteDiVelo: 0,
+          total: 1,
+        },
+      ],
+    });
+    await fixture.whenStable();
+
+    expect(readProtectedSignal<RoundScoreBreakdownEntry[]>('roundScoreBreakdown')).toEqual([
+      {
+        playerName: 'Alice',
+        escobas: 2,
+        mostCards: 1,
+        mostOros: 1,
+        mostSevens: 0,
+        sieteDiVelo: 1,
+        total: 5,
+      },
+      {
+        playerName: 'Bob',
+        escobas: 0,
+        mostCards: 0,
+        mostOros: 0,
+        mostSevens: 1,
+        sieteDiVelo: 0,
+        total: 1,
+      },
+    ]);
+  });
+
+  it('T-2 / TR-4.3 - resolves roundScoreBreakdown names by playerId even when score rows are out of player order', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    stubs.setRoundResult({
+      roundNumber: 9,
+      playerScores: [
+        {
+          playerId: 'p2',
+          escobas: 0,
+          mostCards: 0,
+          mostOros: 1,
+          mostSevens: 1,
+          sieteDiVelo: 0,
+          total: 2,
+        },
+        {
+          playerId: 'p1',
+          escobas: 1,
+          mostCards: 1,
+          mostOros: 0,
+          mostSevens: 0,
+          sieteDiVelo: 1,
+          total: 3,
+        },
+      ],
+    });
+    await fixture.whenStable();
+
+    expect(readProtectedSignal<RoundScoreBreakdownEntry[]>('roundScoreBreakdown')).toEqual([
+      {
+        playerName: 'Bob',
+        escobas: 0,
+        mostCards: 0,
+        mostOros: 1,
+        mostSevens: 1,
+        sieteDiVelo: 0,
+        total: 2,
+      },
+      {
+        playerName: 'Alice',
+        escobas: 1,
+        mostCards: 1,
+        mostOros: 0,
+        mostSevens: 0,
+        sieteDiVelo: 1,
+        total: 3,
+      },
+    ]);
+  });
+
+  it('T-2 / TR-4.3 - returns empty breakdown and match-score arrays when state is null', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    stubs.setRoundResult({
+      roundNumber: 1,
+      playerScores: [
+        {
+          playerId: 'p1',
+          escobas: 1,
+          mostCards: 1,
+          mostOros: 1,
+          mostSevens: 1,
+          sieteDiVelo: 1,
+          total: 5,
+        },
+      ],
+    });
+    stubs.setState(null);
+    await fixture.whenStable();
+
+    expect(readProtectedSignal<RoundScoreBreakdownEntry[]>('roundScoreBreakdown')).toEqual([]);
+    expect(readProtectedSignal<MatchScoreEntry[]>('matchScoreEntries')).toEqual([]);
+  });
+
+  it('T-2 / TR-4.1 - exposes winnerNames as a pure string array', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    expect(readProtectedSignal<string[]>('winnerNames')).toEqual([]);
+
+    stubs.setMatchWinner([
+      { id: 'p1', name: 'Alice', hand: [], capturedPile: [], escobaCount: 0 },
+      { id: 'p2', name: 'Bob', hand: [], capturedPile: [], escobaCount: 0 },
+    ]);
+    await fixture.whenStable();
+
+    const winnerNames = readProtectedSignal<string[]>('winnerNames');
+    expect(winnerNames).toEqual(['Alice', 'Bob']);
+    expect(winnerNames?.every((name) => typeof name === 'string')).toBe(true);
+  });
+
+  it('T-2 / TR-4.3 - maps matchScoreEntries from state.matchScores instead of round totals', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    stubs.setMatchScores({ p1: 11, p2: 7 });
+    stubs.setRoundResult({
+      roundNumber: 6,
+      playerScores: [
+        {
+          playerId: 'p1',
+          escobas: 1,
+          mostCards: 0,
+          mostOros: 0,
+          mostSevens: 0,
+          sieteDiVelo: 0,
+          total: 1,
+        },
+        {
+          playerId: 'p2',
+          escobas: 0,
+          mostCards: 1,
+          mostOros: 0,
+          mostSevens: 0,
+          sieteDiVelo: 0,
+          total: 1,
+        },
+      ],
+    });
+    await fixture.whenStable();
+
+    expect(readProtectedSignal<MatchScoreEntry[]>('matchScoreEntries')).toEqual([
+      { playerName: 'Alice', score: 11 },
+      { playerName: 'Bob', score: 7 },
+    ]);
+  });
+
+  it('T-2 / TR-4.1 - initializes showMatchOverOverlay signal to false', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    expect(readProtectedSignal<boolean>('showMatchOverOverlay')).toBe(false);
+  });
+
+  it('T-2 / TR-4.1 - keeps showMatchOverOverlay false when only matchWinner changes', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    stubs.setMatchWinner([{ id: 'p1', name: 'Alice', hand: [], capturedPile: [], escobaCount: 0 }]);
+    await fixture.whenStable();
+
+    expect(readProtectedSignal<boolean>('showMatchOverOverlay')).toBe(false);
   });
 });

@@ -138,13 +138,13 @@ export class GameEngine {
   private readonly _state = signal<GameState | null>(null);
   private readonly _turnPhase = signal<TurnPhase>('awaiting-card-play');
   private readonly _roundResult = signal<RoundResult | null>(null);
-  private readonly _matchWinner = signal<Player | null>(null);
+  private readonly _matchWinner = signal<Player[] | null>(null);
 
   // Public read-only signals (TR-4.3, NFR-2.1)
   readonly state: Signal<GameState | null> = this._state.asReadonly();
   readonly turnPhase: Signal<TurnPhase> = this._turnPhase.asReadonly();
   readonly roundResult: Signal<RoundResult | null> = this._roundResult.asReadonly();
-  readonly matchWinner: Signal<Player | null> = this._matchWinner.asReadonly();
+  readonly matchWinner: Signal<Player[] | null> = this._matchWinner.asReadonly();
 
   /** Computed signal: derives the active player from current state. */
   readonly activePlayer: Signal<Player | null> = computed(() => {
@@ -217,7 +217,7 @@ export class GameEngine {
     };
 
     this._roundResult.set(roundResult);
-    this._matchWinner.set(winner);
+    this._matchWinner.set([winner]);
 
     return {
       roundNumber: roundResult.roundNumber,

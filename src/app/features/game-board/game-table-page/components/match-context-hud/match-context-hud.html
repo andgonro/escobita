@@ -35,7 +35,7 @@
 
   @if (matchWinnerSignal(); as matchWinner) {
     <p data-testid="match-winner-indicator" class="match-winner-indicator">
-      Match winner: {{ matchWinner.name }}
+      Match winner: {{ matchWinner.map((winner) => winner.name).join(', ') }}
     </p>
   }
 </header>

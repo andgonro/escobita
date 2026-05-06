@@ -21,42 +21,50 @@ describe('checkWinCondition', () => {
     expect(checkWinCondition(scores, players)).toBeNull();
   });
 
-  it('SC-65 / SC-70 — returns the winning player when exactly one player reaches 15 or more', () => {
+  it('SC-65 / SC-70 — returns a single-element array when exactly one player reaches 15 or more', () => {
     const alice = makePlayer('p1', 'Alice');
     const bob = makePlayer('p2', 'Bob');
     const scores: Record<string, number> = { p1: 16, p2: 10 };
     const winner = checkWinCondition(scores, [alice, bob]);
-    expect(winner).not.toBeNull();
-    expect(winner?.id).toBe('p1');
+    expect(winner).toEqual([alice]);
   });
 
-  it('SC-66 — when multiple players reach 15 simultaneously the player with the highest score wins', () => {
+  it('SC-66 — when multiple players reach 15 simultaneously the highest scorer is returned as a single-element array', () => {
     const alice = makePlayer('p1', 'Alice');
     const bob = makePlayer('p2', 'Bob');
     const scores: Record<string, number> = { p1: 16, p2: 15 };
     const winner = checkWinCondition(scores, [alice, bob]);
-    expect(winner?.id).toBe('p1');
+    expect(winner).toEqual([alice]);
   });
 
-  it('SC-67 — returns null when multiple players share the highest score at or above 15 (tie)', () => {
+  it('SC-67 — returns all co-winners when players share the highest score at or above 15', () => {
     const alice = makePlayer('p1', 'Alice');
     const bob = makePlayer('p2', 'Bob');
     const scores: Record<string, number> = { p1: 16, p2: 16 };
-    expect(checkWinCondition(scores, [alice, bob])).toBeNull();
+    expect(checkWinCondition(scores, [alice, bob])).toEqual([alice, bob]);
   });
 
-  it('returns null when three players tie at 15', () => {
+  it('returns all co-winners when three players tie at 15', () => {
     const players = [makePlayer('p1', 'Alice'), makePlayer('p2', 'Bob'), makePlayer('p3', 'Carol')];
     const scores: Record<string, number> = { p1: 15, p2: 15, p3: 15 };
-    expect(checkWinCondition(scores, players)).toBeNull();
+    expect(checkWinCondition(scores, players)).toEqual(players);
   });
 
-  it('returns the single highest scorer when others are below 15', () => {
+  it('returns only players tied at the highest qualifying score', () => {
     const alice = makePlayer('p1', 'Alice');
     const bob = makePlayer('p2', 'Bob');
     const carol = makePlayer('p3', 'Carol');
-    const scores: Record<string, number> = { p1: 20, p2: 14, p3: 14 };
+    const scores: Record<string, number> = { p1: 20, p2: 18, p3: 20 };
     const winner = checkWinCondition(scores, [alice, bob, carol]);
-    expect(winner?.id).toBe('p1');
+    expect(winner).toEqual([alice, carol]);
+  });
+
+  it('excludes players below 15 even when another player wins', () => {
+    const alice = makePlayer('p1', 'Alice');
+    const bob = makePlayer('p2', 'Bob');
+    const carol = makePlayer('p3', 'Carol');
+    const scores: Record<string, number> = { p1: 17, p2: 14, p3: 11 };
+    const winner = checkWinCondition(scores, [alice, bob, carol]);
+    expect(winner).toEqual([alice]);
   });
 });

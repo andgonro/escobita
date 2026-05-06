@@ -83,7 +83,7 @@ function setEngineState(engine: GameEngine, state: GameState, phase: TurnPhase):
     _state: { set: (value: GameState) => void };
     _turnPhase: { set: (value: TurnPhase) => void };
     _roundResult: { set: (value: null) => void };
-    _matchWinner: { set: (value: Player | null) => void };
+    _matchWinner: { set: (value: Player[] | null) => void };
   };
   internal._state.set(state);
   internal._turnPhase.set(phase);
@@ -106,8 +106,12 @@ describe('GameEngine', () => {
   // -------------------------------------------------------------------------
   // TR-4.1 — service is injectable at root
   // -------------------------------------------------------------------------
-  it('TR-4.1 — GameEngine is injectable and available via TestBed', () => {
-    expect(engine).toBeTruthy();
+  it('TR-4.1 — GameEngine exposes safe default signal state before initGame', () => {
+    expect(engine.state()).toBeNull();
+    expect(engine.activePlayer()).toBeNull();
+    expect(engine.roundResult()).toBeNull();
+    expect(engine.matchWinner()).toBeNull();
+    expect(engine.turnPhase()).toBe('awaiting-card-play');
   });
 
   // -------------------------------------------------------------------------
@@ -120,6 +124,24 @@ describe('GameEngine', () => {
     expect((engine.turnPhase as unknown as { set?: unknown }).set).toBeUndefined();
     expect((engine.roundResult as unknown as { set?: unknown }).set).toBeUndefined();
     expect((engine.matchWinner as unknown as { set?: unknown }).set).toBeUndefined();
+  });
+
+  describe('applyE2eFixture', () => {
+    it('round-winner fixture exposes matchWinner as a single-element array', () => {
+      engine.initGame(twoPlayerConfig());
+
+      const fixtureResult = engine.applyE2eFixture('round-winner-visibility');
+      const winners = engine.matchWinner();
+
+      expect(Array.isArray(winners)).toBe(true);
+
+      if (!Array.isArray(winners)) {
+        throw new Error('Expected matchWinner to expose an array winner contract.');
+      }
+
+      expect(winners).toHaveLength(1);
+      expect(winners[0]?.name).toBe(fixtureResult.winnerName);
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -548,6 +570,34 @@ describe('GameEngine', () => {
   // confirmTurn — SC-23, SC-24, SC-26, SC-27, SC-44–SC-51
   // -------------------------------------------------------------------------
   describe('confirmTurn', () => {
+    it('keeps matchWinner null before a round has fully completed', () => {
+      engine.initGame(twoPlayerConfig());
+
+      const alice = engine.state()!.players[0];
+      engine.playCard(alice.hand[0], []);
+      expect(engine.matchWinner()).toBeNull();
+
+      engine.confirmTurn();
+      expect(engine.matchWinner()).toBeNull();
+    });
+
+    it('SC-67 / FR-3.1 — emits co-winners at round end when top qualifying score is tied', () => {
+      const alice = makePlayer('alice', 'Alice', [], [], 0);
+      const bob = makePlayer('bob', 'Bob', [], [], 0);
+
+      const tiedEndState = makeState([alice, bob], [], [], 0, 4, null, {
+        [alice.id]: 15,
+        [bob.id]: 15,
+      });
+
+      setEngineState(engine, tiedEndState, 'awaiting-confirmation');
+
+      engine.confirmTurn();
+
+      expect(engine.roundResult()).not.toBeNull();
+      expect(engine.matchWinner()).toEqual([alice, bob]);
+    });
+
     it('SC-26 — confirmTurn while in awaiting-card-play phase is rejected', () => {
       engine.initGame(twoPlayerConfig());
       const stateBefore = engine.state();
@@ -791,16 +841,16 @@ describe('GameEngine', () => {
       setEngineState(engine, state, 'awaiting-card-play');
 
       const internal = engine as unknown as {
-        _matchWinner: { set: (value: Player | null) => void };
+        _matchWinner: { set: (value: Player[] | null) => void };
       };
-      internal._matchWinner.set(alice);
+      internal._matchWinner.set([alice]);
 
       const stateBefore = engine.state();
       const roundBefore = engine.state()!.roundNumber;
       engine.startNextRound();
       expect(engine.state()).toBe(stateBefore);
       expect(engine.state()!.roundNumber).toBe(roundBefore);
-      expect(engine.matchWinner()).not.toBeNull();
+      expect(engine.matchWinner()).toEqual([alice]);
     });
 
     it('SC-68 — startNextRound is rejected mid-round (hands not empty)', () => {

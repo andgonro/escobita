@@ -24,6 +24,21 @@ interface EscobaOutcome {
   escobaCount: number;
 }
 
+interface RoundScoreBreakdownEntry {
+  playerName: string;
+  escobas: number;
+  mostCards: number;
+  mostOros: number;
+  mostSevens: number;
+  sieteDiVelo: number;
+  total: number;
+}
+
+interface MatchScoreEntry {
+  playerName: string;
+  score: number;
+}
+
 @Component({
   selector: 'app-game-table-page',
   imports: [
@@ -50,6 +65,7 @@ export class GameTablePage {
   });
   private readonly interactionState = this.resolveInteractionState();
   private readonly showTurnHandoffOverlayState = signal(false);
+  private readonly showMatchOverOverlayState = signal(false);
   private readonly liveAnnouncementState = signal('');
 
   constructor() {
@@ -129,6 +145,51 @@ export class GameTablePage {
 
   protected readonly roundResult = computed(() => this.readEngineRoundResult());
   protected readonly matchWinner = computed(() => this.readEngineMatchWinner());
+  protected readonly showStartNextRoundButton = computed(() => {
+    return this.roundResult() !== null && this.matchWinner() === null;
+  });
+  protected readonly showViewWinnerButton = computed(() => {
+    return this.roundResult() !== null && this.matchWinner() !== null;
+  });
+  protected readonly roundScoreBreakdown = computed<RoundScoreBreakdownEntry[]>(() => {
+    const roundResult = this.roundResult();
+    const state = this.gameEngine.state();
+    if (roundResult === null || state === null) {
+      return [];
+    }
+
+    const playerNamesById = new Map(state.players.map((player) => [player.id, player.name]));
+
+    return roundResult.playerScores.map((scoreEntry) => ({
+      playerName: playerNamesById.get(scoreEntry.playerId) ?? scoreEntry.playerId,
+      escobas: scoreEntry.escobas,
+      mostCards: scoreEntry.mostCards,
+      mostOros: scoreEntry.mostOros,
+      mostSevens: scoreEntry.mostSevens,
+      sieteDiVelo: scoreEntry.sieteDiVelo,
+      total: scoreEntry.total,
+    }));
+  });
+  protected readonly winnerNames = computed<string[]>(() => {
+    const winners = this.matchWinner();
+    if (winners === null) {
+      return [];
+    }
+
+    return winners.map((winner) => winner.name);
+  });
+  protected readonly matchScoreEntries = computed<MatchScoreEntry[]>(() => {
+    const state = this.gameEngine.state();
+    if (state === null) {
+      return [];
+    }
+
+    return state.players.map((player) => ({
+      playerName: player.name,
+      score: state.matchScores[player.id] ?? 0,
+    }));
+  });
+  protected readonly showMatchOverOverlay = this.showMatchOverOverlayState.asReadonly();
   protected readonly escobaOutcome = computed<EscobaOutcome | null>(() => {
     const state = this.gameEngine.state();
     if (!state || state.table.length !== 0 || state.lastCapturerId === null) {
@@ -316,9 +377,9 @@ export class GameTablePage {
     return engine.roundResult();
   }
 
-  private readEngineMatchWinner(): Player | null {
+  private readEngineMatchWinner(): Player[] | null {
     const engine = this.gameEngine as unknown as {
-      matchWinner?: () => Player | null;
+      matchWinner?: () => Player[] | null;
     };
 
     if (typeof engine.matchWinner !== 'function') {

@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { vi } from 'vitest';
 import { TurnPhase } from '../../../../../models/game-state';
 import { RoundResult } from '../../../../../models/round-result';
 import { Player } from '../../../../../models/player';
@@ -6,7 +7,8 @@ import { Player } from '../../../../../models/player';
 import { MatchContextHud } from './match-context-hud';
 
 // Covers: FR-2.1, FR-2.2, FR-2.3, FR-2.4, FR-4.6, FR-8.5, TR-1.2, US-2, US-4, US-8
-// BDD Scenarios: SC-05, SC-06, SC-15, SC-29
+// Covers: FR-1.2, FR-1.3, FR-2.1, FR-2.2, FR-2.5, FR-2.6, FR-2.7, NFR-1.1, US-1, US-6
+// BDD Scenarios: SC-03, SC-04, SC-05, SC-07, SC-08, SC-09, SC-10, SC-11, SC-14, SC-15, SC-24, SC-29
 
 interface ScoreEntry {
   id: string;
@@ -19,6 +21,16 @@ interface EscobaOutcome {
   escobaCount: number;
 }
 
+interface RoundScoreBreakdownEntry {
+  playerName: string;
+  escobas: number;
+  mostCards: number;
+  mostOros: number;
+  mostSevens: number;
+  sieteDiVelo: number;
+  total: number;
+}
+
 type MatchContextHudTestState = MatchContextHud & {
   activePlayerName: string;
   scoreEntries: ScoreEntry[];
@@ -26,7 +38,10 @@ type MatchContextHudTestState = MatchContextHud & {
   handoffActive: boolean;
   escobaOutcome: EscobaOutcome | null;
   roundResult: RoundResult | null;
-  matchWinner: Player | null;
+  matchWinner: Player[] | null;
+  showStartNextRound: boolean;
+  showViewWinner: boolean;
+  roundScoreBreakdown: RoundScoreBreakdownEntry[];
 };
 
 const sampleScores: ScoreEntry[] = [
@@ -66,10 +81,44 @@ const sampleWinner: Player = {
   escobaCount: 0,
 };
 
+const sampleWinners: Player[] = [sampleWinner];
+
+const sampleCoWinners: Player[] = [
+  sampleWinner,
+  {
+    id: 'p2',
+    name: 'Luis',
+    hand: [],
+    capturedPile: [],
+    escobaCount: 0,
+  },
+];
+
 const sampleEscobaOutcome: EscobaOutcome = {
   playerName: 'Ana',
   escobaCount: 1,
 };
+
+const sampleRoundScoreBreakdown: RoundScoreBreakdownEntry[] = [
+  {
+    playerName: 'Ana',
+    escobas: 1,
+    mostCards: 1,
+    mostOros: 0,
+    mostSevens: 0,
+    sieteDiVelo: 0,
+    total: 2,
+  },
+  {
+    playerName: 'Luis',
+    escobas: 0,
+    mostCards: 0,
+    mostOros: 0,
+    mostSevens: 1,
+    sieteDiVelo: 0,
+    total: 1,
+  },
+];
 
 describe('MatchContextHud', () => {
   let fixture: ComponentFixture<MatchContextHud>;
@@ -203,11 +252,211 @@ describe('MatchContextHud', () => {
   });
 
   it('SC-29 / FR-8.5 - renders match-winner outcome from engine-provided context data', async () => {
-    testState.matchWinner = sampleWinner;
+    fixture.componentRef.setInput('matchWinner', sampleWinners);
     await fixture.whenStable();
 
     const matchWinner = getByTestId<HTMLElement>('match-winner-indicator');
 
     expect((matchWinner.textContent ?? '').trim()).toContain('Ana');
+  });
+
+  it('FR-3.3 - renders all co-winner names when multiple winners are provided', async () => {
+    fixture.componentRef.setInput('matchWinner', sampleCoWinners);
+    await fixture.whenStable();
+
+    const matchWinner = getByTestId<HTMLElement>('match-winner-indicator');
+    const winnerText = (matchWinner.textContent ?? '').trim();
+
+    expect(winnerText).toContain('Ana');
+    expect(winnerText).toContain('Luis');
+  });
+
+  it('SC-03 / FR-1.3 - renders round score breakdown rows when breakdown input is provided', async () => {
+    fixture.componentRef.setInput('roundScoreBreakdown', sampleRoundScoreBreakdown);
+    await fixture.whenStable();
+
+    const breakdownPanel = getByTestId<HTMLElement>('round-score-breakdown');
+    const breakdownRows = fixture.nativeElement.querySelectorAll(
+      '[data-testid^="round-score-player-"]',
+    ) as NodeListOf<HTMLElement>;
+    const firstPlayerRowText = (breakdownRows[0]?.textContent ?? '').trim();
+
+    expect(breakdownRows.length).toBe(2);
+    expect((breakdownPanel.textContent ?? '').trim()).toContain(
+      'Desglose de puntuación de la ronda',
+    );
+    expect(firstPlayerRowText).toContain('Ana');
+    expect(firstPlayerRowText).toContain('Escobas: 1');
+    expect(firstPlayerRowText).toContain('Más cartas: 1');
+    expect(firstPlayerRowText).toContain('Más oros: 0');
+    expect(firstPlayerRowText).toContain('Más sietes: 0');
+    expect(firstPlayerRowText).toContain('Siete de velo: 0');
+    expect(firstPlayerRowText).toContain('Total: 2');
+  });
+
+  it('SC-04 / FR-1.3 - keeps zero-value scoring categories visible in the breakdown', async () => {
+    fixture.componentRef.setInput('roundScoreBreakdown', sampleRoundScoreBreakdown);
+    await fixture.whenStable();
+
+    const secondPlayerRow = getByTestId<HTMLElement>('round-score-player-1');
+    const rowText = (secondPlayerRow.textContent ?? '').trim();
+
+    expect(rowText).toContain('Escobas: 0');
+    expect(rowText).toContain('Más cartas: 0');
+    expect(rowText).toContain('Más oros: 0');
+    expect(rowText).toContain('Más sietes: 1');
+    expect(rowText).toContain('Siete de velo: 0');
+    expect(rowText).toContain('Total: 1');
+  });
+
+  it('SC-07 - does not render round score breakdown panel when breakdown input is empty', async () => {
+    fixture.componentRef.setInput('roundScoreBreakdown', []);
+    await fixture.whenStable();
+
+    const breakdownPanel = fixture.nativeElement.querySelector(
+      '[data-testid="round-score-breakdown"]',
+    ) as HTMLElement | null;
+
+    expect(breakdownPanel).toBeNull();
+  });
+
+  it('SC-08 - renders start-next-round button when showStartNextRound is true', async () => {
+    fixture.componentRef.setInput('showStartNextRound', true);
+    fixture.componentRef.setInput('showViewWinner', false);
+    await fixture.whenStable();
+
+    const startButton = getByTestId<HTMLButtonElement>('start-next-round-button');
+
+    expect(startButton).not.toBeNull();
+    expect(startButton.textContent ?? '').toContain('Empezar siguiente ronda');
+  });
+
+  it('SC-09 - hides start-next-round button when showStartNextRound is false', async () => {
+    fixture.componentRef.setInput('showStartNextRound', false);
+    await fixture.whenStable();
+
+    const startButton = fixture.nativeElement.querySelector(
+      '[data-testid="start-next-round-button"]',
+    ) as HTMLButtonElement | null;
+
+    expect(startButton).toBeNull();
+  });
+
+  it('SC-10 - renders view-winner button when showViewWinner is true', async () => {
+    fixture.componentRef.setInput('showStartNextRound', false);
+    fixture.componentRef.setInput('showViewWinner', true);
+    await fixture.whenStable();
+
+    const viewWinnerButton = getByTestId<HTMLButtonElement>('view-winner-button');
+
+    expect(viewWinnerButton).not.toBeNull();
+    expect(viewWinnerButton.textContent ?? '').toContain('Ver ganador');
+  });
+
+  it('SC-10 - hides view-winner button when showViewWinner is false', async () => {
+    fixture.componentRef.setInput('showViewWinner', false);
+    await fixture.whenStable();
+
+    const viewWinnerButton = fixture.nativeElement.querySelector(
+      '[data-testid="view-winner-button"]',
+    ) as HTMLButtonElement | null;
+
+    expect(viewWinnerButton).toBeNull();
+  });
+
+  it('SC-10 - keeps continuation buttons mutually exclusive when both visibility inputs are true', async () => {
+    fixture.componentRef.setInput('showStartNextRound', true);
+    fixture.componentRef.setInput('showViewWinner', true);
+    await fixture.whenStable();
+
+    const startButton = fixture.nativeElement.querySelector(
+      '[data-testid="start-next-round-button"]',
+    ) as HTMLButtonElement | null;
+    const viewWinnerButton = fixture.nativeElement.querySelector(
+      '[data-testid="view-winner-button"]',
+    ) as HTMLButtonElement | null;
+
+    expect(startButton).toBeNull();
+    expect(viewWinnerButton).not.toBeNull();
+  });
+
+  it('SC-11 - emits startNextRound output when start-next-round button is activated', async () => {
+    fixture.componentRef.setInput('showStartNextRound', true);
+    fixture.componentRef.setInput('showViewWinner', false);
+    await fixture.whenStable();
+
+    const startNextRoundEmitter = (testState as unknown as { startNextRound: { emit: () => void } })
+      .startNextRound;
+    const emitSpy = vi.spyOn(startNextRoundEmitter, 'emit');
+    const startButton = getByTestId<HTMLButtonElement>('start-next-round-button');
+
+    startButton.click();
+    await fixture.whenStable();
+
+    expect(emitSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('SC-13 / FR-2.5 - emits startNextRound output when start-next-round is activated by Enter key', async () => {
+    fixture.componentRef.setInput('showStartNextRound', true);
+    fixture.componentRef.setInput('showViewWinner', false);
+    await fixture.whenStable();
+
+    const startNextRoundEmitter = (testState as unknown as { startNextRound: { emit: () => void } })
+      .startNextRound;
+    const emitSpy = vi.spyOn(startNextRoundEmitter, 'emit');
+    const startButton = getByTestId<HTMLButtonElement>('start-next-round-button');
+
+    startButton.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    await fixture.whenStable();
+
+    expect(emitSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('SC-15 - emits viewWinner output when view-winner button is activated', async () => {
+    fixture.componentRef.setInput('showStartNextRound', false);
+    fixture.componentRef.setInput('showViewWinner', true);
+    await fixture.whenStable();
+
+    const viewWinnerEmitter = (testState as unknown as { viewWinner: { emit: () => void } })
+      .viewWinner;
+    const emitSpy = vi.spyOn(viewWinnerEmitter, 'emit');
+    const viewWinnerButton = getByTestId<HTMLButtonElement>('view-winner-button');
+
+    viewWinnerButton.click();
+    await fixture.whenStable();
+
+    expect(emitSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('SC-24 / FR-2.7 - emits viewWinner output when view-winner is activated by Enter key', async () => {
+    fixture.componentRef.setInput('showStartNextRound', false);
+    fixture.componentRef.setInput('showViewWinner', true);
+    await fixture.whenStable();
+
+    const viewWinnerEmitter = (testState as unknown as { viewWinner: { emit: () => void } })
+      .viewWinner;
+    const emitSpy = vi.spyOn(viewWinnerEmitter, 'emit');
+    const viewWinnerButton = getByTestId<HTMLButtonElement>('view-winner-button');
+
+    viewWinnerButton.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    await fixture.whenStable();
+
+    expect(emitSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('SC-14 / SC-24 - exposes meaningful Spanish aria-labels on continuation buttons', async () => {
+    fixture.componentRef.setInput('showStartNextRound', true);
+    fixture.componentRef.setInput('showViewWinner', false);
+    await fixture.whenStable();
+
+    const startButton = getByTestId<HTMLButtonElement>('start-next-round-button');
+    expect(startButton.getAttribute('aria-label')).toBe('Empezar siguiente ronda');
+
+    fixture.componentRef.setInput('showStartNextRound', false);
+    fixture.componentRef.setInput('showViewWinner', true);
+    await fixture.whenStable();
+
+    const viewWinnerButton = getByTestId<HTMLButtonElement>('view-winner-button');
+    expect(viewWinnerButton.getAttribute('aria-label')).toBe('Ver ganador');
   });
 });

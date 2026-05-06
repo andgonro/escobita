@@ -26,7 +26,7 @@ export class MatchContextHud {
   private readonly turnPhaseState = signal<TurnPhase>('awaiting-card-play');
   private readonly escobaOutcomeState = signal<EscobaOutcome | null>(null);
   private readonly roundResultState = signal<RoundResult | null>(null);
-  private readonly matchWinnerState = signal<Player | null>(null);
+  private readonly matchWinnerState = signal<Player[] | null>(null);
   private readonly handoffActiveState = signal(false);
   private readonly contextHeaderTestIdState = signal<string | null>('context-header');
 
@@ -38,7 +38,8 @@ export class MatchContextHud {
     this.escobaOutcomeState.asReadonly();
   protected readonly roundResultSignal: Signal<RoundResult | null> =
     this.roundResultState.asReadonly();
-  protected readonly matchWinnerSignal: Signal<Player | null> = this.matchWinnerState.asReadonly();
+  protected readonly matchWinnerSignal: Signal<Player[] | null> =
+    this.matchWinnerState.asReadonly();
   protected readonly roundTopScoreSignal = computed(() => {
     const roundResult = this.roundResultSignal();
     if (!roundResult || roundResult.playerScores.length === 0) {
@@ -99,11 +100,11 @@ export class MatchContextHud {
   }
 
   @Input()
-  set matchWinner(value: Player | null) {
+  set matchWinner(value: Player[] | null) {
     this.matchWinnerState.set(value ?? null);
   }
 
-  get matchWinner(): Player | null {
+  get matchWinner(): Player[] | null {
     return this.matchWinnerState();
   }
 

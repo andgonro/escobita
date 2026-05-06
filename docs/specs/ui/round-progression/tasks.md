@@ -42,6 +42,8 @@ graph LR
 
 ### T-1: Widen `matchWinner` signal to `Player[]` and update all consumers
 
+- **Status:** ✅ Implemented
+
 - **Description:** Change the engine's internal `_matchWinner` writable signal from `Player | null` to `Player[] | null`. Update the public read-only `matchWinner` signal type accordingly. Update `checkWinCondition` utility to collect all players whose accumulated score is at or above 15 and equals the highest score, returning them as an array (sole winner → single-element array; co-winners → multi-element array; no winner → null). Update the `confirmTurn` call site in `GameEngine` to use the new return shape. Update the `matchWinner` input of `MatchContextHud` from `Player | null` to `Player[] | null`. Update all existing `GameEngine` unit tests that reference `matchWinner` to use array assertions. Update any existing `MatchContextHud` unit tests that reference the `matchWinner` input. Confirm the full build passes (TypeScript compilation will surface any unconsidered consumers).
 - **Architectural Decision:** AD-1
 - **Depends on:** None (this is the foundation task)
@@ -61,6 +63,8 @@ graph LR
 ---
 
 ### T-2: Add round-progression computed properties to `GameTablePage`
+
+- **Status:** ✅ Implemented
 
 - **Description:** Add five new computed properties to `GameTablePage`. The first two are visibility gates: `showStartNextRoundButton` is true when `roundResult()` is non-null and `matchWinner()` is null; `showViewWinnerButton` is true when both are non-null. The third is `roundScoreBreakdown`: a computed that, when `roundResult()` is non-null and `state()` is non-null, joins `roundResult().playerScores` with `state().players` by `playerId` to produce an array of `RoundScoreBreakdownEntry` view-model objects (playerName, escobas, mostCards, mostOros, mostSevens, sieteDiVelo, total); returns an empty array otherwise. The fourth is `winnerNames`: an array of player name strings derived from `matchWinner()`, or an empty array when null. The fifth is `matchScoreEntries`: maps `state().players` to `{ playerName, score }` objects using `state().matchScores`, or an empty array when state is null. Add one new writable signal: `showMatchOverOverlay` initialised to `false`. No template changes yet — that is T-6.
 - **Architectural Decision:** AD-4, AD-7, AD-8
