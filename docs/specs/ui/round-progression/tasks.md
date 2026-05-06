@@ -111,6 +111,8 @@ graph LR
 
 ### T-4: Wire "Start Next Round" in `GameTablePage`
 
+- **Status:** ✅ Implemented
+
 - **Description:** Add the `onStartNextRound()` event handler to `GameTablePage`. This handler calls `gameEngine.startNextRound()`. Pass the new computed properties and the handler binding to `MatchContextHud` in the template: bind `[showStartNextRound]="showStartNextRoundButton()"`, `[showViewWinner]="showViewWinnerButton()"`, `[roundScoreBreakdown]="roundScoreBreakdown()"`, and `(startNextRound)="onStartNextRound()"`. Also bind `(viewWinner)="onViewWinner()"` here (even though `onViewWinner()` is implemented in T-6 — leave it as a placeholder call if needed, or implement the full handler now). Update the `A11yLiveRegion` announcement: after a round ends (when `roundResult()` becomes non-null), announce the round completion. This can be done via an `effect` that watches `roundResult()` and calls `announce()` with the Spanish round-complete message including the round number.
 - **Architectural Decision:** AD-5, TR-2.1
 - **Depends on:** T-3

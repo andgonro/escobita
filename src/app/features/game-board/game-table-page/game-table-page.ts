@@ -1,4 +1,12 @@
-import { Component, Injector, afterNextRender, computed, inject, signal } from '@angular/core';
+import {
+  Component,
+  Injector,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { GameEngine } from '../../../core/services/game-engine';
 import { GameSession } from '../../../core/services/game-session';
 import { Card } from '../../../models/card';
@@ -67,9 +75,25 @@ export class GameTablePage {
   private readonly showTurnHandoffOverlayState = signal(false);
   private readonly showMatchOverOverlayState = signal(false);
   private readonly liveAnnouncementState = signal('');
+  private lastAnnouncedRoundNumber: number | null = null;
 
   constructor() {
     this.bootstrapEngineStateFromSession();
+
+    effect(() => {
+      const roundResult = this.roundResult();
+      if (roundResult === null) {
+        this.lastAnnouncedRoundNumber = null;
+        return;
+      }
+
+      if (this.lastAnnouncedRoundNumber === roundResult.roundNumber) {
+        return;
+      }
+
+      this.lastAnnouncedRoundNumber = roundResult.roundNumber;
+      this.announce(`Ronda ${roundResult.roundNumber} completada.`);
+    });
   }
 
   protected readonly turnPhase = this.gameEngine.turnPhase;
@@ -307,6 +331,14 @@ export class GameTablePage {
   protected onHandoffAcknowledged(): void {
     this.showTurnHandoffOverlayState.set(false);
     this.focusByTestIdAfterRender('submit-play');
+  }
+
+  protected onStartNextRound(): void {
+    this.gameEngine.startNextRound();
+  }
+
+  protected onViewWinner(): void {
+    // T-6 will implement match-over overlay orchestration.
   }
 
   private resolveInteractionState(): TableInteractionState {

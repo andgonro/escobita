@@ -1,18 +1,18 @@
-# Review Report: Round Progression and Match Over
+# Review Report: Round Progression
 
-**Review Mode:** Incremental (T-3: Update MatchContextHud - GREEN phase re-review)
+**Review Mode:** Incremental (T-4: Wire Start Next Round in GameTablePage, focused GREEN re-review)
 **Source:** docs/specs/ui/round-progression/
 **Reviewed against:** proposal.md, spec.md, user-stories.md, bdd-test.md, design.md, tasks.md
 
 ## 1. Executive Summary
 
-This GREEN-phase incremental re-review is scoped to T-3 surfaces only: MatchContextHud class, template, stylesheet, and MatchContextHud unit tests. The prior suppression-flag blocker is no longer present. The current stateless Enter-to-click delegation resolves the dropped-click persistence issue and keeps activation behavior deterministic in component scope. One non-blocking test-hardening gap remains.
+This focused GREEN re-review is limited to T-4 implementation readiness in `GameTablePage` class/template wiring and T-4-specific tests in the `GameTablePage` spec. The implementation is functionally aligned with T-4 acceptance criteria and TR-2.1 direct mapping. The scoped test set for SC-11, SC-12, SC-07, and SC-42 is meaningful and behavior-oriented. One traceability-only naming inconsistency remains in a test title.
 
-- Total findings: 1 (0 Critical, 0 Major, 1 Minor, 0 Note)
-- Spec compliance (T-3 scope): 12 of 12 reviewed requirements met
+- Total findings: 1 (0 Critical, 0 Major, 0 Minor, 1 Note)
+- Spec compliance (T-4 scope): 6 of 6 scoped requirements met
 - Architecture alignment: aligned
-- Test quality: meaningful with minor edge-case coverage gap
-- Gate verdict for this re-review: **Proceed**
+- Test quality: meaningful
+- Gate verdict for this GREEN re-review: **Proceed**
 
 ## 2. Architecture Comparison
 
@@ -22,11 +22,15 @@ This GREEN-phase incremental re-review is scoped to T-3 surfaces only: MatchCont
 graph TD
     GTP[GameTablePage]
     MCH[MatchContextHud]
+    ENG[GameEngine]
+    ALR[A11yLiveRegion]
 
     GTP -->|showStartNextRound, showViewWinner,
-    roundScoreBreakdown, matchWinner[]| MCH
-    MCH -->|startNextRound| GTP
-    MCH -->|viewWinner| GTP
+    roundScoreBreakdown| MCH
+    MCH -->|startNextRound output| GTP
+    MCH -->|viewWinner output| GTP
+    GTP -->|startNextRound()| ENG
+    GTP -->|round completion announcement| ALR
 ```
 
 ### 2.2 Actual Component Tree
@@ -35,87 +39,76 @@ graph TD
 graph TD
     GTPA[GameTablePage]
     MCHA[MatchContextHud]
+    ENGA[GameEngine]
+    ALRA[A11yLiveRegion]
 
-    GTPA -->|showStartNextRound, showViewWinner,
-    roundScoreBreakdown, matchWinner[]| MCHA
-    MCHA -->|startNextRound output| GTPA
-    MCHA -->|viewWinner output| GTPA
+    GTPA -->|[showStartNextRound], [showViewWinner],
+    [roundScoreBreakdown]| MCHA
+    MCHA -->|(startNextRound), (viewWinner)| GTPA
+    GTPA -->|onStartNextRound() -> startNextRound()| ENGA
+    GTPA -->|effect on roundResult -> announce()| ALRA
 ```
 
 ### 2.3 Drift Analysis
 
-The T-3 structural design remains aligned with AD-2. MatchContextHud remains presentational, receives visibility/data inputs from GameTablePage, and emits output-only events for continuation actions. No architecture drift was found in this re-review scope.
+No architecture drift was observed for T-4 scope. The parent-child contract between `GameTablePage` and `MatchContextHud` matches the planned design for start-next-round wiring and round-completion announcement behavior.
 
 ## 3. Findings
 
-### RV-01: Keyboard-Then-Pointer Sequence Coverage Is Missing in Unit Tests [Minor]
+### RV-01: One T-4 test traceability label uses TR-1.1 wording while the task targets TR-2.1 [Note]
 
-- **Category:** Test Quality
-- **Severity:** Minor
-- **Related:** T-3, T-7, FR-2.5, FR-2.7, NFR-2.1, SC-13, SC-24
-- **Description:** The test suite validates click activation and Enter activation independently but does not assert a keyboard-then-pointer sequence within the same component instance.
-- **Expected:** Regression-sensitive interaction sequences should be exercised in one lifecycle to confirm no duplicate or dropped emission across mixed input modes.
-- **Actual:** Sequence behavior is inferred, not directly verified.
-- **Recommendation:** Add one sequence test per button path that performs Enter activation followed by pointer click and checks exact emission counts.
-- **Impact:** Minor confidence gap for long-lived component interaction behavior across repeated rounds.
+- **Category:** Spec Compliance
+- **Severity:** Note
+- **Related:** T-4, TR-2.1
+- **Description:** The test title for the `viewWinner` output-parent binding uses `TR-1.1` in its label even though this task and review criterion are scoped to `TR-2.1` mapping for Start Next Round.
+- **Expected:** Test labels should align with the requirement identifiers used in the task for clean traceability.
+- **Actual:** Runtime behavior is correct, but the requirement tag naming is inconsistent.
+- **Recommendation:** Normalize the test title traceability label to match the intended requirement reference.
+- **Impact:** No functional impact; documentation and review readability only.
 
 ## 4. Traceability Matrix
 
-| Finding | Severity | Category     | Related Spec                                    | Status |
-| ------- | -------- | ------------ | ----------------------------------------------- | ------ |
-| RV-01   | Minor    | Test Quality | T-3, T-7, FR-2.5, FR-2.7, NFR-2.1, SC-13, SC-24 | Open   |
+| Finding | Severity | Category        | Related Spec | Status |
+| ------- | -------- | --------------- | ------------ | ------ |
+| RV-01   | Note     | Spec Compliance | T-4, TR-2.1  | Open   |
 
 ## 5. Spec Compliance Summary
 
-| Requirement | Status | Notes                                                                                              |
-| ----------- | ------ | -------------------------------------------------------------------------------------------------- |
-| FR-1.2      | ✅ Met | Round number and top score remain rendered in MatchContextHud when roundResult is present.         |
-| FR-1.3      | ✅ Met | Round score breakdown includes all required categories and is conditionally rendered.              |
-| FR-2.1      | ✅ Met | Start Next Round visibility input is implemented and covered by tests.                             |
-| FR-2.2      | ✅ Met | View Winner path is implemented as mutually exclusive with Start Next Round.                       |
-| FR-2.5      | ✅ Met | Keyboard activation path is implemented for continuation controls.                                 |
-| FR-2.6      | ✅ Met | Spanish aria-label is present on Start Next Round button.                                          |
-| FR-2.7      | ✅ Met | View Winner button supports keyboard activation and emits the expected output.                     |
-| FR-6.5      | ✅ Met | New controls expose meaningful Spanish accessible labels.                                          |
-| NFR-1.1     | ✅ Met | UI mutually excludes continuation buttons through conditional control flow.                        |
-| NFR-2.1     | ✅ Met | Controls are reachable/operable by keyboard in component scope; minor test hardening remains open. |
-| US-1        | ✅ Met | T-3 scoped HUD requirements are implemented and verified by unit tests.                            |
-| US-6        | ✅ Met | Score breakdown semantics and visibility behavior are implemented in component scope.              |
+| Requirement | Status | Notes                                                                                                      |
+| ----------- | ------ | ---------------------------------------------------------------------------------------------------------- |
+| FR-2.1      | ✅ Met | `showStartNextRoundButton` is bound from parent to HUD and verified in scoped tests.                       |
+| FR-2.2      | ✅ Met | `showViewWinnerButton` is bound from parent to HUD and mutual branch behavior is verified in scoped tests. |
+| FR-2.3      | ✅ Met | `onStartNextRound()` maps directly to `gameEngine.startNextRound()`.                                       |
+| FR-2.4      | ✅ Met | Scoped tests verify continuation controls disappear and board reflects new-round deal indicators.          |
+| FR-6.4      | ✅ Met | Round-complete announcement is emitted when `roundResult` transitions to non-null.                         |
+| TR-2.1      | ✅ Met | Start-next-round action maps directly to engine call with no intermediate state layer.                     |
 
 ## 6. Task Completion Summary
 
-| Task | Title                                                           | Status      | Findings |
-| ---- | --------------------------------------------------------------- | ----------- | -------- |
-| T-3  | Update MatchContextHud - add breakdown panel and action buttons | ✅ Complete | RV-01    |
+| Task | Title                                  | Status      | Findings |
+| ---- | -------------------------------------- | ----------- | -------- |
+| T-4  | Wire Start Next Round in GameTablePage | ✅ Complete | RV-01    |
 
 ## 7. Test Coverage Summary
 
-| Scenario | Step Definitions / Assertions | Meaningful | Findings |
-| -------- | ----------------------------- | ---------- | -------- |
-| SC-03    | ✅ Yes                        | ✅ Yes     | —        |
-| SC-04    | ✅ Yes                        | ✅ Yes     | —        |
-| SC-05    | ✅ Yes                        | ✅ Yes     | —        |
-| SC-07    | ✅ Yes                        | ✅ Yes     | —        |
-| SC-08    | ✅ Yes                        | ✅ Yes     | —        |
-| SC-09    | ✅ Yes                        | ✅ Yes     | —        |
-| SC-10    | ✅ Yes                        | ✅ Yes     | —        |
-| SC-11    | ✅ Yes                        | ✅ Yes     | —        |
-| SC-13    | ✅ Yes                        | ⚠️ Partial | RV-01    |
-| SC-14    | ✅ Yes                        | ✅ Yes     | —        |
-| SC-15    | ✅ Yes                        | ✅ Yes     | —        |
-| SC-24    | ✅ Yes                        | ⚠️ Partial | RV-01    |
+| Scenario | Step Definitions | Meaningful | Findings |
+| -------- | ---------------- | ---------- | -------- |
+| SC-11    | ✅ Yes           | ✅ Yes     | —        |
+| SC-12    | ✅ Yes           | ✅ Yes     | —        |
+| SC-07    | ✅ Yes           | ✅ Yes     | —        |
+| SC-42    | ✅ Yes           | ✅ Yes     | —        |
 
 ## 8. Test Quality Summary
 
-| Test File                                                                                          | Type | Meaningful Assertions | Issues                                                                                              |
-| -------------------------------------------------------------------------------------------------- | ---- | --------------------- | --------------------------------------------------------------------------------------------------- |
-| src/app/features/game-board/game-table-page/components/match-context-hud/match-context-hud.spec.ts | Unit | ⚠️ Partial            | Missing sequence-based assertion for keyboard activation followed by later click activation (RV-01) |
+| Test File                                                           | Type | Meaningful Assertions | Issues                                                                           |
+| ------------------------------------------------------------------- | ---- | --------------------- | -------------------------------------------------------------------------------- |
+| src/app/features/game-board/game-table-page/game-table-page.spec.ts | Unit | ✅ Yes                | No superficial, no-op, or tautological assertions found in scoped T-4 scenarios. |
 
 ## 9. Security Cross-Reference
 
-This section cross-references Critical and High security findings from the companion security-report.md. See docs/specs/ui/round-progression/security-report.md for the full security analysis.
+This section cross-references Critical and High security findings from the companion `security-report.md`. See `docs/specs/ui/round-progression/security-report.md` for the full security analysis.
 
-No Critical or High security findings are currently reported for this task scope.
+No Critical or High security findings are currently reported for this feature folder.
 
 ## 10. Recommendations
 
@@ -129,8 +122,8 @@ No Critical or High security findings are currently reported for this task scope
 
 ### Minor (improvement)
 
-1. Extend unit tests to cover activation sequences across repeated rounds in the same component instance, including keyboard-then-click follow-up interactions for both continuation buttons.
+1. None.
 
 ### Notes (informational)
 
-1. The suppression-flag blocker from the previous GREEN review has been resolved by stateless delegation in component scope.
+1. Align the single test title traceability label with the T-4 requirement identifier set.

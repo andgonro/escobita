@@ -10,8 +10,13 @@
     [escobaOutcome]="escobaOutcome()"
     [roundResult]="roundResult()"
     [matchWinner]="matchWinner()"
+    [showStartNextRound]="showStartNextRoundButton()"
+    [showViewWinner]="showViewWinnerButton()"
+    [roundScoreBreakdown]="roundScoreBreakdown()"
     [handoffActive]="showTurnHandoffOverlay()"
     [contextHeaderTestId]="contextHeaderTestId()"
+    (startNextRound)="onStartNextRound()"
+    (viewWinner)="onViewWinner()"
   ></app-match-context-hud>
 
   <app-a11y-live-region [message]="liveAnnouncement()"></app-a11y-live-region>

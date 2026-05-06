@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
+import { By } from '@angular/platform-browser';
 import { vi } from 'vitest';
 import { GameEngine } from '../../../core/services/game-engine';
 import { GameSession } from '../../../core/services/game-session';
@@ -11,6 +12,7 @@ import { Player } from '../../../models/player';
 import { RoundResult } from '../../../models/round-result';
 
 import { GameTablePage } from './game-table-page';
+import { MatchContextHud } from './components/match-context-hud/match-context-hud';
 
 // Covers: FR-2.4, FR-3.4, FR-3.5, FR-3.6, FR-4.6, FR-6.3, FR-6.4, FR-8.2, FR-8.3, FR-8.4, FR-8.5, TR-6.3, NFR-2.1, NFR-2.2, NFR-3.1, US-2, US-3, US-4, US-6, US-8
 // BDD Scenarios: SC-06, SC-09, SC-10, SC-15, SC-22, SC-23, SC-26, SC-27, SC-28, SC-29
@@ -23,6 +25,7 @@ interface GameEnginePort {
   matchWinner: () => Player[] | null;
   playCard: (card: Card, captureSubset: Card[]) => void;
   confirmTurn: () => void;
+  startNextRound: () => void;
 }
 
 interface GameSessionPort {
@@ -39,6 +42,22 @@ interface TableInteractionStatePort {
 const handCard: Card = { suit: 'Oros', rank: '7', value: 7 };
 const tableCardA: Card = { suit: 'Copas', rank: '5', value: 5 };
 const tableCardB: Card = { suit: 'Bastos', rank: '3', value: 3 };
+const nextRoundTableCards: Card[] = [
+  { suit: 'Espadas', rank: '1', value: 1 },
+  { suit: 'Copas', rank: '2', value: 2 },
+  { suit: 'Oros', rank: '3', value: 3 },
+  { suit: 'Bastos', rank: '4', value: 4 },
+];
+const nextRoundHandCardsPlayerOne: Card[] = [
+  { suit: 'Oros', rank: '6', value: 6 },
+  { suit: 'Copas', rank: '7', value: 7 },
+  { suit: 'Bastos', rank: '1', value: 1 },
+];
+const nextRoundHandCardsPlayerTwo: Card[] = [
+  { suit: 'Espadas', rank: '7', value: 7 },
+  { suit: 'Copas', rank: '3', value: 3 },
+  { suit: 'Oros', rank: '1', value: 1 },
+];
 
 const sessionConfiguration: GameConfiguration = {
   mode: 'Single Player',
@@ -80,6 +99,7 @@ interface Stubs {
   interactionStub: TableInteractionStatePort;
   playCardSpy: ReturnType<typeof vi.fn>;
   confirmTurnSpy: ReturnType<typeof vi.fn>;
+  startNextRoundSpy: ReturnType<typeof vi.fn>;
   setTurnPhase: (phase: TurnPhase) => void;
   setTurnIndex: (turnIndex: number) => void;
   setEscobaOutcome: (playerId: string, escobaCount: number) => void;
@@ -115,6 +135,28 @@ function createStubs(turnPhase: TurnPhase, selectedCard: Card | null): Stubs {
     });
     turnPhaseSignal.set('awaiting-card-play');
   });
+  const startNextRoundSpy = vi.fn(() => {
+    roundResultSignal.set(null);
+    stateSignal.update((state) => {
+      if (!state) {
+        return state;
+      }
+
+      return {
+        ...state,
+        table: [...nextRoundTableCards],
+        players: state.players.map((player, playerIndex) => ({
+          ...player,
+          hand:
+            playerIndex === 0 ? [...nextRoundHandCardsPlayerOne] : [...nextRoundHandCardsPlayerTwo],
+          capturedPile: [],
+          escobaCount: 0,
+        })),
+        roundNumber: state.roundNumber + 1,
+        lastCapturerId: null,
+      };
+    });
+  });
 
   const engineStub: GameEnginePort = {
     state: stateSignal.asReadonly(),
@@ -131,6 +173,7 @@ function createStubs(turnPhase: TurnPhase, selectedCard: Card | null): Stubs {
     matchWinner: matchWinnerSignal.asReadonly(),
     playCard: playCardSpy as unknown as GameEnginePort['playCard'],
     confirmTurn: confirmTurnSpy as unknown as GameEnginePort['confirmTurn'],
+    startNextRound: startNextRoundSpy as unknown as GameEnginePort['startNextRound'],
   };
 
   const sessionSignal = signal<GameConfiguration | null>(sessionConfiguration);
@@ -213,6 +256,7 @@ function createStubs(turnPhase: TurnPhase, selectedCard: Card | null): Stubs {
     interactionStub,
     playCardSpy,
     confirmTurnSpy,
+    startNextRoundSpy,
     setTurnPhase,
     setTurnIndex,
     setEscobaOutcome,
@@ -265,6 +309,15 @@ describe('GameTablePage', () => {
     }
 
     return (candidate as () => T)();
+  };
+
+  const getHudInstance = (): MatchContextHud => {
+    const hudDebugElement = fixture.debugElement.query(By.directive(MatchContextHud));
+    if (!hudDebugElement) {
+      throw new Error('Expected MatchContextHud to be present in GameTablePage template');
+    }
+
+    return hudDebugElement.componentInstance as MatchContextHud;
   };
 
   const configureAndCreate = async (turnPhase: TurnPhase, selectedCard: Card | null) => {
@@ -756,5 +809,252 @@ describe('GameTablePage', () => {
     await fixture.whenStable();
 
     expect(readProtectedSignal<boolean>('showMatchOverOverlay')).toBe(false);
+  });
+
+  it('SC-11 / FR-2.3 - emits start-next-round from MatchContextHud and dispatches gameEngine.startNextRound', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    stubs.setRoundResult({
+      roundNumber: 1,
+      playerScores: [
+        {
+          playerId: 'p1',
+          escobas: 1,
+          mostCards: 1,
+          mostOros: 0,
+          mostSevens: 0,
+          sieteDiVelo: 0,
+          total: 2,
+        },
+      ],
+    });
+    stubs.setMatchWinner(null);
+    await fixture.whenStable();
+
+    getHudInstance().startNextRound.emit();
+    await fixture.whenStable();
+
+    expect(stubs.startNextRoundSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('SC-07 / FR-2.4 - hides score breakdown and continuation control after start-next-round activation', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    stubs.setRoundResult({
+      roundNumber: 1,
+      playerScores: [
+        {
+          playerId: 'p1',
+          escobas: 1,
+          mostCards: 1,
+          mostOros: 0,
+          mostSevens: 0,
+          sieteDiVelo: 0,
+          total: 2,
+        },
+      ],
+    });
+    stubs.setMatchWinner(null);
+    await fixture.whenStable();
+
+    const startButtonBefore = fixture.nativeElement.querySelector(
+      '[data-testid="start-next-round-button"]',
+    ) as HTMLButtonElement | null;
+    const breakdownBefore = fixture.nativeElement.querySelector(
+      '[data-testid="round-score-breakdown"]',
+    ) as HTMLElement | null;
+
+    expect(startButtonBefore).not.toBeNull();
+    expect(breakdownBefore).not.toBeNull();
+
+    getHudInstance().startNextRound.emit();
+    await fixture.whenStable();
+
+    const startButtonAfter = fixture.nativeElement.querySelector(
+      '[data-testid="start-next-round-button"]',
+    ) as HTMLButtonElement | null;
+    const breakdownAfter = fixture.nativeElement.querySelector(
+      '[data-testid="round-score-breakdown"]',
+    ) as HTMLElement | null;
+
+    expect(startButtonAfter).toBeNull();
+    expect(breakdownAfter).toBeNull();
+  });
+
+  it('SC-42 / FR-6.4 - announces round completion when roundResult becomes non-null', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    const liveRegionBefore = getByTestId<HTMLElement>('a11y-live-region');
+    expect((liveRegionBefore.textContent ?? '').trim()).toBe('');
+
+    stubs.setRoundResult({
+      roundNumber: 2,
+      playerScores: [
+        {
+          playerId: 'p1',
+          escobas: 1,
+          mostCards: 1,
+          mostOros: 1,
+          mostSevens: 0,
+          sieteDiVelo: 0,
+          total: 3,
+        },
+      ],
+    });
+    await fixture.whenStable();
+
+    const liveRegion = getByTestId<HTMLElement>('a11y-live-region');
+    expect((liveRegion.textContent ?? '').trim()).toContain('Ronda 2 completada');
+  });
+
+  it('T-4 / FR-2.1 / FR-2.2 - passes continuation visibility and breakdown inputs to MatchContextHud', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    stubs.setRoundResult({
+      roundNumber: 3,
+      playerScores: [
+        {
+          playerId: 'p1',
+          escobas: 1,
+          mostCards: 1,
+          mostOros: 0,
+          mostSevens: 0,
+          sieteDiVelo: 0,
+          total: 2,
+        },
+        {
+          playerId: 'p2',
+          escobas: 0,
+          mostCards: 0,
+          mostOros: 0,
+          mostSevens: 1,
+          sieteDiVelo: 0,
+          total: 1,
+        },
+      ],
+    });
+    stubs.setMatchWinner(null);
+    await fixture.whenStable();
+
+    const hudState = getHudInstance() as MatchContextHud & {
+      showStartNextRound: boolean;
+      showViewWinner: boolean;
+      roundScoreBreakdown: RoundScoreBreakdownEntry[];
+    };
+
+    expect(hudState.showStartNextRound).toBe(true);
+    expect(hudState.showViewWinner).toBe(false);
+    expect(hudState.roundScoreBreakdown.length).toBe(2);
+
+    stubs.setMatchWinner([{ id: 'p1', name: 'Alice', hand: [], capturedPile: [], escobaCount: 0 }]);
+    await fixture.whenStable();
+
+    expect(hudState.showStartNextRound).toBe(false);
+    expect(hudState.showViewWinner).toBe(true);
+    expect(hudState.roundScoreBreakdown.length).toBe(2);
+  });
+
+  it('T-4 / TR-1.1 - binds MatchContextHud viewWinner output to the parent handler', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    stubs.setRoundResult({
+      roundNumber: 3,
+      playerScores: [
+        {
+          playerId: 'p1',
+          escobas: 1,
+          mostCards: 1,
+          mostOros: 0,
+          mostSevens: 0,
+          sieteDiVelo: 0,
+          total: 2,
+        },
+      ],
+    });
+    stubs.setMatchWinner([{ id: 'p1', name: 'Alice', hand: [], capturedPile: [], escobaCount: 0 }]);
+    await fixture.whenStable();
+
+    const onViewWinnerSpy = vi.spyOn(
+      component as unknown as { onViewWinner: () => void },
+      'onViewWinner',
+    );
+
+    getHudInstance().viewWinner.emit();
+    await fixture.whenStable();
+
+    expect(onViewWinnerSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('SC-12 / FR-2.4 - start-next-round activation refreshes table and hand zones for a new round', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    stubs.setState({
+      deck: [],
+      table: [],
+      players: [
+        {
+          id: 'p1',
+          name: 'Alice',
+          hand: [],
+          capturedPile: [],
+          escobaCount: 0,
+        },
+        {
+          id: 'p2',
+          name: 'Bob',
+          hand: [],
+          capturedPile: [],
+          escobaCount: 0,
+        },
+      ],
+      turnIndex: 0,
+      roundNumber: 1,
+      matchScores: { p1: 4, p2: 3 },
+      lastCapturerId: null,
+    });
+    stubs.setRoundResult({
+      roundNumber: 1,
+      playerScores: [
+        {
+          playerId: 'p1',
+          escobas: 1,
+          mostCards: 1,
+          mostOros: 0,
+          mostSevens: 0,
+          sieteDiVelo: 0,
+          total: 2,
+        },
+        {
+          playerId: 'p2',
+          escobas: 0,
+          mostCards: 0,
+          mostOros: 0,
+          mostSevens: 1,
+          sieteDiVelo: 0,
+          total: 1,
+        },
+      ],
+    });
+    stubs.setMatchWinner(null);
+    await fixture.whenStable();
+
+    getHudInstance().startNextRound.emit();
+    await fixture.whenStable();
+
+    const tableCards = fixture.nativeElement.querySelectorAll(
+      '[data-testid^="table-card-"]',
+    ) as NodeListOf<HTMLElement>;
+    const activeHandCards = fixture.nativeElement.querySelectorAll(
+      '[data-testid^="active-hand-card-"]',
+    ) as NodeListOf<HTMLElement>;
+    const roundOutcomeIndicator = fixture.nativeElement.querySelector(
+      '[data-testid="round-outcome-indicator"]',
+    ) as HTMLElement | null;
+
+    expect(stubs.startNextRoundSpy).toHaveBeenCalledTimes(1);
+    expect(tableCards.length).toBe(4);
+    expect(activeHandCards.length).toBe(3);
+    expect(stubs.engineStub.state()?.roundNumber).toBe(2);
+    expect(roundOutcomeIndicator).toBeNull();
   });
 });
