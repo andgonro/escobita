@@ -55,6 +55,43 @@
   font-weight: 600;
 }
 
+.round-score-breakdown {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.625rem;
+  border-radius: 0.625rem;
+  background: rgba(241, 226, 189, 0.16);
+}
+
+.round-score-breakdown-title {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.round-score-player {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.25rem, 1fr));
+  gap: 0.25rem 0.75rem;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  background: rgba(4, 11, 9, 0.36);
+}
+
+.round-score-player p {
+  margin: 0;
+}
+
+.round-score-player-name {
+  font-weight: 700;
+}
+
+.round-action-button {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
 @media (max-width: 700px) {
   .context-header {
     grid-template-columns: minmax(0, 1fr);
@@ -64,5 +101,9 @@
 
   .scoreboard {
     justify-content: flex-start;
+  }
+
+  .round-score-player {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

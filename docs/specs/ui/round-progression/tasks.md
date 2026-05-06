@@ -87,6 +87,8 @@ graph LR
 
 ### T-3: Update `MatchContextHud` — add breakdown panel and action buttons
 
+- **Status:** ✅ Implemented
+
 - **Description:** Add three new inputs to `MatchContextHud`: `showStartNextRound: boolean`, `showViewWinner: boolean`, and `roundScoreBreakdown: RoundScoreBreakdownEntry[]`. Add two new outputs: `startNextRound` (emitted when "Empezar siguiente ronda" is clicked) and `viewWinner` (emitted when "Ver ganador" is clicked). In the template, add a round score breakdown panel adjacent to the existing `round-outcome-indicator`. The panel uses `@for` to render one row per entry in `roundScoreBreakdown`, showing the player name and all six scoring categories always (including zero values). Add a `data-testid="round-score-breakdown"` attribute on the panel container. Below the breakdown panel, add the two action buttons conditionally using `@if (showStartNextRound())` and `@if (showViewWinner())`. Each button must have a Spanish text label, a `data-testid` attribute (`start-next-round-button` and `view-winner-button`), and a Spanish `aria-label`. The two buttons are mutually exclusive and never both rendered at the same time.
 - **Architectural Decision:** AD-2
 - **Depends on:** T-2 (requires the view-model types to be defined)

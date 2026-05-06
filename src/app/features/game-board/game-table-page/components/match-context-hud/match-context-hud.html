@@ -33,6 +33,51 @@
     </p>
   }
 
+  @if (roundScoreBreakdownSignal().length > 0) {
+    <section data-testid="round-score-breakdown" class="round-score-breakdown">
+      <h3 class="round-score-breakdown-title">Desglose de puntuación de la ronda</h3>
+      @for (
+        entry of roundScoreBreakdownSignal();
+        track entry.playerName;
+        let playerIndex = $index
+      ) {
+        <div class="round-score-player" [attr.data-testid]="'round-score-player-' + playerIndex">
+          <p class="round-score-player-name">{{ entry.playerName }}</p>
+          <p>Escobas: {{ entry.escobas }}</p>
+          <p>Más cartas: {{ entry.mostCards }}</p>
+          <p>Más oros: {{ entry.mostOros }}</p>
+          <p>Más sietes: {{ entry.mostSevens }}</p>
+          <p>Siete de velo: {{ entry.sieteDiVelo }}</p>
+          <p>Total: {{ entry.total }}</p>
+        </div>
+      }
+    </section>
+  }
+
+  @if (showViewWinnerSignal()) {
+    <button
+      type="button"
+      data-testid="view-winner-button"
+      class="round-action-button"
+      aria-label="Ver ganador"
+      (click)="onViewWinnerClick()"
+      (keydown.enter)="onViewWinnerEnter($event)"
+    >
+      Ver ganador
+    </button>
+  } @else if (showStartNextRoundSignal()) {
+    <button
+      type="button"
+      data-testid="start-next-round-button"
+      class="round-action-button"
+      aria-label="Empezar siguiente ronda"
+      (click)="onStartNextRoundClick()"
+      (keydown.enter)="onStartNextRoundEnter($event)"
+    >
+      Empezar siguiente ronda
+    </button>
+  }
+
   @if (matchWinnerSignal(); as matchWinner) {
     <p data-testid="match-winner-indicator" class="match-winner-indicator">
       Match winner: {{ matchWinner.map((winner) => winner.name).join(', ') }}
