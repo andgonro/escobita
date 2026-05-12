@@ -88,7 +88,7 @@ export function scoreMostSevens(players: Player[]): Map<string, number> {
 }
 
 /**
- * Awards 1 point to the player who captured the 7 of Oros (Siete de Velo).
+ * Awards 1 point to the player who captured the 7 of Oros (Siete de Oros).
  * Independent of most-Oros and most-sevens.
  * Covers FR-8.2 (siete-de-velo).
  */

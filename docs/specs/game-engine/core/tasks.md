@@ -153,14 +153,14 @@ graph LR
 ### T-6: Implement Scoring Utilities
 
 - **Status:** ✅ Implemented
-- **Description:** Create `src/app/core/utils/scoring.utils.ts`. Implement `computeRoundResult(players, roundNumber, lastCapturerId)` as the main entry point. Internally, decompose scoring into five independent pure category functions (one per scoring category: escobas, most-cards, most-Oros, most-sevens, Siete de Velo). `computeRoundResult` calls each category function sequentially, collects the per-player results, sums totals per player, and returns a fully-formed `RoundResult`.
+- **Description:** Create `src/app/core/utils/scoring.utils.ts`. Implement `computeRoundResult(players, roundNumber, lastCapturerId)` as the main entry point. Internally, decompose scoring into five independent pure category functions (one per scoring category: escobas, most-cards, most-Oros, most-sevens, Siete de Oros). `computeRoundResult` calls each category function sequentially, collects the per-player results, sums totals per player, and returns a fully-formed `RoundResult`.
 
   Scoring rules to implement:
   - **Escobas:** 1 point per escoba recorded in the player's escoba count. No tie condition.
   - **Most Cards:** 1 point to the player with strictly the most captured cards; 2 points if that player has all 40. Zero points if two or more players tie for most.
   - **Most Oros:** 1 point to the player with strictly the most Oros-suit cards in their captured pile; 2 points if that player has all 10. Zero on tie.
   - **Most Sevens:** 1 point to the player with strictly the most rank-7 cards captured; 2 points if all 4. Zero on tie.
-  - **Siete de Velo:** 1 point to the player who has the 7 of Oros in their captured pile. Independent of the other categories.
+  - **Siete de Oros:** 1 point to the player who has the 7 of Oros in their captured pile. Independent of the other categories.
 
 - **Architectural Decision:** AD-6 (independent composable category handlers for extensibility).
 - **Depends on:** T-1, T-2, T-4.
@@ -171,7 +171,7 @@ graph LR
   - [ ] Most-cards points are 0 on a tie, 1 for a clear winner, 2 when the winner has all 40 cards.
   - [ ] Most-Oros points are 0 on a tie, 1 for a clear winner, 2 when the winner has all 10 Oros.
   - [ ] Most-sevens points are 0 on a tie, 1 for a clear winner, 2 when the winner has all 4 sevens.
-  - [ ] Siete de Velo points are 1 for the holder of 7 of Oros, 0 for all others.
+  - [ ] Siete de Oros points are 1 for the holder of 7 of Oros, 0 for all others.
   - [ ] `total` field in `PlayerRoundScore` equals the sum of all category fields.
   - [ ] No Angular imports are present in the file.
   - [ ] The five category functions are independently importable (or at minimum independently exercisable in tests).
@@ -364,7 +364,7 @@ graph LR
   - [ ] Most-Oros: winner with all 10 Oros receives 2 points.
   - [ ] Most-sevens: clear winner receives 1 point; tied players receive 0.
   - [ ] Most-sevens: winner with all 4 sevens receives 2 points.
-  - [ ] Siete de Velo: the holder of 7 of Oros receives 1 point regardless of most-Oros/most-sevens outcome.
+  - [ ] Siete de Oros: the holder of 7 of Oros receives 1 point regardless of most-Oros/most-sevens outcome.
   - [ ] `total` field equals the sum of all category fields for each player.
   - [ ] `roundNumber` in the returned `RoundResult` matches the input.
   - [ ] All tests pass with `vitest run`.

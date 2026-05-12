@@ -13,7 +13,7 @@
 - [ ] After the last confirmed turn of a round, a "Start Next Round" button becomes visible in the round result area of the HUD.
 - [ ] The "Start Next Round" button is visible only when `roundResult` is non-null and `matchWinner` is null.
 - [ ] When `roundResult` is non-null and `matchWinner` is non-null (the final round has ended with a winner), a "View Winner" button appears in place of "Start Next Round". The two buttons are mutually exclusive.
-- [ ] The per-player score breakdown for the completed round is shown alongside the button: each player's name and the points they earned in each scoring category (escobas, most cards, most Oros, most sevens, Siete de Velo, and total).
+- [ ] The per-player score breakdown for the completed round is shown alongside the button: each player's name and the points they earned in each scoring category (escobas, most cards, most Oros, most sevens, Siete de Oros, and total).
 - [ ] The board zones (table cards, opponent zones, active hand zone) remain rendered and visible for inspection while the round-complete state is active.
 - [ ] The action bar's "Submit play" and "Confirm turn" controls are naturally inactive (engine state prevents their use), and no artificial lock is applied.
 - [ ] Activating the "Start Next Round" button calls `startNextRound()` on the game engine.
@@ -110,7 +110,7 @@
 
 ### Acceptance Criteria
 
-- [ ] For each player, the round result panel shows: the player's name and their points earned in each of the five scoring categories (escobas, most cards, most Oros, most sevens, Siete de Velo).
+- [ ] For each player, the round result panel shows: the player's name and their points earned in each of the five scoring categories (escobas, most cards, most Oros, most sevens, Siete de Oros).
 - [ ] Each player's total round points are shown.
 - [ ] If a player earned 0 in a category, that 0 is shown rather than omitting the row.
 - [ ] Player names shown in the breakdown match the names configured in the session.

@@ -108,7 +108,7 @@ The Game Engine Core defines all data models and business rules required to play
 - **Most Cards Captured:** The player who captured the most cards across the round earns 1 point. If the player captured all 40 cards, they earn 2 points instead of 1. If two or more players tie for the most cards (and no player has all 40), no one receives this point.
 - **Most Oros Captured:** The player who captured the most cards of the Oros suit earns 1 point. If the player captured all 10 Oros cards, they earn 2 points instead of 1. On a tie, no one receives this point.
 - **Most Sevens Captured:** The player who captured the most cards with rank 7 earns 1 point. If the player captured all 4 sevens (one per suit), they earn 2 points instead of 1. On a tie, no one receives this point.
-- **Siete de Velo:** The player who captured the 7 of Oros earns 1 additional point. This is awarded independently of the Most Oros and Most Sevens categories.
+- **Siete de Oros:** The player who captured the 7 of Oros earns 1 additional point. This is awarded independently of the Most Oros and Most Sevens categories.
 
 **FR-8.3** — A player's round score is the sum of points earned across all applicable categories in that round. Round points are added directly to the player's accumulated match score.
 

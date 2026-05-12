@@ -7,6 +7,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { Router } from '@angular/router';
 import { GameEngine } from '../../../core/services/game-engine';
 import { GameSession } from '../../../core/services/game-session';
 import { Card } from '../../../models/card';
@@ -20,6 +21,7 @@ import { ActiveHandZone } from './zones/active-hand-zone/active-hand-zone';
 import { CenterTableZone } from './zones/center-table-zone/center-table-zone';
 import { OpponentZones } from './zones/opponent-zones/opponent-zones';
 import { MatchContextHud } from './components/match-context-hud/match-context-hud';
+import { MatchOverOverlay } from './components/match-over-overlay/match-over-overlay';
 
 interface ScoreEntry {
   id: string;
@@ -57,6 +59,7 @@ interface MatchScoreEntry {
     ActiveHandZone,
     PlayActionBar,
     TurnHandoffOverlay,
+    MatchOverOverlay,
   ],
   providers: [TableInteractionState],
   templateUrl: './game-table-page.html',
@@ -66,6 +69,7 @@ export class GameTablePage {
   private readonly injector = inject(Injector);
   private readonly gameEngine = inject(GameEngine);
   private readonly gameSession = inject(GameSession);
+  private readonly router = inject(Router);
   private readonly componentInteractionState = inject(TableInteractionState);
   private readonly parentInteractionState = inject(TableInteractionState, {
     skipSelf: true,
@@ -135,6 +139,10 @@ export class GameTablePage {
 
   protected readonly activePlayerName = computed(() => {
     return this.gameEngine.activePlayer()?.name ?? 'No active player';
+  });
+
+  protected readonly currentRoundNumber = computed(() => {
+    return this.gameEngine.state()?.roundNumber ?? 0;
   });
 
   protected readonly activeHandCards = computed(() => {
@@ -338,7 +346,36 @@ export class GameTablePage {
   }
 
   protected onViewWinner(): void {
-    // T-6 will implement match-over overlay orchestration.
+    const winners = this.winnerNames();
+    if (winners.length === 0) {
+      return;
+    }
+
+    this.showMatchOverOverlayState.set(true);
+
+    const winnerLabel = winners.join(', ');
+    const winnerNoun = winners.length > 1 ? 'Ganadores' : 'Ganador';
+    this.announce(`Partida terminada. ${winnerNoun}: ${winnerLabel}.`);
+    this.focusByTestIdAfterRender('return-to-lobby-button');
+  }
+
+  protected onPlayAgain(): void {
+    const configuration = this.gameSession.configuration();
+    if (configuration === null) {
+      this.showMatchOverOverlayState.set(false);
+      this.announce('No hay una configuracion activa. Volviendo al lobby.');
+      void this.router.navigate(['/']);
+      return;
+    }
+
+    this.showMatchOverOverlayState.set(false);
+    this.gameEngine.initGame(configuration);
+    this.focusByTestIdAfterRender('submit-play');
+  }
+
+  protected onReturnToLobby(): void {
+    this.showMatchOverOverlayState.set(false);
+    void this.router.navigate(['/']);
   }
 
   private resolveInteractionState(): TableInteractionState {

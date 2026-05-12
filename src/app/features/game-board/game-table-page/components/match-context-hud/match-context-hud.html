@@ -6,6 +6,8 @@
 >
   <p data-testid="active-player-indicator">Active player: {{ activePlayerNameSignal() }}</p>
 
+  <p data-testid="current-round-indicator">Round: {{ currentRoundNumberSignal() }}</p>
+
   <div class="scoreboard" data-testid="scoreboard-indicator" aria-label="Match scores">
     @for (entry of scoreEntriesSignal(); track entry.id; let scoreIndex = $index) {
       <p class="score-item" [attr.data-testid]="'score-item-' + scoreIndex">
@@ -47,7 +49,7 @@
           <p>Más cartas: {{ entry.mostCards }}</p>
           <p>Más oros: {{ entry.mostOros }}</p>
           <p>Más sietes: {{ entry.mostSevens }}</p>
-          <p>Siete de velo: {{ entry.sieteDiVelo }}</p>
+          <p>Siete de Oros: {{ entry.sieteDiVelo }}</p>
           <p>Total: {{ entry.total }}</p>
         </div>
       }

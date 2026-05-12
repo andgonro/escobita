@@ -130,6 +130,8 @@ graph LR
 
 ### T-5: Create `MatchOverOverlay` standalone component
 
+- **Status:** ✅ Implemented
+
 - **Description:** Create a new standalone component at `src/app/features/game-board/game-table-page/components/match-over-overlay/`. The component accepts two inputs: `winnerNames: string[]` and `matchScoreEntries: { playerName: string; score: number }[]`. It emits two outputs: `returnToLobby` and `playAgain`. The root template element is a `<section>` with `role="dialog"`, `aria-modal="true"`, `aria-labelledby` referencing the heading element's id, and CSS classes for full-screen positioning following the `TurnHandoffOverlay` layout pattern. The heading displays a Spanish "match over" title. Winner names are rendered via `@for` — each name in its own element. Match score entries are rendered via `@for` showing player name and score. The "Volver al lobby" button has `data-testid="return-to-lobby-button"` and a Spanish `aria-label`; the "Jugar de nuevo" button has `data-testid="play-again-button"` and a Spanish `aria-label`. Neither button closes the overlay itself — they only emit output events. No Escape key handler and no outside-click handler are added (FR-3.5). Apply SCSS for full-screen overlay positioning consistent with `TurnHandoffOverlay`.
 - **Architectural Decision:** AD-3, AD-8
 - **Depends on:** T-1 (requires Player[] type resolution to be finalised so view-model shapes are stable)
@@ -151,6 +153,8 @@ graph LR
 ---
 
 ### T-6: Wire match-over overlay flow in `GameTablePage`
+
+- **Status:** ✅ Implemented
 
 - **Description:** Integrate `MatchOverOverlay` into `GameTablePage`. Import the component. Add it to the template with `@if (showMatchOverOverlay())`. Bind `[winnerNames]="winnerNames()"` and `[matchScoreEntries]="matchScoreEntries()"`. Bind `(returnToLobby)="onReturnToLobby()"` and `(playAgain)="onPlayAgain()"`. Implement `onViewWinner()`: sets `showMatchOverOverlay` to true, calls `announce()` with the match-over live region message (winner name(s)). Implement `onPlayAgain()`: sets `showMatchOverOverlay` to false, then calls `gameEngine.initGame(gameSession.configuration())` unconditionally (not via `bootstrapEngineStateFromSession`), then schedules focus on the "submit play" button via `focusByTestIdAfterRender`. Implement `onReturnToLobby()`: calls `router.navigate(['/'])`. Update the background inert / aria-hidden condition on the board layout wrapper and action bar from `showTurnHandoffOverlay()` to `showTurnHandoffOverlay() || showMatchOverOverlay()`. Schedule focus on the first focusable element inside the overlay when `showMatchOverOverlay` transitions to true, using `afterNextRender` + `focusByTestIdAfterRender`.
 - **Architectural Decision:** AD-4, AD-5, AD-6
@@ -174,6 +178,8 @@ graph LR
 
 ### T-7: Unit tests — `MatchContextHud` updates
 
+- **Status:** ✅ Implemented
+
 - **Description:** Extend the existing `MatchContextHud` spec file to cover all new inputs and outputs introduced in T-3. Add test cases for: breakdown panel renders all six category columns; zero values are shown not omitted; panel is absent when `roundScoreBreakdown` is empty; "Empezar siguiente ronda" button visible when `showStartNextRound` is true; "Empezar siguiente ronda" hidden when `showStartNextRound` is false; "Ver ganador" visible when `showViewWinner` is true; "Ver ganador" hidden when `showViewWinner` is false; both buttons never simultaneously visible; `startNextRound` output emitted exactly once on button activation; `viewWinner` output emitted exactly once on button activation; accessible label on each button is present and in Spanish. Also update any existing tests that set `matchWinner` to a single `Player` to use `Player[]` instead (consequence of T-1).
 - **Architectural Decision:** AD-2
 - **Depends on:** T-3
@@ -191,6 +197,8 @@ graph LR
 ---
 
 ### T-8: Unit tests — `MatchOverOverlay`
+
+- **Status:** ✅ Implemented
 
 - **Description:** Create `match-over-overlay.spec.ts`. Cover: sole winner name renders; two co-winner names both render with no styling difference (test for presence, not for computed CSS); accumulated match scores render for all players; "Volver al lobby" button is present; "Jugar de nuevo" button is present; clicking "Volver al lobby" emits `returnToLobby` exactly once; clicking "Jugar de nuevo" emits `playAgain` exactly once; pressing Escape does not emit any output; the root element has `role="dialog"` and `aria-modal="true"`.
 - **Architectural Decision:** AD-3
@@ -211,6 +219,8 @@ graph LR
 
 ### T-9: Unit tests — `GameTablePage` round progression and match-over flows
 
+- **Status:** ✅ Implemented
+
 - **Description:** Create two new spec files. In `game-table-page.round-progression.spec.ts`: test `showStartNextRoundButton` truth table across the four combinations of `roundResult`/`matchWinner` nullness; test `showViewWinnerButton` truth table; test `roundScoreBreakdown` resolves player names from engine state; test `onStartNextRound()` calls `gameEngine.startNextRound()`; test that the live-region message is set when round-complete state is entered. In `game-table-page.match-over.spec.ts`: test `showMatchOverOverlay` defaults to false; test `onViewWinner()` sets it to true; test `onPlayAgain()` sets it to false; test `onPlayAgain()` calls `gameEngine.initGame()` with the session configuration; test `onPlayAgain()` calls `initGame()` even when `gameEngine.state()` is already non-null (bypasses bootstrap guard); test `onReturnToLobby()` calls `router.navigate(['/'])`; test that the background inert condition is true when `showMatchOverOverlay` is true; test that the background inert condition is true when `showTurnHandoffOverlay` is true; test that the live-region announces the winner name on `onViewWinner()`.
 - **Architectural Decision:** AD-4, AD-5, AD-6
 - **Depends on:** T-6
@@ -229,6 +239,8 @@ graph LR
 
 ### T-10: Cypress E2E — round continuation scenarios (SC-01–SC-14, SC-42)
 
+- **Status:** ✅ Implemented
+
 - **Description:** Create `round-progression.feature` and `round-progression.ts` in `cypress/e2e/`. Use the `applyE2eFixture` seam to set up an end-of-round state (final turn confirmed, deck empty, hands empty, no match winner) without simulating full match play. Implement step definitions covering: the round-complete state is visually distinct (SC-01); round number and top score remain visible (SC-02); all six scoring categories are shown per player (SC-03); zero-value categories are not omitted (SC-04); player names match session names (SC-05); board zones remain rendered (SC-06); score breakdown disappears after "Empezar siguiente ronda" is activated (SC-07); "Empezar siguiente ronda" is visible when no winner (SC-08); "Empezar siguiente ronda" is hidden when a winner exists (SC-09); "Ver ganador" appears and "Empezar siguiente ronda" disappears when winner is declared (SC-10); activating "Empezar siguiente ronda" triggers next-round transition (SC-11); board reflects new deal after activation (SC-12); keyboard navigation reaches and activates the button (SC-13); accessible label is in Spanish (SC-14); live-region fires on round completion (SC-42). Follow the existing selector-object pattern (data-testid attributes) and the existing step helper conventions.
 - **Architectural Decision:** AD-2, TR-1.1
 - **Depends on:** T-4
@@ -244,6 +256,8 @@ graph LR
 ---
 
 ### T-11: Cypress E2E — match-over overlay scenarios (SC-15–SC-41)
+
+- **Status:** ✅ Implemented
 
 - **Description:** Create `match-over-overlay.feature` and `match-over-overlay.ts` in `cypress/e2e/`. Use `applyE2eFixture` to set up a final-round-complete state with a declared match winner. Implement step definitions covering: "Ver ganador" transitions to match-over state (SC-15); overlay does not appear automatically without player action (SC-16); overlay appears as full-screen layer (SC-17); sole winner name displayed prominently (SC-18); co-winner names displayed with equal prominence (SC-19); accumulated match scores shown (SC-20); Escape does not dismiss overlay (SC-21); outside-click does not dismiss overlay (SC-22); background is inert and aria-hidden (SC-23); "Ver ganador" keyboard navigation (SC-24); overlay has role="dialog" and accessible name (SC-25); focus moves into overlay (SC-26); live region announces winner (SC-27); "Volver al lobby" button present (SC-28); "Volver al lobby" navigates to lobby (SC-29); session configuration preserved on return to lobby (SC-30); rapid repeated activation does not cause multiple navigations (SC-31); "Volver al lobby" keyboard navigation (SC-32); focus on lobby primary control after return (SC-33); "Jugar de nuevo" button present (SC-34); "Jugar de nuevo" starts fresh match (SC-35); same player names and settings retained (SC-36); round 1, scores reset, new deal (SC-37); overlay dismissed after "Jugar de nuevo" (SC-38); "Jugar de nuevo" bypasses bootstrap guard (SC-39); "Jugar de nuevo" keyboard navigation (SC-40); focus on "submit play" after "Jugar de nuevo" (SC-41). Reuse the existing `openSinglePlayerGame` helper for lobby setup. Follow the selector-object pattern.
 - **Architectural Decision:** AD-3, AD-4, AD-5, AD-6

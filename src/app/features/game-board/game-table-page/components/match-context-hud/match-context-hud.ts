@@ -32,6 +32,7 @@ interface RoundScoreBreakdownEntry {
 })
 export class MatchContextHud {
   private readonly activePlayerNameState = signal('No active player');
+  private readonly currentRoundNumberState = signal(0);
   private readonly scoreEntriesState = signal<ScoreEntry[]>([]);
   private readonly turnPhaseState = signal<TurnPhase>('awaiting-card-play');
   private readonly escobaOutcomeState = signal<EscobaOutcome | null>(null);
@@ -45,6 +46,8 @@ export class MatchContextHud {
 
   protected readonly activePlayerNameSignal: Signal<string> =
     this.activePlayerNameState.asReadonly();
+  protected readonly currentRoundNumberSignal: Signal<number> =
+    this.currentRoundNumberState.asReadonly();
   protected readonly scoreEntriesSignal: Signal<ScoreEntry[]> = this.scoreEntriesState.asReadonly();
   protected readonly turnPhaseSignal: Signal<TurnPhase> = this.turnPhaseState.asReadonly();
   protected readonly escobaOutcomeSignal: Signal<EscobaOutcome | null> =
@@ -82,6 +85,15 @@ export class MatchContextHud {
 
   get activePlayerName(): string {
     return this.activePlayerNameState();
+  }
+
+  @Input()
+  set currentRoundNumber(value: number) {
+    this.currentRoundNumberState.set(value ?? 0);
+  }
+
+  get currentRoundNumber(): number {
+    return this.currentRoundNumberState();
   }
 
   @Input()

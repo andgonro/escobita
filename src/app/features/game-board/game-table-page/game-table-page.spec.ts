@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
+import { Router } from '@angular/router';
 import { vi } from 'vitest';
 import { GameEngine } from '../../../core/services/game-engine';
 import { GameSession } from '../../../core/services/game-session';
@@ -23,6 +24,7 @@ interface GameEnginePort {
   activePlayer: () => Player | null;
   roundResult: () => RoundResult | null;
   matchWinner: () => Player[] | null;
+  initGame: (configuration: GameConfiguration) => void;
   playCard: (card: Card, captureSubset: Card[]) => void;
   confirmTurn: () => void;
   startNextRound: () => void;
@@ -37,6 +39,10 @@ interface TableInteractionStatePort {
   selectedTableCards: () => Card[];
   canSubmitPlay: () => boolean;
   isCaptureSelectionValid: () => boolean;
+}
+
+interface RouterPort {
+  navigate: (commands: string[]) => Promise<boolean>;
 }
 
 const handCard: Card = { suit: 'Oros', rank: '7', value: 7 };
@@ -97,15 +103,19 @@ interface Stubs {
   engineStub: GameEnginePort;
   sessionStub: GameSessionPort;
   interactionStub: TableInteractionStatePort;
+  routerStub: RouterPort;
+  initGameSpy: ReturnType<typeof vi.fn>;
   playCardSpy: ReturnType<typeof vi.fn>;
   confirmTurnSpy: ReturnType<typeof vi.fn>;
   startNextRoundSpy: ReturnType<typeof vi.fn>;
+  navigateSpy: ReturnType<typeof vi.fn>;
   setTurnPhase: (phase: TurnPhase) => void;
   setTurnIndex: (turnIndex: number) => void;
   setEscobaOutcome: (playerId: string, escobaCount: number) => void;
   setRoundResult: (roundResult: RoundResult | null) => void;
   setMatchWinner: (winner: Player[] | null) => void;
   setMatchScores: (matchScores: Record<string, number>) => void;
+  setSessionConfiguration: (configuration: GameConfiguration | null) => void;
   setState: (state: GameState | null) => void;
 }
 
@@ -118,6 +128,39 @@ function createStubs(turnPhase: TurnPhase, selectedCard: Card | null): Stubs {
   const selectedTableCardsSignal = signal<Card[]>([tableCardA, tableCardB]);
   const canSubmitPlaySignal = signal(selectedCard !== null);
   const isCaptureSelectionValidSignal = signal(true);
+
+  const initGameSpy = vi.fn((configuration: GameConfiguration) => {
+    const playerOneName = configuration.playerNames[0] ?? 'Alice';
+    const playerTwoName = configuration.playerNames[1] ?? 'Bob';
+
+    stateSignal.set({
+      deck: [],
+      table: [...nextRoundTableCards],
+      players: [
+        {
+          id: 'p1',
+          name: playerOneName,
+          hand: [...nextRoundHandCardsPlayerOne],
+          capturedPile: [],
+          escobaCount: 0,
+        },
+        {
+          id: 'p2',
+          name: playerTwoName,
+          hand: [...nextRoundHandCardsPlayerTwo],
+          capturedPile: [],
+          escobaCount: 0,
+        },
+      ],
+      turnIndex: 0,
+      roundNumber: 1,
+      matchScores: { p1: 0, p2: 0 },
+      lastCapturerId: null,
+    });
+    turnPhaseSignal.set('awaiting-card-play');
+    roundResultSignal.set(null);
+    matchWinnerSignal.set(null);
+  });
 
   const playCardSpy = vi.fn(() => {
     turnPhaseSignal.set('awaiting-confirmation');
@@ -171,6 +214,7 @@ function createStubs(turnPhase: TurnPhase, selectedCard: Card | null): Stubs {
     },
     roundResult: roundResultSignal.asReadonly(),
     matchWinner: matchWinnerSignal.asReadonly(),
+    initGame: initGameSpy as unknown as GameEnginePort['initGame'],
     playCard: playCardSpy as unknown as GameEnginePort['playCard'],
     confirmTurn: confirmTurnSpy as unknown as GameEnginePort['confirmTurn'],
     startNextRound: startNextRoundSpy as unknown as GameEnginePort['startNextRound'],
@@ -186,6 +230,11 @@ function createStubs(turnPhase: TurnPhase, selectedCard: Card | null): Stubs {
     selectedTableCards: selectedTableCardsSignal.asReadonly(),
     canSubmitPlay: canSubmitPlaySignal.asReadonly(),
     isCaptureSelectionValid: isCaptureSelectionValidSignal.asReadonly(),
+  };
+
+  const navigateSpy = vi.fn(async () => true);
+  const routerStub: RouterPort = {
+    navigate: navigateSpy as unknown as RouterPort['navigate'],
   };
 
   const setTurnPhase = (nextPhase: TurnPhase): void => {
@@ -246,6 +295,10 @@ function createStubs(turnPhase: TurnPhase, selectedCard: Card | null): Stubs {
     });
   };
 
+  const setSessionConfiguration = (configuration: GameConfiguration | null): void => {
+    sessionSignal.set(configuration);
+  };
+
   const setState = (state: GameState | null): void => {
     stateSignal.set(state);
   };
@@ -254,15 +307,19 @@ function createStubs(turnPhase: TurnPhase, selectedCard: Card | null): Stubs {
     engineStub,
     sessionStub,
     interactionStub,
+    routerStub,
+    initGameSpy,
     playCardSpy,
     confirmTurnSpy,
     startNextRoundSpy,
+    navigateSpy,
     setTurnPhase,
     setTurnIndex,
     setEscobaOutcome,
     setRoundResult,
     setMatchWinner,
     setMatchScores,
+    setSessionConfiguration,
     setState,
   };
 }
@@ -329,6 +386,7 @@ describe('GameTablePage', () => {
         { provide: GameEngine, useValue: stubs.engineStub },
         { provide: GameSession, useValue: stubs.sessionStub },
         { provide: TableInteractionState, useValue: stubs.interactionStub },
+        { provide: Router, useValue: stubs.routerStub },
       ],
     }).compileComponents();
 
@@ -1056,5 +1114,361 @@ describe('GameTablePage', () => {
     expect(activeHandCards.length).toBe(3);
     expect(stubs.engineStub.state()?.roundNumber).toBe(2);
     expect(roundOutcomeIndicator).toBeNull();
+  });
+
+  it('SC-16 / FR-3.1 - does not display match-over overlay automatically when matchWinner becomes non-null', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    stubs.setRoundResult({
+      roundNumber: 4,
+      playerScores: [
+        {
+          playerId: 'p1',
+          escobas: 1,
+          mostCards: 1,
+          mostOros: 0,
+          mostSevens: 0,
+          sieteDiVelo: 0,
+          total: 2,
+        },
+      ],
+    });
+    stubs.setMatchWinner([{ id: 'p1', name: 'Alice', hand: [], capturedPile: [], escobaCount: 0 }]);
+    await fixture.whenStable();
+
+    const overlay = fixture.nativeElement.querySelector(
+      '[data-testid="match-over-overlay"]',
+    ) as HTMLElement | null;
+    const viewWinnerButton = fixture.nativeElement.querySelector(
+      '[data-testid="view-winner-button"]',
+    ) as HTMLButtonElement | null;
+
+    expect(overlay).toBeNull();
+    expect(viewWinnerButton).not.toBeNull();
+    expect(readProtectedSignal<boolean>('showMatchOverOverlay')).toBe(false);
+  });
+
+  it('SC-16 / NFR-1.2 - ignores view-winner activation when match winner is not declared', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    stubs.setRoundResult({
+      roundNumber: 4,
+      playerScores: [
+        {
+          playerId: 'p1',
+          escobas: 1,
+          mostCards: 1,
+          mostOros: 0,
+          mostSevens: 0,
+          sieteDiVelo: 0,
+          total: 2,
+        },
+      ],
+    });
+    stubs.setMatchWinner(null);
+    await fixture.whenStable();
+
+    const liveRegionBefore = getByTestId<HTMLElement>('a11y-live-region').textContent ?? '';
+
+    getHudInstance().viewWinner.emit();
+    await fixture.whenStable();
+
+    const overlay = fixture.nativeElement.querySelector(
+      '[data-testid="match-over-overlay"]',
+    ) as HTMLElement | null;
+    const liveRegionAfter = getByTestId<HTMLElement>('a11y-live-region').textContent ?? '';
+
+    expect(overlay).toBeNull();
+    expect(readProtectedSignal<boolean>('showMatchOverOverlay')).toBe(false);
+    expect(liveRegionAfter).toBe(liveRegionBefore);
+  });
+
+  it('SC-15 / SC-17 - shows match-over overlay when MatchContextHud emits viewWinner', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    stubs.setRoundResult({
+      roundNumber: 4,
+      playerScores: [
+        {
+          playerId: 'p1',
+          escobas: 1,
+          mostCards: 1,
+          mostOros: 0,
+          mostSevens: 0,
+          sieteDiVelo: 0,
+          total: 2,
+        },
+      ],
+    });
+    stubs.setMatchWinner([{ id: 'p1', name: 'Alice', hand: [], capturedPile: [], escobaCount: 0 }]);
+    await fixture.whenStable();
+
+    getHudInstance().viewWinner.emit();
+    await fixture.whenStable();
+
+    const overlay = getByTestId<HTMLElement>('match-over-overlay');
+
+    expect(readProtectedSignal<boolean>('showMatchOverOverlay')).toBe(true);
+    expect(overlay.getAttribute('role')).toBe('dialog');
+    expect(overlay.getAttribute('aria-modal')).toBe('true');
+  });
+
+  it('SC-18 / SC-20 - binds winner names and accumulated match scores from page state into match-over overlay', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    stubs.setMatchScores({ p1: 17, p2: 13 });
+    stubs.setRoundResult({
+      roundNumber: 4,
+      playerScores: [
+        {
+          playerId: 'p1',
+          escobas: 1,
+          mostCards: 1,
+          mostOros: 0,
+          mostSevens: 0,
+          sieteDiVelo: 0,
+          total: 2,
+        },
+      ],
+    });
+    stubs.setMatchWinner([
+      { id: 'p1', name: 'Alice', hand: [], capturedPile: [], escobaCount: 0 },
+      { id: 'p2', name: 'Bob', hand: [], capturedPile: [], escobaCount: 0 },
+    ]);
+    await fixture.whenStable();
+
+    getHudInstance().viewWinner.emit();
+    await fixture.whenStable();
+
+    const winnerNameA = getByTestId<HTMLElement>('winner-name-0');
+    const winnerNameB = getByTestId<HTMLElement>('winner-name-1');
+    const matchScoreRowA = getByTestId<HTMLElement>('match-score-row-0');
+    const matchScoreRowB = getByTestId<HTMLElement>('match-score-row-1');
+
+    expect((winnerNameA.textContent ?? '').trim()).toContain('Alice');
+    expect((winnerNameB.textContent ?? '').trim()).toContain('Bob');
+    expect((matchScoreRowA.textContent ?? '').trim()).toContain('Alice');
+    expect((matchScoreRowA.textContent ?? '').trim()).toContain('17');
+    expect((matchScoreRowB.textContent ?? '').trim()).toContain('Bob');
+    expect((matchScoreRowB.textContent ?? '').trim()).toContain('13');
+  });
+
+  it('SC-23 / FR-3.6 - applies inert and aria-hidden to background zones while match-over overlay is active', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    stubs.setRoundResult({
+      roundNumber: 4,
+      playerScores: [
+        {
+          playerId: 'p1',
+          escobas: 1,
+          mostCards: 1,
+          mostOros: 0,
+          mostSevens: 0,
+          sieteDiVelo: 0,
+          total: 2,
+        },
+      ],
+    });
+    stubs.setMatchWinner([{ id: 'p1', name: 'Alice', hand: [], capturedPile: [], escobaCount: 0 }]);
+    await fixture.whenStable();
+
+    getHudInstance().viewWinner.emit();
+    await fixture.whenStable();
+
+    const sessionIndicator = getByTestId<HTMLElement>('session-indicator');
+    const tableLayoutShell = getByTestId<HTMLElement>('table-layout-shell');
+    const actionBar = getByTestId<HTMLElement>('play-action-bar');
+
+    expect(sessionIndicator.getAttribute('aria-hidden')).toBe('true');
+    expect(sessionIndicator.getAttribute('inert')).toBe('');
+    expect(tableLayoutShell.getAttribute('aria-hidden')).toBe('true');
+    expect(tableLayoutShell.getAttribute('inert')).toBe('');
+    expect(actionBar.getAttribute('aria-hidden')).toBe('true');
+    expect(actionBar.getAttribute('inert')).toBe('');
+  });
+
+  it('SC-26 / SC-27 - moves focus into overlay and announces winners when viewWinner is activated', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    stubs.setRoundResult({
+      roundNumber: 4,
+      playerScores: [
+        {
+          playerId: 'p1',
+          escobas: 1,
+          mostCards: 1,
+          mostOros: 0,
+          mostSevens: 0,
+          sieteDiVelo: 0,
+          total: 2,
+        },
+      ],
+    });
+    stubs.setMatchWinner([
+      { id: 'p1', name: 'Alice', hand: [], capturedPile: [], escobaCount: 0 },
+      { id: 'p2', name: 'Bob', hand: [], capturedPile: [], escobaCount: 0 },
+    ]);
+    await fixture.whenStable();
+
+    const viewWinnerButton = getByTestId<HTMLButtonElement>('view-winner-button');
+    viewWinnerButton.focus();
+
+    getHudInstance().viewWinner.emit();
+    await fixture.whenStable();
+
+    expectFocusedTestId('return-to-lobby-button');
+
+    const liveRegion = getByTestId<HTMLElement>('a11y-live-region');
+    const liveRegionText = (liveRegion.textContent ?? '').trim();
+    expect(liveRegionText).toContain('Partida terminada');
+    expect(liveRegionText).toContain('Alice');
+    expect(liveRegionText).toContain('Bob');
+  });
+
+  it('SC-37 / SC-38 / SC-39 / SC-41 - play-again hides overlay, reinitializes the match, and restores submit focus', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    stubs.setState({
+      deck: [],
+      table: [],
+      players: [
+        {
+          id: 'p1',
+          name: 'Alice',
+          hand: [],
+          capturedPile: [],
+          escobaCount: 0,
+        },
+        {
+          id: 'p2',
+          name: 'Bob',
+          hand: [],
+          capturedPile: [],
+          escobaCount: 0,
+        },
+      ],
+      turnIndex: 0,
+      roundNumber: 9,
+      matchScores: { p1: 15, p2: 12 },
+      lastCapturerId: null,
+    });
+    stubs.setRoundResult({
+      roundNumber: 9,
+      playerScores: [
+        {
+          playerId: 'p1',
+          escobas: 1,
+          mostCards: 1,
+          mostOros: 0,
+          mostSevens: 0,
+          sieteDiVelo: 0,
+          total: 2,
+        },
+      ],
+    });
+    stubs.setMatchWinner([{ id: 'p1', name: 'Alice', hand: [], capturedPile: [], escobaCount: 0 }]);
+    await fixture.whenStable();
+
+    getHudInstance().viewWinner.emit();
+    await fixture.whenStable();
+
+    getByTestId<HTMLButtonElement>('play-again-button').click();
+    await fixture.whenStable();
+
+    const overlay = fixture.nativeElement.querySelector(
+      '[data-testid="match-over-overlay"]',
+    ) as HTMLElement | null;
+    const tableCards = fixture.nativeElement.querySelectorAll(
+      '[data-testid^="table-card-"]',
+    ) as NodeListOf<HTMLElement>;
+    const activeHandCards = fixture.nativeElement.querySelectorAll(
+      '[data-testid^="active-hand-card-"]',
+    ) as NodeListOf<HTMLElement>;
+
+    expect(stubs.initGameSpy).toHaveBeenCalledTimes(1);
+    expect(stubs.initGameSpy).toHaveBeenCalledWith(sessionConfiguration);
+    expect(readProtectedSignal<boolean>('showMatchOverOverlay')).toBe(false);
+    expect(overlay).toBeNull();
+    expect(stubs.engineStub.state()?.roundNumber).toBe(1);
+    expect(stubs.engineStub.state()?.matchScores).toEqual({ p1: 0, p2: 0 });
+    expect(tableCards.length).toBe(4);
+    expect(activeHandCards.length).toBe(3);
+    expectFocusedTestId('submit-play');
+
+    const submitPlayButton = getByTestId<HTMLButtonElement>('submit-play');
+    submitPlayButton.click();
+    await fixture.whenStable();
+
+    expect(stubs.playCardSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('SC-39 / TR-2.2 - play-again falls back to lobby when session configuration is missing', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    stubs.setRoundResult({
+      roundNumber: 4,
+      playerScores: [
+        {
+          playerId: 'p1',
+          escobas: 1,
+          mostCards: 1,
+          mostOros: 0,
+          mostSevens: 0,
+          sieteDiVelo: 0,
+          total: 2,
+        },
+      ],
+    });
+    stubs.setMatchWinner([{ id: 'p1', name: 'Alice', hand: [], capturedPile: [], escobaCount: 0 }]);
+    await fixture.whenStable();
+
+    getHudInstance().viewWinner.emit();
+    await fixture.whenStable();
+
+    stubs.setSessionConfiguration(null);
+    getByTestId<HTMLButtonElement>('play-again-button').click();
+    await fixture.whenStable();
+
+    const overlay = fixture.nativeElement.querySelector(
+      '[data-testid="match-over-overlay"]',
+    ) as HTMLElement | null;
+
+    expect(stubs.initGameSpy).not.toHaveBeenCalled();
+    expect(stubs.navigateSpy).toHaveBeenCalledTimes(1);
+    expect(stubs.navigateSpy).toHaveBeenCalledWith(['/']);
+    expect(readProtectedSignal<boolean>('showMatchOverOverlay')).toBe(false);
+    expect(overlay).toBeNull();
+  });
+
+  it('SC-29 / SC-30 - return-to-lobby navigates to root and keeps session configuration intact', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    stubs.setRoundResult({
+      roundNumber: 4,
+      playerScores: [
+        {
+          playerId: 'p1',
+          escobas: 1,
+          mostCards: 1,
+          mostOros: 0,
+          mostSevens: 0,
+          sieteDiVelo: 0,
+          total: 2,
+        },
+      ],
+    });
+    stubs.setMatchWinner([{ id: 'p1', name: 'Alice', hand: [], capturedPile: [], escobaCount: 0 }]);
+    await fixture.whenStable();
+
+    getHudInstance().viewWinner.emit();
+    await fixture.whenStable();
+
+    getByTestId<HTMLButtonElement>('return-to-lobby-button').click();
+    await fixture.whenStable();
+
+    expect(stubs.navigateSpy).toHaveBeenCalledTimes(1);
+    expect(stubs.navigateSpy).toHaveBeenCalledWith(['/']);
+    expect(stubs.sessionStub.configuration()).toEqual(sessionConfiguration);
   });
 });

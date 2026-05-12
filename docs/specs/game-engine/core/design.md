@@ -381,7 +381,7 @@ All observable state is managed exclusively through Angular Signals inside `Game
   - _Score most cards_ — finds the player with the strictly highest captured pile size. Awards 1 point (or 2 if all 40 cards). Awards 0 on any tie.
   - _Score most Oros_ — finds the player with the strictly highest count of Oros-suit cards in their captured pile. Awards 1 point (or 2 if all 10 Oros). Awards 0 on any tie.
   - _Score most sevens_ — finds the player with the strictly highest count of rank-7 cards in their captured pile. Awards 1 point (or 2 if all 4 sevens). Awards 0 on any tie.
-  - _Score Siete de Velo_ — awards 1 point to the player who captured the 7 of Oros. Independent of Most Oros and Most Sevens categories.
+  - _Score Siete de Oros_ — awards 1 point to the player who captured the 7 of Oros. Independent of Most Oros and Most Sevens categories.
 
 ---
 
@@ -499,7 +499,7 @@ This feature introduces no UI. Accessibility concerns are deferred entirely to t
 ### Utility functions — tested without TestBed
 
 - `deck.utils.ts` — Verify: deck has exactly 40 cards; each suit has exactly 10 cards; each rank per suit has the correct numeric value; total sum of all values equals 220; shuffle returns a new array (no mutation); shuffle distributes cards differently from the original order across repeated calls.
-- `scoring.utils.ts` — Verify each scoring category independently with controlled player state: escoba counts, capture pile sizes, Oros capture counts, seven counts, Siete de Velo possession, tie scenarios producing zero points, all-cards bonus (2 points), all-Oros bonus (2 points), all-sevens bonus (2 points).
+- `scoring.utils.ts` — Verify each scoring category independently with controlled player state: escoba counts, capture pile sizes, Oros capture counts, seven counts, Siete de Oros possession, tie scenarios producing zero points, all-cards bonus (2 points), all-Oros bonus (2 points), all-sevens bonus (2 points).
 - `win-condition.utils.ts` — Verify: no winner returned when no player reaches 15; correct winner returned when one player leads at or above 15; no winner (tie) when multiple players share the same highest score at or above 15.
 
 ### GameEngine service — tested with TestBed

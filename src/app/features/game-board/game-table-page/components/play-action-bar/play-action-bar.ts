@@ -14,6 +14,7 @@ export class PlayActionBar {
   private readonly validationMessageState = signal('');
   private readonly multiplayerState = signal(false);
   private readonly handoffEnabledState = signal(false);
+  private readonly overlayBlockedState = signal(false);
 
   protected readonly canSubmitPlaySignal: Signal<boolean> = this.canSubmitPlayState.asReadonly();
   protected readonly isCaptureSelectionValidSignal: Signal<boolean> =
@@ -23,6 +24,7 @@ export class PlayActionBar {
     this.validationMessageState.asReadonly();
   protected readonly multiplayerSignal: Signal<boolean> = this.multiplayerState.asReadonly();
   protected readonly handoffEnabledSignal: Signal<boolean> = this.handoffEnabledState.asReadonly();
+  protected readonly overlayBlockedSignal: Signal<boolean> = this.overlayBlockedState.asReadonly();
 
   readonly submitPlayClicked = output<void>();
   readonly confirmTurnClicked = output<void>();
@@ -80,6 +82,15 @@ export class PlayActionBar {
 
   get handoffEnabled(): boolean {
     return this.handoffEnabledState();
+  }
+
+  @Input()
+  set overlayBlocked(value: boolean) {
+    this.overlayBlockedState.set(value ?? false);
+  }
+
+  get overlayBlocked(): boolean {
+    return this.overlayBlockedState();
   }
 
   protected onSubmitPlay(): void {

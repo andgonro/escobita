@@ -1,4 +1,10 @@
-<section class="play-action-bar" data-testid="play-action-bar" aria-label="Play actions">
+<section
+  class="play-action-bar"
+  data-testid="play-action-bar"
+  aria-label="Play actions"
+  [attr.aria-hidden]="overlayBlockedSignal() ? 'true' : null"
+  [attr.inert]="overlayBlockedSignal() ? '' : null"
+>
   @if (multiplayerSignal()) {
     <label class="play-action-bar__handoff-toggle" for="handoff-toggle-input">
       <input

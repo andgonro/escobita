@@ -188,7 +188,7 @@ describe('computeRoundResult — most-sevens category', () => {
   });
 });
 
-describe('computeRoundResult — siete de velo category', () => {
+describe('computeRoundResult — Siete de Oros category', () => {
   it('SC-62 — holder of 7 of Oros earns 1 siete-de-velo point', () => {
     const sieteDeVelo = makeCard('Oros', '7', 7);
     const alice = makePlayer('p1', 'Alice', [sieteDeVelo]);
@@ -202,7 +202,7 @@ describe('computeRoundResult — siete de velo category', () => {
     expect(bobScore.sieteDiVelo).toBe(0);
   });
 
-  it('SC-62 — siete de velo is awarded independently of most-Oros and most-sevens outcomes', () => {
+  it('SC-62 — Siete de Oros is awarded independently of most-Oros and most-sevens outcomes', () => {
     // Bob has more oros and more sevens but Alice has the 7 of Oros specifically
     const sieteDeVelo = makeCard('Oros', '7', 7);
     const allOros = allCards().filter((c) => c.suit === 'Oros');

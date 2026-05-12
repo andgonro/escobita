@@ -118,7 +118,12 @@ function freezeGameState(state: GameState): GameState {
   }) as GameState;
 }
 
-export type EngineE2eFixture = 'escoba-visibility' | 'round-winner-visibility';
+export type EngineE2eFixture =
+  | 'escoba-visibility'
+  | 'round-winner-visibility'
+  | 'round-co-winner-visibility'
+  | 'round-complete-no-winner'
+  | 'pre-final-turn-no-winner';
 
 export interface EngineE2eFixtureResult {
   escobaPlayerName?: string;
@@ -167,63 +172,267 @@ export class GameEngine {
       throw new Error('[GameEngine] applyE2eFixture requires an initialized game state.');
     }
 
-    if (fixture === 'escoba-visibility') {
-      const escobaPlayer = state.players[0] ?? null;
-      if (!escobaPlayer) {
-        throw new Error('[GameEngine] escoba fixture requires at least one player.');
+    switch (fixture) {
+      case 'escoba-visibility': {
+        const escobaPlayer = state.players[0] ?? null;
+        if (!escobaPlayer) {
+          throw new Error('[GameEngine] escoba fixture requires at least one player.');
+        }
+
+        const escobaCount = Math.max(1, escobaPlayer.escobaCount + 1);
+        const escobaState: GameState = {
+          ...state,
+          table: [],
+          lastCapturerId: escobaPlayer.id,
+          players: state.players.map((player) => {
+            if (player.id !== escobaPlayer.id) {
+              return player;
+            }
+
+            return {
+              ...player,
+              escobaCount,
+            };
+          }),
+        };
+
+        this._state.set(freezeGameState(escobaState));
+
+        return {
+          escobaPlayerName: escobaPlayer.name,
+          escobaCount,
+        };
       }
 
-      const escobaCount = Math.max(1, escobaPlayer.escobaCount + 1);
-      const escobaState: GameState = {
-        ...state,
-        table: [],
-        lastCapturerId: escobaPlayer.id,
-        players: state.players.map((player) => {
-          if (player.id !== escobaPlayer.id) {
-            return player;
+      case 'round-winner-visibility': {
+        const winner = state.players[0] ?? null;
+        if (!winner) {
+          throw new Error('[GameEngine] round/winner fixture requires at least one player.');
+        }
+
+        const roundResult: RoundResult = {
+          roundNumber: state.roundNumber + 41,
+          playerScores: state.players.map((player, playerIndex) => ({
+            playerId: player.id,
+            escobas: playerIndex === 0 ? 2 : 0,
+            mostCards: playerIndex === 0 ? 1 : 0,
+            mostOros: playerIndex === 0 ? 1 : 0,
+            mostSevens: playerIndex === 0 ? 1 : 0,
+            sieteDiVelo: 0,
+            total: playerIndex === 0 ? 13 : 1,
+          })),
+        };
+
+        this._roundResult.set(roundResult);
+        this._matchWinner.set([winner]);
+        this._turnPhase.set('awaiting-card-play');
+
+        return {
+          roundNumber: roundResult.roundNumber,
+          winnerName: winner.name,
+          topScore: roundResult.playerScores[0]?.total ?? 0,
+        };
+      }
+
+      case 'round-co-winner-visibility': {
+        const winnerA = state.players[0] ?? null;
+        const winnerB = state.players[1] ?? null;
+        if (!winnerA || !winnerB) {
+          throw new Error('[GameEngine] co-winner fixture requires at least two players.');
+        }
+
+        const roundNumber = state.roundNumber + 57;
+        const topScore = 7;
+        const roundResult: RoundResult = {
+          roundNumber,
+          playerScores: state.players.map((player, playerIndex) => {
+            if (playerIndex < 2) {
+              return {
+                playerId: player.id,
+                escobas: 1,
+                mostCards: 1,
+                mostOros: 0,
+                mostSevens: 0,
+                sieteDiVelo: 0,
+                total: topScore,
+              };
+            }
+
+            return {
+              playerId: player.id,
+              escobas: 0,
+              mostCards: 0,
+              mostOros: 0,
+              mostSevens: 0,
+              sieteDiVelo: 0,
+              total: 0,
+            };
+          }),
+        };
+
+        const players = state.players.map((player) => ({
+          ...player,
+          hand: [],
+        }));
+
+        const coWinnerState: GameState = {
+          ...state,
+          deck: [],
+          table: [...state.table],
+          players,
+          turnIndex: 0,
+          roundNumber,
+          matchScores: players.reduce<Record<string, number>>((scoreMap, player, playerIndex) => {
+            scoreMap[player.id] = playerIndex < 2 ? 16 : 8;
+            return scoreMap;
+          }, {}),
+          lastCapturerId: players[0]?.id ?? null,
+        };
+
+        this._state.set(freezeGameState(coWinnerState));
+        this._roundResult.set(roundResult);
+        this._matchWinner.set([winnerA, winnerB]);
+        this._turnPhase.set('awaiting-card-play');
+
+        return {
+          roundNumber,
+          winnerName: `${winnerA.name}, ${winnerB.name}`,
+          topScore,
+        };
+      }
+
+      case 'round-complete-no-winner': {
+        const roundNumber = 2;
+        const roundCompleteTable: Card[] = [
+          { suit: 'Bastos', rank: '6', value: 6 },
+          { suit: 'Oros', rank: '2', value: 2 },
+        ];
+        const playerScores = state.players.map((player, playerIndex) => {
+          if (playerIndex === 0) {
+            return {
+              playerId: player.id,
+              escobas: 0,
+              mostCards: 0,
+              mostOros: 0,
+              mostSevens: 1,
+              sieteDiVelo: 0,
+              total: 1,
+            };
+          }
+
+          if (playerIndex === 1) {
+            return {
+              playerId: player.id,
+              escobas: 1,
+              mostCards: 1,
+              mostOros: 1,
+              mostSevens: 0,
+              sieteDiVelo: 0,
+              total: 3,
+            };
           }
 
           return {
-            ...player,
-            escobaCount,
+            playerId: player.id,
+            escobas: 0,
+            mostCards: 0,
+            mostOros: 0,
+            mostSevens: 0,
+            sieteDiVelo: 0,
+            total: 0,
           };
-        }),
-      };
+        });
 
-      this._state.set(freezeGameState(escobaState));
+        const topScore = playerScores.reduce((currentTopScore, score) => {
+          return Math.max(currentTopScore, score.total);
+        }, 0);
 
-      return {
-        escobaPlayerName: escobaPlayer.name,
-        escobaCount,
-      };
+        const roundResult: RoundResult = {
+          roundNumber,
+          playerScores,
+        };
+
+        const players = state.players.map((player) => ({
+          ...player,
+          hand: [],
+        }));
+
+        const fallbackScores = [6, 7, 5, 4];
+        const matchScores = players.reduce<Record<string, number>>((scoreMap, player, index) => {
+          scoreMap[player.id] = fallbackScores[index] ?? 0;
+          return scoreMap;
+        }, {});
+
+        const roundCompleteState: GameState = {
+          ...state,
+          deck: [],
+          table: roundCompleteTable,
+          players,
+          turnIndex: 0,
+          roundNumber,
+          matchScores,
+          lastCapturerId: players[0]?.id ?? null,
+        };
+
+        this._state.set(freezeGameState(roundCompleteState));
+        this._roundResult.set(roundResult);
+        this._matchWinner.set(null);
+        this._turnPhase.set('awaiting-card-play');
+
+        return {
+          roundNumber,
+          topScore,
+        };
+      }
+
+      case 'pre-final-turn-no-winner': {
+        const preFinalTurnTable: Card[] = [
+          { suit: 'Espadas', rank: '2', value: 2 },
+          { suit: 'Oros', rank: '1', value: 1 },
+        ];
+
+        const players: Player[] = state.players.map((player, playerIndex): Player => {
+          const capturedPile: Card[] =
+            playerIndex === 0 ? [{ suit: 'Copas', rank: '3', value: 3 }] : [];
+
+          return {
+            ...player,
+            hand: [],
+            capturedPile,
+            escobaCount: 0,
+          };
+        });
+
+        const matchScores = players.reduce<Record<string, number>>((scoreMap, player) => {
+          scoreMap[player.id] = 0;
+          return scoreMap;
+        }, {});
+
+        const preFinalTurnState: GameState = {
+          ...state,
+          deck: [],
+          table: preFinalTurnTable,
+          players,
+          turnIndex: 0,
+          roundNumber: 1,
+          matchScores,
+          lastCapturerId: players[0]?.id ?? null,
+        };
+
+        this._state.set(freezeGameState(preFinalTurnState));
+        this._roundResult.set(null);
+        this._matchWinner.set(null);
+        this._turnPhase.set('awaiting-confirmation');
+
+        return {
+          roundNumber: preFinalTurnState.roundNumber,
+          topScore: 0,
+        };
+      }
+
+      default:
+        throw new Error(`[GameEngine] Unknown E2E fixture: ${fixture}`);
     }
-
-    const winner = state.players[0] ?? null;
-    if (!winner) {
-      throw new Error('[GameEngine] round/winner fixture requires at least one player.');
-    }
-
-    const roundResult: RoundResult = {
-      roundNumber: state.roundNumber + 41,
-      playerScores: state.players.map((player, playerIndex) => ({
-        playerId: player.id,
-        escobas: playerIndex === 0 ? 2 : 0,
-        mostCards: playerIndex === 0 ? 1 : 0,
-        mostOros: playerIndex === 0 ? 1 : 0,
-        mostSevens: playerIndex === 0 ? 1 : 0,
-        sieteDiVelo: 0,
-        total: playerIndex === 0 ? 13 : 1,
-      })),
-    };
-
-    this._roundResult.set(roundResult);
-    this._matchWinner.set([winner]);
-
-    return {
-      roundNumber: roundResult.roundNumber,
-      winnerName: winner.name,
-      topScore: roundResult.playerScores[0]?.total ?? 0,
-    };
   }
 
   // ---------------------------------------------------------------------------

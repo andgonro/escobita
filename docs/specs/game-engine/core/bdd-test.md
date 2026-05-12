@@ -566,7 +566,7 @@ Rule: Most-sevens category scoring
       When round scores are calculated at end of round
       Then neither "Alice" nor "Bob" earns a point from the most-sevens category
 
-Rule: Siete de Velo (7 of Oros) and accumulated scores
+Rule: Siete de Oros (7 of Oros) and accumulated scores
 
     Scenario: SC-62 — The player who captured the 7 of Oros earns 1 additional point independently
       Given "Alice" captured the 7 of Oros during the round

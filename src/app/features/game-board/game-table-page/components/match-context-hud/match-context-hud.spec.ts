@@ -6,9 +6,8 @@ import { Player } from '../../../../../models/player';
 
 import { MatchContextHud } from './match-context-hud';
 
-// Covers: FR-2.1, FR-2.2, FR-2.3, FR-2.4, FR-4.6, FR-8.5, TR-1.2, US-2, US-4, US-8
 // Covers: FR-1.2, FR-1.3, FR-2.1, FR-2.2, FR-2.5, FR-2.6, FR-2.7, NFR-1.1, US-1, US-6
-// BDD Scenarios: SC-03, SC-04, SC-05, SC-07, SC-08, SC-09, SC-10, SC-11, SC-14, SC-15, SC-24, SC-29
+// BDD Scenarios: SC-02, SC-03, SC-04, SC-05, SC-07, SC-08, SC-09, SC-10, SC-11, SC-14, SC-15, SC-24
 
 interface ScoreEntry {
   id: string;
@@ -144,7 +143,7 @@ describe('MatchContextHud', () => {
     await fixture.whenStable();
   });
 
-  it('SC-05 / FR-2.1 - renders an always-visible active-player indicator', async () => {
+  it('Baseline HUD context - renders an always-visible active-player indicator', async () => {
     testState.activePlayerName = 'Ana';
     await fixture.whenStable();
 
@@ -153,7 +152,7 @@ describe('MatchContextHud', () => {
     expect((activePlayerIndicator.textContent ?? '').trim()).toContain('Ana');
   });
 
-  it('SC-05 / FR-2.2 - renders all score entries in match context', async () => {
+  it('Baseline HUD context - renders all score entries in match context', async () => {
     testState.scoreEntries = sampleScores;
     await fixture.whenStable();
 
@@ -170,7 +169,7 @@ describe('MatchContextHud', () => {
     expect(scoreItems[1]?.textContent ?? '').toContain('1');
   });
 
-  it('SC-05 / FR-2.2 - renders a pending-score fallback when no score entries are available', async () => {
+  it('Baseline HUD context - renders a pending-score fallback when no score entries are available', async () => {
     testState.scoreEntries = [];
     await fixture.whenStable();
 
@@ -180,7 +179,7 @@ describe('MatchContextHud', () => {
     expect((scoreEmpty?.textContent ?? '').trim()).toContain('Scores pending');
   });
 
-  it('SC-05 / FR-2.3 - renders turn-phase indicator in persistent context', async () => {
+  it('Baseline HUD context - renders turn-phase indicator in persistent context', async () => {
     testState.turnPhase = 'awaiting-confirmation';
     await fixture.whenStable();
 
@@ -189,7 +188,7 @@ describe('MatchContextHud', () => {
     expect((turnPhaseIndicator.textContent ?? '').trim()).toContain('awaiting-confirmation');
   });
 
-  it('SC-06 / FR-2.4 - updates visible context immediately when context inputs change', async () => {
+  it('Baseline HUD context - updates visible context immediately when context inputs change', async () => {
     testState.activePlayerName = 'Ana';
     testState.turnPhase = 'awaiting-card-play';
     await fixture.whenStable();
@@ -220,7 +219,7 @@ describe('MatchContextHud', () => {
     expect((turnPhaseIndicator.textContent ?? '').trim()).toBe(phaseAfterFirstBoundary);
   });
 
-  it('FR-2.4 - applies masking attributes when handoff privacy mode is active', async () => {
+  it('Baseline HUD privacy - applies masking attributes when handoff privacy mode is active', async () => {
     testState.handoffActive = true;
     await fixture.whenStable();
 
@@ -230,7 +229,7 @@ describe('MatchContextHud', () => {
     expect(contextHeader.getAttribute('inert')).toBe('');
   });
 
-  it('SC-15 / FR-4.6 - renders escoba outcome visibility from table-clear context', async () => {
+  it('Baseline HUD context - renders escoba outcome visibility from table-clear context', async () => {
     testState.escobaOutcome = sampleEscobaOutcome;
     await fixture.whenStable();
 
@@ -241,7 +240,7 @@ describe('MatchContextHud', () => {
     expect((escobaOutcome.textContent ?? '').trim()).toContain('1');
   });
 
-  it('SC-29 / FR-8.5 - renders round-result outcome from engine-provided context data', async () => {
+  it('SC-02 / FR-1.2 - renders round-result outcome with round number and top score', async () => {
     testState.roundResult = sampleRoundResult;
     await fixture.whenStable();
 
@@ -251,7 +250,7 @@ describe('MatchContextHud', () => {
     expect((roundOutcome.textContent ?? '').trim()).toContain('Top score: 2');
   });
 
-  it('SC-29 / FR-8.5 - renders match-winner outcome from engine-provided context data', async () => {
+  it('Baseline winner context - renders match-winner outcome from engine-provided context data', async () => {
     fixture.componentRef.setInput('matchWinner', sampleWinners);
     await fixture.whenStable();
 
@@ -260,7 +259,7 @@ describe('MatchContextHud', () => {
     expect((matchWinner.textContent ?? '').trim()).toContain('Ana');
   });
 
-  it('FR-3.3 - renders all co-winner names when multiple winners are provided', async () => {
+  it('Baseline winner context - renders all co-winner names when multiple winners are provided', async () => {
     fixture.componentRef.setInput('matchWinner', sampleCoWinners);
     await fixture.whenStable();
 
@@ -290,7 +289,7 @@ describe('MatchContextHud', () => {
     expect(firstPlayerRowText).toContain('Más cartas: 1');
     expect(firstPlayerRowText).toContain('Más oros: 0');
     expect(firstPlayerRowText).toContain('Más sietes: 0');
-    expect(firstPlayerRowText).toContain('Siete de velo: 0');
+    expect(firstPlayerRowText).toContain('Siete de Oros: 0');
     expect(firstPlayerRowText).toContain('Total: 2');
   });
 
@@ -305,8 +304,20 @@ describe('MatchContextHud', () => {
     expect(rowText).toContain('Más cartas: 0');
     expect(rowText).toContain('Más oros: 0');
     expect(rowText).toContain('Más sietes: 1');
-    expect(rowText).toContain('Siete de velo: 0');
+    expect(rowText).toContain('Siete de Oros: 0');
     expect(rowText).toContain('Total: 1');
+  });
+
+  it('SC-05 / FR-1.3 - renders only session-configured player names in breakdown rows', async () => {
+    fixture.componentRef.setInput('roundScoreBreakdown', sampleRoundScoreBreakdown);
+    await fixture.whenStable();
+
+    const breakdownPanel = getByTestId<HTMLElement>('round-score-breakdown');
+    const breakdownText = (breakdownPanel.textContent ?? '').trim();
+
+    expect(breakdownText).toContain('Ana');
+    expect(breakdownText).toContain('Luis');
+    expect(breakdownText).not.toContain('Carlos');
   });
 
   it('SC-07 - does not render round score breakdown panel when breakdown input is empty', async () => {
@@ -380,6 +391,34 @@ describe('MatchContextHud', () => {
     expect(viewWinnerButton).not.toBeNull();
   });
 
+  it('SC-13 / FR-2.5 - start-next-round button is keyboard focusable when visible', async () => {
+    fixture.componentRef.setInput('showStartNextRound', true);
+    fixture.componentRef.setInput('showViewWinner', false);
+    await fixture.whenStable();
+
+    const startButton = getByTestId<HTMLButtonElement>('start-next-round-button');
+
+    expect(startButton.tabIndex).toBeGreaterThanOrEqual(0);
+    startButton.focus();
+    await fixture.whenStable();
+
+    expect(document.activeElement).toBe(startButton);
+  });
+
+  it('SC-24 / FR-2.7 - view-winner button is keyboard focusable when visible', async () => {
+    fixture.componentRef.setInput('showStartNextRound', false);
+    fixture.componentRef.setInput('showViewWinner', true);
+    await fixture.whenStable();
+
+    const viewWinnerButton = getByTestId<HTMLButtonElement>('view-winner-button');
+
+    expect(viewWinnerButton.tabIndex).toBeGreaterThanOrEqual(0);
+    viewWinnerButton.focus();
+    await fixture.whenStable();
+
+    expect(document.activeElement).toBe(viewWinnerButton);
+  });
+
   it('SC-11 - emits startNextRound output when start-next-round button is activated', async () => {
     fixture.componentRef.setInput('showStartNextRound', true);
     fixture.componentRef.setInput('showViewWinner', false);
@@ -405,6 +444,10 @@ describe('MatchContextHud', () => {
       .startNextRound;
     const emitSpy = vi.spyOn(startNextRoundEmitter, 'emit');
     const startButton = getByTestId<HTMLButtonElement>('start-next-round-button');
+
+    expect(startButton.tabIndex).toBeGreaterThanOrEqual(0);
+    startButton.focus();
+    expect(document.activeElement).toBe(startButton);
 
     startButton.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
     await fixture.whenStable();
@@ -437,6 +480,10 @@ describe('MatchContextHud', () => {
       .viewWinner;
     const emitSpy = vi.spyOn(viewWinnerEmitter, 'emit');
     const viewWinnerButton = getByTestId<HTMLButtonElement>('view-winner-button');
+
+    expect(viewWinnerButton.tabIndex).toBeGreaterThanOrEqual(0);
+    viewWinnerButton.focus();
+    expect(document.activeElement).toBe(viewWinnerButton);
 
     viewWinnerButton.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
     await fixture.whenStable();

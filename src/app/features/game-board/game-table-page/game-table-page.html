@@ -5,6 +5,7 @@
 >
   <app-match-context-hud
     [activePlayerName]="activePlayerName()"
+    [currentRoundNumber]="currentRoundNumber()"
     [scoreEntries]="scoreEntries()"
     [turnPhase]="turnPhase()"
     [escobaOutcome]="escobaOutcome()"
@@ -13,7 +14,7 @@
     [showStartNextRound]="showStartNextRoundButton()"
     [showViewWinner]="showViewWinnerButton()"
     [roundScoreBreakdown]="roundScoreBreakdown()"
-    [handoffActive]="showTurnHandoffOverlay()"
+    [handoffActive]="showTurnHandoffOverlay() || showMatchOverOverlay()"
     [contextHeaderTestId]="contextHeaderTestId()"
     (startNextRound)="onStartNextRound()"
     (viewWinner)="onViewWinner()"
@@ -23,8 +24,8 @@
 
   <p
     data-testid="session-indicator"
-    [attr.aria-hidden]="showTurnHandoffOverlay() ? 'true' : null"
-    [attr.inert]="showTurnHandoffOverlay() ? '' : null"
+    [attr.aria-hidden]="showTurnHandoffOverlay() || showMatchOverOverlay() ? 'true' : null"
+    [attr.inert]="showTurnHandoffOverlay() || showMatchOverOverlay() ? '' : null"
   >
     Session configuration: {{ hasSessionConfiguration() ? 'ready' : 'missing' }}
   </p>
@@ -32,8 +33,8 @@
   <div
     class="table-layout-shell"
     data-testid="table-layout-shell"
-    [attr.aria-hidden]="showTurnHandoffOverlay() ? 'true' : null"
-    [attr.inert]="showTurnHandoffOverlay() ? '' : null"
+    [attr.aria-hidden]="showTurnHandoffOverlay() || showMatchOverOverlay() ? 'true' : null"
+    [attr.inert]="showTurnHandoffOverlay() || showMatchOverOverlay() ? '' : null"
   >
     <div class="layout-opponents" data-testid="layout-opponents">
       <app-opponent-zones [opponents]="opponents()"></app-opponent-zones>
@@ -65,12 +66,22 @@
     [validationMessage]="validationMessage()"
     [multiplayer]="isMultiplayer()"
     [handoffEnabled]="handoffEnabled()"
+    [overlayBlocked]="showTurnHandoffOverlay() || showMatchOverOverlay()"
     (submitPlayClicked)="submitPlay()"
     (confirmTurnClicked)="confirmTurn()"
     (handoffToggleChanged)="onHandoffToggleChanged($event)"
-    [attr.aria-hidden]="showTurnHandoffOverlay() ? 'true' : null"
-    [attr.inert]="showTurnHandoffOverlay() ? '' : null"
+    [attr.aria-hidden]="showTurnHandoffOverlay() || showMatchOverOverlay() ? 'true' : null"
+    [attr.inert]="showTurnHandoffOverlay() || showMatchOverOverlay() ? '' : null"
   ></app-play-action-bar>
+
+  @if (showMatchOverOverlay()) {
+    <app-match-over-overlay
+      [winnerNames]="winnerNames()"
+      [matchScoreEntries]="matchScoreEntries()"
+      (returnToLobby)="onReturnToLobby()"
+      (playAgain)="onPlayAgain()"
+    ></app-match-over-overlay>
+  }
 
   @if (showTurnHandoffOverlay()) {
     <app-turn-handoff-overlay

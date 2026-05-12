@@ -1,0 +1,51 @@
+<section
+  class="match-over-overlay"
+  data-testid="match-over-overlay"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="match-over-title"
+>
+  <div class="match-over-overlay__content">
+    <h2 id="match-over-title" data-testid="match-over-title" class="match-over-overlay__title">
+      Partida terminada
+    </h2>
+
+    <p class="match-over-overlay__subtitle">Ganador(es)</p>
+    <div class="match-over-overlay__winners">
+      @for (winnerName of winnerNamesSignal(); track $index; let index = $index) {
+        <p class="match-over-overlay__winner-name" [attr.data-testid]="'winner-name-' + index">
+          {{ winnerName }}
+        </p>
+      }
+    </div>
+
+    <p class="match-over-overlay__subtitle">Puntuacion acumulada</p>
+    <ul class="match-over-overlay__scores">
+      @for (entry of matchScoreEntriesSignal(); track entry.playerName; let index = $index) {
+        <li class="match-over-overlay__score-row" [attr.data-testid]="'match-score-row-' + index">
+          <span>{{ entry.playerName }}</span>
+          <span>{{ entry.score }}</span>
+        </li>
+      }
+    </ul>
+
+    <div class="match-over-overlay__actions">
+      <button
+        type="button"
+        data-testid="return-to-lobby-button"
+        aria-label="Volver al lobby"
+        (click)="onReturnToLobbyClick()"
+      >
+        Volver al lobby
+      </button>
+      <button
+        type="button"
+        data-testid="play-again-button"
+        aria-label="Jugar de nuevo"
+        (click)="onPlayAgainClick()"
+      >
+        Jugar de nuevo
+      </button>
+    </div>
+  </div>
+</section>
