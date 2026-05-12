@@ -1,4 +1,5 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { Component, afterNextRender, computed, inject, signal } from '@angular/core';
 import { FormField, form } from '@angular/forms/signals';
 import { Router } from '@angular/router';
 import { GameSession } from '../../../core/services/game-session';
@@ -19,8 +20,20 @@ interface MultiplayerModel {
   styleUrl: './lobby.scss',
 })
 export class Lobby {
+  private readonly document = inject(DOCUMENT);
   private readonly router = inject(Router);
   private readonly gameSession = inject(GameSession);
+
+  constructor() {
+    this.hydrateFromSessionConfiguration();
+
+    afterNextRender(() => {
+      const primaryControl = this.document.querySelector('[data-testid="mode-single"]');
+      if (primaryControl instanceof HTMLElement) {
+        primaryControl.focus();
+      }
+    });
+  }
 
   protected readonly mode = signal<GameMode>('Single Player');
   protected readonly aiDifficulty = signal<AIDifficulty>('Easy');
@@ -160,5 +173,35 @@ export class Lobby {
 
   private isBlank(value: string): boolean {
     return value.trim().length === 0;
+  }
+
+  private hydrateFromSessionConfiguration(): void {
+    const configuration = this.gameSession.configuration();
+    if (configuration === null) {
+      return;
+    }
+
+    this.mode.set(configuration.mode);
+    this.aiDifficulty.set(configuration.aiDifficulty);
+    this.multiplayerPlayerCount.set(configuration.playerCount);
+
+    this.singlePlayerModel.set({
+      name: configuration.playerNames[0] ?? this.singlePlayerModel().name,
+    });
+
+    this.multiplayerModel.set({
+      playerNames: this.buildMultiplayerPrefill(configuration.playerNames),
+    });
+  }
+
+  private buildMultiplayerPrefill(playerNames: string[]): [string, string, string, string] {
+    const fallbackNames = this.multiplayerModel().playerNames;
+
+    return [
+      playerNames[0] ?? fallbackNames[0],
+      playerNames[1] ?? fallbackNames[1],
+      playerNames[2] ?? fallbackNames[2],
+      playerNames[3] ?? fallbackNames[3],
+    ];
   }
 }

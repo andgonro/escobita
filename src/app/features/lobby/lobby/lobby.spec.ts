@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { vi } from 'vitest';
 import { GameSession } from '../../../core/services/game-session';
@@ -19,6 +20,7 @@ interface RouterPort {
 }
 
 interface SessionPort {
+  configuration: () => LobbyConfiguration | null;
   setConfiguration: (configuration: LobbyConfiguration) => void;
 }
 
@@ -44,12 +46,14 @@ describe('Lobby', () => {
   beforeEach(async () => {
     navigateSpy = vi.fn().mockResolvedValue(true);
     setConfigurationSpy = vi.fn();
+    const configurationSignal = signal<LobbyConfiguration | null>(null);
 
     const routerStub: RouterPort = {
       navigate: navigateSpy as unknown as RouterPort['navigate'],
     };
 
     const sessionStub: SessionPort = {
+      configuration: configurationSignal.asReadonly(),
       setConfiguration: setConfigurationSpy as unknown as SessionPort['setConfiguration'],
     };
 
