@@ -191,13 +191,13 @@ Prompt the Security Assistant with the same feature spec folder path and review 
 `docs/specs/{epic-id}/{feature-id} task T-X` (for incremental reviews)
 `docs/specs/{epic-id}/{feature-id} full` (for full reviews)
 
-This generates (or updates) `security-report.md` in `docs/specs/{epic-id}/{feature-id}/`.
+This generates (or updates) `security-report_{taskId}.md` in `docs/specs/{epic-id}/{feature-id}/`.
 
-Once the Security Assistant completes, read the generated `security-report.md` and:
+Once the Security Assistant completes, read the generated `security-report_{taskId}.md` and:
 
 - Note every SEC-XX finding at Critical or High severity — these must appear in the Traceability Matrix of `review-report_{taskId}.md` as cross-references.
 - If any SEC-XX finding relates to a spec requirement (FR-X.X, NFR-X.X), mark that requirement as ⚠️ Partial or ❌ Not Met in the Spec Compliance Summary.
-- Include a brief **Security Cross-Reference** section in the review report pointing readers to `security-report.md` for the full security analysis.
+- Include a brief **Security Cross-Reference** section in the review report pointing readers to `security-report_{taskId}.md` for the full security analysis.
 
 ## 3. Report Generation — `review-report_{taskId}.md`
 
@@ -294,7 +294,7 @@ Prose description of structural differences between planned and actual architect
 
 ## 9. Security Cross-Reference
 
-This section cross-references Critical and High security findings from the companion `security-report.md`. See `docs/specs/{epic-id}/{feature-id}/security-report.md` for the full security analysis.
+This section cross-references Critical and High security findings from the companion `security-report_{taskId}.md`. See `docs/specs/{epic-id}/{feature-id}/security-report_{taskId}.md` for the full security analysis.
 
 | SEC ID | Severity | OWASP | Summary |
 |--------|----------|-------|---------|
