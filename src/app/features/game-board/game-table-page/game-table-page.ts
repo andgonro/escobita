@@ -8,9 +8,12 @@ import {
   signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
+import { AiStrategyService } from '../../../core/services/ai-strategy.service';
 import { GameEngine } from '../../../core/services/game-engine';
 import { GameSession } from '../../../core/services/game-session';
+import { delay } from '../../../core/utils/delay.utils';
 import { Card } from '../../../models/card';
+import { AI_TURN_IDLE, AiTurnAnimationState } from '../../../models/ai-turn';
 import { Player } from '../../../models/player';
 import { RoundResult } from '../../../models/round-result';
 import { TableInteractionState } from '../services/table-interaction-state';
@@ -69,6 +72,7 @@ export class GameTablePage {
   private readonly injector = inject(Injector);
   private readonly gameEngine = inject(GameEngine);
   private readonly gameSession = inject(GameSession);
+  private readonly aiStrategyService = inject(AiStrategyService);
   private readonly router = inject(Router);
   private readonly componentInteractionState = inject(TableInteractionState);
   private readonly parentInteractionState = inject(TableInteractionState, {
@@ -78,6 +82,8 @@ export class GameTablePage {
   private readonly interactionState = this.resolveInteractionState();
   private readonly showTurnHandoffOverlayState = signal(false);
   private readonly showMatchOverOverlayState = signal(false);
+  private readonly isAiTurnInProgress = signal(false);
+  protected readonly aiTurnAnimationState = signal<AiTurnAnimationState>(AI_TURN_IDLE);
   private readonly liveAnnouncementState = signal('');
   private lastAnnouncedRoundNumber: number | null = null;
 
@@ -97,6 +103,31 @@ export class GameTablePage {
 
       this.lastAnnouncedRoundNumber = roundResult.roundNumber;
       this.announce(`Ronda ${roundResult.roundNumber} completada.`);
+    });
+
+    effect(() => {
+      const configuration = this.gameSession.configuration();
+      const activePlayer = this.gameEngine.activePlayer();
+      const aiPlayerId = this.aiPlayerId();
+      const turnPhase = this.gameEngine.turnPhase();
+
+      if (configuration?.mode !== 'Single Player') {
+        return;
+      }
+
+      if (activePlayer === null || aiPlayerId === null) {
+        return;
+      }
+
+      if (turnPhase !== 'awaiting-card-play' || this.isAiTurnInProgress()) {
+        return;
+      }
+
+      if (activePlayer.id !== aiPlayerId) {
+        return;
+      }
+
+      void this.runAiTurn().catch(() => undefined);
     });
   }
 
@@ -134,7 +165,31 @@ export class GameTablePage {
     return this.interactionState.canSubmitPlay();
   });
   protected readonly interactionEnabled = computed(() => {
-    return this.gameEngine.turnPhase() === 'awaiting-card-play' && !this.showTurnHandoffOverlay();
+    return (
+      this.gameEngine.turnPhase() === 'awaiting-card-play' &&
+      !this.showTurnHandoffOverlay() &&
+      !this.isAiTurnInProgress()
+    );
+  });
+  protected readonly aiPlayerId = computed(() => {
+    return this.gameEngine.state()?.players[1]?.id ?? null;
+  });
+  protected readonly aiHandCardCount = computed(() => {
+    const aiPlayerId = this.aiPlayerId();
+    if (aiPlayerId === null) {
+      return 0;
+    }
+
+    const state = this.gameEngine.state();
+    if (state === null) {
+      return 0;
+    }
+
+    const aiPlayer = state.players.find((player) => player.id === aiPlayerId);
+    return aiPlayer?.hand.length ?? 0;
+  });
+  protected readonly aiHighlightedTableCards = computed(() => {
+    return this.aiTurnAnimationState().highlightedTableCards;
   });
 
   protected readonly activePlayerName = computed(() => {
@@ -470,5 +525,92 @@ export class GameTablePage {
       },
       { injector: this.injector },
     );
+  }
+
+  private async runAiTurn(): Promise<void> {
+    const configuration = this.gameSession.configuration();
+    const aiPlayerId = this.aiPlayerId();
+    const state = this.gameEngine.state();
+    const activePlayer = this.gameEngine.activePlayer();
+
+    if (
+      configuration?.mode !== 'Single Player' ||
+      aiPlayerId === null ||
+      state === null ||
+      activePlayer === null ||
+      activePlayer.id !== aiPlayerId ||
+      this.gameEngine.turnPhase() !== 'awaiting-card-play' ||
+      this.isAiTurnInProgress()
+    ) {
+      return;
+    }
+
+    const aiPlayer = state.players.find((player) => player.id === aiPlayerId);
+    if (!aiPlayer || aiPlayer.hand.length === 0) {
+      return;
+    }
+
+    const difficulty = configuration.aiDifficulty;
+
+    this.isAiTurnInProgress.set(true);
+    this.aiTurnAnimationState.set({
+      ...AI_TURN_IDLE,
+      phase: 'deliberating',
+    });
+
+    try {
+      await delay(600);
+
+      const decision = this.aiStrategyService.decide(state, aiPlayer, difficulty);
+      const selectedCardIndex = aiPlayer.hand.findIndex((card) =>
+        this.areCardsEqual(card, decision.cardToPlay),
+      );
+
+      this.aiTurnAnimationState.set({
+        phase: 'card-selected',
+        selectedCardIndex: selectedCardIndex >= 0 ? selectedCardIndex : null,
+        revealedCard: null,
+        highlightedTableCards: [],
+      });
+
+      await delay(600);
+
+      if (decision.captureSubset.length > 0) {
+        this.aiTurnAnimationState.set({
+          phase: 'capture-previewing',
+          selectedCardIndex: selectedCardIndex >= 0 ? selectedCardIndex : null,
+          revealedCard: decision.cardToPlay,
+          highlightedTableCards: decision.captureSubset,
+        });
+
+        await delay(700);
+      }
+
+      this.aiTurnAnimationState.set({
+        phase: 'resolving',
+        selectedCardIndex: selectedCardIndex >= 0 ? selectedCardIndex : null,
+        revealedCard: decision.captureSubset.length > 0 ? decision.cardToPlay : null,
+        highlightedTableCards: decision.captureSubset.length > 0 ? decision.captureSubset : [],
+      });
+
+      this.gameEngine.playCard(decision.cardToPlay, decision.captureSubset);
+      await delay(300);
+      this.gameEngine.confirmTurn();
+    } catch (error) {
+      console.warn('AI turn orchestration failed', {
+        aiPlayerId,
+        difficulty,
+        turnPhase: this.gameEngine.turnPhase(),
+        errorName: error instanceof Error ? error.name : 'UnknownError',
+      });
+      // AI orchestration must fail closed: unlock interaction and reset animation state in finally.
+    } finally {
+      this.isAiTurnInProgress.set(false);
+      this.aiTurnAnimationState.set(AI_TURN_IDLE);
+    }
+  }
+
+  private areCardsEqual(left: Card, right: Card): boolean {
+    return left.suit === right.suit && left.rank === right.rank && left.value === right.value;
   }
 }

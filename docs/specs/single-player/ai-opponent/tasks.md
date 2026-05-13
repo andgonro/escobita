@@ -186,6 +186,7 @@ graph LR
 ### T-8: Add AI animation state signals and extend interactionEnabled in GameTablePage
 
 - **Description:** In `GameTablePage`, introduce the following new signals: `isAiTurnInProgress` (writable boolean, initially false), `aiTurnAnimationState` (writable `AiTurnAnimationState`, initially `AI_TURN_IDLE`). Add a `aiPlayerId` computed signal reading `gameEngine.state()?.players[1]?.id`. Add a `aiHandCardCount` computed signal reading the AI player's hand length from the game state. Extend the `interactionEnabled` computed to add `&& !isAiTurnInProgress()`. Add a `aiHighlightedTableCards` computed signal derived from `aiTurnAnimationState.highlightedTableCards` for passing to `CenterTableZone`. Inject `AiStrategyService`. Do not yet implement `runAiTurn()` or the `effect()` — those are T-9.
+- **Status:** ✅ Implemented
 - **Architectural Decision:** AD-6, AD-5, AD-2
 - **Depends on:** T-1, T-4
 - **Files affected:** `src/app/features/game-board/game-table-page/game-table-page.ts`
@@ -203,6 +204,7 @@ graph LR
 ### T-9: Implement runAiTurn() method and the AI turn trigger effect in GameTablePage
 
 - **Description:** Implement the async `runAiTurn()` method in `GameTablePage` that drives the full AI turn animation and engine calls. Sequence: set `isAiTurnInProgress = true` and `aiTurnAnimationState.phase = 'deliberating'`; read current state and call `aiStrategyService.decide(...)`; set `aiTurnAnimationState` to `'card-selected'` with the selected card index; `await delay(~600ms)`; if a capture was decided, set `aiTurnAnimationState` to `'capture-previewing'` with `revealedCard` and `highlightedTableCards`, then `await delay(~700ms)`; call `gameEngine.playCard(...)`; `await delay(~300ms)`; call `gameEngine.confirmTurn()`; clear `isAiTurnInProgress` and reset `aiTurnAnimationState` to idle. Wrap in try/finally. Also implement the Angular `effect()` that watches `activePlayer()` and `turnPhase()` and calls `runAiTurn()` when the active player is Laia, the phase is `'awaiting-card-play'`, and `isAiTurnInProgress` is false.
+- **Status:** ✅ Implemented
 - **Architectural Decision:** AD-4, AD-5, AD-6, AD-9
 - **Depends on:** T-5, T-6, T-7, T-8
 - **Files affected:** `src/app/features/game-board/game-table-page/game-table-page.ts`

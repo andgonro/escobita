@@ -3,10 +3,12 @@ import { signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { vi } from 'vitest';
+import { AiStrategyService } from '../../../core/services/ai-strategy.service';
 import { GameEngine } from '../../../core/services/game-engine';
 import { GameSession } from '../../../core/services/game-session';
 import { TableInteractionState } from '../services/table-interaction-state';
 import { Card } from '../../../models/card';
+import { AiPlayDecision, AiTurnAnimationState, AI_TURN_IDLE } from '../../../models/ai-turn';
 import { GameConfiguration } from '../../../models/game-configuration';
 import { GameState, TurnPhase } from '../../../models/game-state';
 import { Player } from '../../../models/player';
@@ -43,6 +45,14 @@ interface TableInteractionStatePort {
 
 interface RouterPort {
   navigate: (commands: string[]) => Promise<boolean>;
+}
+
+interface AiStrategyPort {
+  decide: (
+    state: GameState,
+    aiPlayer: Player,
+    difficulty: GameConfiguration['aiDifficulty'],
+  ) => AiPlayDecision;
 }
 
 const handCard: Card = { suit: 'Oros', rank: '7', value: 7 };
@@ -104,11 +114,13 @@ interface Stubs {
   sessionStub: GameSessionPort;
   interactionStub: TableInteractionStatePort;
   routerStub: RouterPort;
+  aiStrategyStub: AiStrategyPort;
   initGameSpy: ReturnType<typeof vi.fn>;
   playCardSpy: ReturnType<typeof vi.fn>;
   confirmTurnSpy: ReturnType<typeof vi.fn>;
   startNextRoundSpy: ReturnType<typeof vi.fn>;
   navigateSpy: ReturnType<typeof vi.fn>;
+  decideSpy: ReturnType<typeof vi.fn>;
   setTurnPhase: (phase: TurnPhase) => void;
   setTurnIndex: (turnIndex: number) => void;
   setEscobaOutcome: (playerId: string, escobaCount: number) => void;
@@ -117,6 +129,7 @@ interface Stubs {
   setMatchScores: (matchScores: Record<string, number>) => void;
   setSessionConfiguration: (configuration: GameConfiguration | null) => void;
   setState: (state: GameState | null) => void;
+  setAiDecision: (decision: AiPlayDecision) => void;
 }
 
 function createStubs(turnPhase: TurnPhase, selectedCard: Card | null): Stubs {
@@ -128,6 +141,7 @@ function createStubs(turnPhase: TurnPhase, selectedCard: Card | null): Stubs {
   const selectedTableCardsSignal = signal<Card[]>([tableCardA, tableCardB]);
   const canSubmitPlaySignal = signal(selectedCard !== null);
   const isCaptureSelectionValidSignal = signal(true);
+  let aiDecision: AiPlayDecision = { cardToPlay: handCard, captureSubset: [] };
 
   const initGameSpy = vi.fn((configuration: GameConfiguration) => {
     const playerOneName = configuration.playerNames[0] ?? 'Alice';
@@ -237,6 +251,11 @@ function createStubs(turnPhase: TurnPhase, selectedCard: Card | null): Stubs {
     navigate: navigateSpy as unknown as RouterPort['navigate'],
   };
 
+  const decideSpy = vi.fn(() => aiDecision);
+  const aiStrategyStub: AiStrategyPort = {
+    decide: decideSpy as unknown as AiStrategyPort['decide'],
+  };
+
   const setTurnPhase = (nextPhase: TurnPhase): void => {
     turnPhaseSignal.set(nextPhase);
   };
@@ -303,16 +322,22 @@ function createStubs(turnPhase: TurnPhase, selectedCard: Card | null): Stubs {
     stateSignal.set(state);
   };
 
+  const setAiDecision = (decision: AiPlayDecision): void => {
+    aiDecision = decision;
+  };
+
   return {
     engineStub,
     sessionStub,
     interactionStub,
     routerStub,
+    aiStrategyStub,
     initGameSpy,
     playCardSpy,
     confirmTurnSpy,
     startNextRoundSpy,
     navigateSpy,
+    decideSpy,
     setTurnPhase,
     setTurnIndex,
     setEscobaOutcome,
@@ -321,6 +346,7 @@ function createStubs(turnPhase: TurnPhase, selectedCard: Card | null): Stubs {
     setMatchScores,
     setSessionConfiguration,
     setState,
+    setAiDecision,
   };
 }
 
@@ -368,6 +394,18 @@ describe('GameTablePage', () => {
     return (candidate as () => T)();
   };
 
+  const setProtectedWritableSignal = <T>(propertyName: string, value: T): void => {
+    const candidate = (component as unknown as Record<string, unknown>)[propertyName] as
+      | ({ set?: (next: T) => void } & ((...args: never[]) => unknown))
+      | undefined;
+
+    if (!candidate || typeof candidate !== 'function' || typeof candidate.set !== 'function') {
+      throw new Error(`Expected writable signal "${propertyName}" on component instance`);
+    }
+
+    candidate.set(value);
+  };
+
   const getHudInstance = (): MatchContextHud => {
     const hudDebugElement = fixture.debugElement.query(By.directive(MatchContextHud));
     if (!hudDebugElement) {
@@ -375,6 +413,15 @@ describe('GameTablePage', () => {
     }
 
     return hudDebugElement.componentInstance as MatchContextHud;
+  };
+
+  const runAiTurnDirectly = (): Promise<void> => {
+    const runner = (component as unknown as { runAiTurn?: () => Promise<void> }).runAiTurn;
+    if (typeof runner !== 'function') {
+      throw new Error('Expected private runAiTurn method to exist on GameTablePage');
+    }
+
+    return runner.call(component);
   };
 
   const configureAndCreate = async (turnPhase: TurnPhase, selectedCard: Card | null) => {
@@ -387,6 +434,7 @@ describe('GameTablePage', () => {
         { provide: GameSession, useValue: stubs.sessionStub },
         { provide: TableInteractionState, useValue: stubs.interactionStub },
         { provide: Router, useValue: stubs.routerStub },
+        { provide: AiStrategyService, useValue: stubs.aiStrategyStub },
       ],
     }).compileComponents();
 
@@ -1470,5 +1518,663 @@ describe('GameTablePage', () => {
     expect(stubs.navigateSpy).toHaveBeenCalledTimes(1);
     expect(stubs.navigateSpy).toHaveBeenCalledWith(['/']);
     expect(stubs.sessionStub.configuration()).toEqual(sessionConfiguration);
+  });
+
+  it('T-8 / FR-7.1 - disables interaction when AI turn is in progress even in awaiting-card-play phase', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    expect(readProtectedSignal<boolean>('interactionEnabled')).toBe(true);
+
+    setProtectedWritableSignal('isAiTurnInProgress', true);
+    await fixture.whenStable();
+
+    expect(readProtectedSignal<boolean>('interactionEnabled')).toBe(false);
+  });
+
+  it('T-8 / AD-2 - resolves aiPlayerId to the second player UUID after initialization', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    stubs.setState({
+      deck: [],
+      table: [tableCardA],
+      players: [
+        {
+          id: 'human-id',
+          name: 'Alice',
+          hand: [handCard],
+          capturedPile: [],
+          escobaCount: 0,
+        },
+        {
+          id: 'laia-id',
+          name: 'Laia',
+          hand: [tableCardB],
+          capturedPile: [],
+          escobaCount: 0,
+        },
+      ],
+      turnIndex: 0,
+      roundNumber: 1,
+      matchScores: { 'human-id': 0, 'laia-id': 0 },
+      lastCapturerId: null,
+    });
+    await fixture.whenStable();
+
+    expect(readProtectedSignal<string | null | undefined>('aiPlayerId')).toBe('laia-id');
+  });
+
+  it('T-8 / FR-7.3 - tracks aiHandCardCount reactively as AI hand size changes', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    stubs.setState({
+      deck: [],
+      table: [tableCardA],
+      players: [
+        {
+          id: 'p1',
+          name: 'Alice',
+          hand: [handCard],
+          capturedPile: [],
+          escobaCount: 0,
+        },
+        {
+          id: 'p2',
+          name: 'Laia',
+          hand: [tableCardB, tableCardA],
+          capturedPile: [],
+          escobaCount: 0,
+        },
+      ],
+      turnIndex: 0,
+      roundNumber: 1,
+      matchScores: { p1: 0, p2: 0 },
+      lastCapturerId: null,
+    });
+    await fixture.whenStable();
+
+    expect(readProtectedSignal<number>('aiHandCardCount')).toBe(2);
+
+    stubs.setState({
+      deck: [],
+      table: [tableCardA],
+      players: [
+        {
+          id: 'p1',
+          name: 'Alice',
+          hand: [handCard],
+          capturedPile: [],
+          escobaCount: 0,
+        },
+        {
+          id: 'p2',
+          name: 'Laia',
+          hand: [tableCardB],
+          capturedPile: [],
+          escobaCount: 0,
+        },
+      ],
+      turnIndex: 0,
+      roundNumber: 1,
+      matchScores: { p1: 0, p2: 0 },
+      lastCapturerId: null,
+    });
+    await fixture.whenStable();
+
+    expect(readProtectedSignal<number>('aiHandCardCount')).toBe(1);
+  });
+
+  it('T-8 / AD-5 - exposes aiHighlightedTableCards derived from aiTurnAnimationState', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    setProtectedWritableSignal('aiTurnAnimationState', {
+      phase: 'capture-previewing',
+      selectedCardIndex: 0,
+      revealedCard: handCard,
+      highlightedTableCards: [tableCardA, tableCardB],
+    });
+    await fixture.whenStable();
+
+    expect(readProtectedSignal<Card[]>('aiHighlightedTableCards')).toEqual([
+      tableCardA,
+      tableCardB,
+    ]);
+  });
+
+  it('T-9 / FR-2.1 - automatically triggers AI play and confirm when Laia is active in awaiting-card-play', async () => {
+    vi.useFakeTimers();
+
+    try {
+      await configureAndCreate('awaiting-card-play', handCard);
+
+      const aiCard: Card = { suit: 'Oros', rank: '1', value: 1 };
+      stubs.setAiDecision({
+        cardToPlay: aiCard,
+        captureSubset: [tableCardA],
+      });
+
+      stubs.setState({
+        deck: [],
+        table: [tableCardA, tableCardB],
+        players: [
+          {
+            id: 'p1',
+            name: 'Alice',
+            hand: [handCard],
+            capturedPile: [],
+            escobaCount: 0,
+          },
+          {
+            id: 'p2',
+            name: 'Laia',
+            hand: [aiCard],
+            capturedPile: [],
+            escobaCount: 0,
+          },
+        ],
+        turnIndex: 1,
+        roundNumber: 1,
+        matchScores: { p1: 0, p2: 0 },
+        lastCapturerId: null,
+      });
+
+      await vi.advanceTimersByTimeAsync(2200);
+
+      expect(stubs.decideSpy).toHaveBeenCalledTimes(1);
+      expect(stubs.playCardSpy).toHaveBeenCalledWith(aiCard, [tableCardA]);
+      expect(stubs.confirmTurnSpy).toHaveBeenCalledTimes(1);
+      expect(readProtectedSignal<boolean>('isAiTurnInProgress')).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('T-9 / FR-6.3 - sets revealedCard before playCard for capture decisions', async () => {
+    vi.useFakeTimers();
+
+    try {
+      await configureAndCreate('awaiting-card-play', handCard);
+
+      const aiCard: Card = { suit: 'Espadas', rank: '7', value: 7 };
+      stubs.setAiDecision({
+        cardToPlay: aiCard,
+        captureSubset: [tableCardA],
+      });
+
+      stubs.playCardSpy.mockImplementationOnce(() => {
+        const animation = readProtectedSignal<AiTurnAnimationState>('aiTurnAnimationState');
+        expect(animation?.revealedCard).toEqual(aiCard);
+        expect(animation?.phase).toBe('resolving');
+        expect(animation?.highlightedTableCards).toEqual([tableCardA]);
+      });
+
+      stubs.setState({
+        deck: [],
+        table: [tableCardA],
+        players: [
+          {
+            id: 'p1',
+            name: 'Alice',
+            hand: [handCard],
+            capturedPile: [],
+            escobaCount: 0,
+          },
+          {
+            id: 'p2',
+            name: 'Laia',
+            hand: [aiCard],
+            capturedPile: [],
+            escobaCount: 0,
+          },
+        ],
+        turnIndex: 1,
+        roundNumber: 1,
+        matchScores: { p1: 0, p2: 0 },
+        lastCapturerId: null,
+      });
+
+      const aiRun = runAiTurnDirectly();
+      await vi.advanceTimersByTimeAsync(2200);
+      await aiRun;
+
+      expect(stubs.playCardSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('T-9 / FR-8.3 - never sets revealedCard for placement decisions', async () => {
+    vi.useFakeTimers();
+
+    try {
+      await configureAndCreate('awaiting-card-play', handCard);
+
+      const aiCard: Card = { suit: 'Bastos', rank: '2', value: 2 };
+      stubs.setAiDecision({
+        cardToPlay: aiCard,
+        captureSubset: [],
+      });
+
+      stubs.playCardSpy.mockImplementationOnce(() => {
+        const animation = readProtectedSignal<AiTurnAnimationState>('aiTurnAnimationState');
+        expect(animation?.revealedCard).toBeNull();
+      });
+
+      stubs.setState({
+        deck: [],
+        table: [tableCardA],
+        players: [
+          {
+            id: 'p1',
+            name: 'Alice',
+            hand: [handCard],
+            capturedPile: [],
+            escobaCount: 0,
+          },
+          {
+            id: 'p2',
+            name: 'Laia',
+            hand: [aiCard],
+            capturedPile: [],
+            escobaCount: 0,
+          },
+        ],
+        turnIndex: 1,
+        roundNumber: 1,
+        matchScores: { p1: 0, p2: 0 },
+        lastCapturerId: null,
+      });
+
+      const aiRun = runAiTurnDirectly();
+      await vi.advanceTimersByTimeAsync(1500);
+      await aiRun;
+
+      expect(stubs.playCardSpy).toHaveBeenCalledWith(aiCard, []);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('T-9 / TR-2.4 - resets AI in-progress lock and animation state to idle when playCard throws', async () => {
+    vi.useFakeTimers();
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    try {
+      await configureAndCreate('awaiting-card-play', handCard);
+
+      const aiCard: Card = { suit: 'Copas', rank: '4', value: 4 };
+      stubs.setAiDecision({
+        cardToPlay: aiCard,
+        captureSubset: [],
+      });
+
+      stubs.playCardSpy.mockImplementationOnce(() => {
+        stubs.setTurnPhase('awaiting-confirmation');
+        throw new Error('playCard failure');
+      });
+
+      stubs.setState({
+        deck: [],
+        table: [tableCardA],
+        players: [
+          {
+            id: 'p1',
+            name: 'Alice',
+            hand: [handCard],
+            capturedPile: [],
+            escobaCount: 0,
+          },
+          {
+            id: 'p2',
+            name: 'Laia',
+            hand: [aiCard],
+            capturedPile: [],
+            escobaCount: 0,
+          },
+        ],
+        turnIndex: 1,
+        roundNumber: 1,
+        matchScores: { p1: 0, p2: 0 },
+        lastCapturerId: null,
+      });
+      const aiRun = runAiTurnDirectly();
+      await vi.advanceTimersByTimeAsync(1200);
+      await aiRun;
+
+      expect(warnSpy).toHaveBeenCalledWith(
+        'AI turn orchestration failed',
+        expect.objectContaining({
+          aiPlayerId: 'p2',
+          difficulty: 'Easy',
+          errorName: 'Error',
+        }),
+      );
+      expect(readProtectedSignal<boolean>('isAiTurnInProgress')).toBe(false);
+      expect(stubs.confirmTurnSpy).not.toHaveBeenCalled();
+      expect(readProtectedSignal<AiTurnAnimationState>('aiTurnAnimationState')).toEqual(
+        AI_TURN_IDLE,
+      );
+    } finally {
+      warnSpy.mockRestore();
+      vi.useRealTimers();
+    }
+  });
+
+  it('T-9 / FR-6.1-FR-6.5 - progresses animation phases through card-selected and capture-previewing before resolving', async () => {
+    vi.useFakeTimers();
+
+    try {
+      await configureAndCreate('awaiting-card-play', handCard);
+
+      const aiCard: Card = { suit: 'Oros', rank: '4', value: 4 };
+      stubs.setAiDecision({
+        cardToPlay: aiCard,
+        captureSubset: [tableCardA],
+      });
+
+      stubs.setState({
+        deck: [],
+        table: [tableCardA],
+        players: [
+          {
+            id: 'p1',
+            name: 'Alice',
+            hand: [handCard],
+            capturedPile: [],
+            escobaCount: 0,
+          },
+          {
+            id: 'p2',
+            name: 'Laia',
+            hand: [aiCard],
+            capturedPile: [],
+            escobaCount: 0,
+          },
+        ],
+        turnIndex: 1,
+        roundNumber: 1,
+        matchScores: { p1: 0, p2: 0 },
+        lastCapturerId: null,
+      });
+
+      const aiRun = runAiTurnDirectly();
+      await vi.runAllTicks();
+      expect(readProtectedSignal<AiTurnAnimationState>('aiTurnAnimationState')?.phase).toBe(
+        'deliberating',
+      );
+
+      await vi.advanceTimersByTimeAsync(600);
+      expect(readProtectedSignal<AiTurnAnimationState>('aiTurnAnimationState')?.phase).toBe(
+        'card-selected',
+      );
+
+      await vi.advanceTimersByTimeAsync(600);
+      expect(readProtectedSignal<AiTurnAnimationState>('aiTurnAnimationState')).toEqual({
+        phase: 'capture-previewing',
+        selectedCardIndex: 0,
+        revealedCard: aiCard,
+        highlightedTableCards: [tableCardA],
+      });
+
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(readProtectedSignal<AiTurnAnimationState>('aiTurnAnimationState')).toEqual(
+        AI_TURN_IDLE,
+      );
+      await aiRun;
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('T-9 / FR-2.3 - does not auto-run AI turn when phase is not awaiting-card-play', async () => {
+    await configureAndCreate('awaiting-confirmation', handCard);
+
+    const aiCard: Card = { suit: 'Bastos', rank: '5', value: 5 };
+    stubs.setAiDecision({
+      cardToPlay: aiCard,
+      captureSubset: [],
+    });
+
+    stubs.setState({
+      deck: [],
+      table: [tableCardA],
+      players: [
+        {
+          id: 'p1',
+          name: 'Alice',
+          hand: [handCard],
+          capturedPile: [],
+          escobaCount: 0,
+        },
+        {
+          id: 'p2',
+          name: 'Laia',
+          hand: [aiCard],
+          capturedPile: [],
+          escobaCount: 0,
+        },
+      ],
+      turnIndex: 1,
+      roundNumber: 1,
+      matchScores: { p1: 0, p2: 0 },
+      lastCapturerId: null,
+    });
+    await fixture.whenStable();
+
+    expect(stubs.decideSpy).not.toHaveBeenCalled();
+    expect(stubs.playCardSpy).not.toHaveBeenCalled();
+  });
+
+  it('T-9 / FR-7.2 - prevents double-trigger while AI turn is already in progress', async () => {
+    vi.useFakeTimers();
+
+    try {
+      await configureAndCreate('awaiting-card-play', handCard);
+
+      const aiCard: Card = { suit: 'Espadas', rank: '3', value: 3 };
+      stubs.setAiDecision({
+        cardToPlay: aiCard,
+        captureSubset: [],
+      });
+
+      stubs.setState({
+        deck: [],
+        table: [tableCardA],
+        players: [
+          {
+            id: 'p1',
+            name: 'Alice',
+            hand: [handCard],
+            capturedPile: [],
+            escobaCount: 0,
+          },
+          {
+            id: 'p2',
+            name: 'Laia',
+            hand: [aiCard],
+            capturedPile: [],
+            escobaCount: 0,
+          },
+        ],
+        turnIndex: 1,
+        roundNumber: 1,
+        matchScores: { p1: 0, p2: 0 },
+        lastCapturerId: null,
+      });
+
+      const firstRun = runAiTurnDirectly();
+      const secondRun = runAiTurnDirectly();
+      await vi.runAllTicks();
+
+      expect(readProtectedSignal<boolean>('isAiTurnInProgress')).toBe(true);
+      expect(stubs.decideSpy).toHaveBeenCalledTimes(0);
+
+      await vi.advanceTimersByTimeAsync(600);
+      expect(stubs.decideSpy).toHaveBeenCalledTimes(1);
+
+      await vi.advanceTimersByTimeAsync(1600);
+      await firstRun;
+      await secondRun;
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('T-9 / FR-2.2 - re-triggers AI turn when it remains active after automatic confirm', async () => {
+    vi.useFakeTimers();
+
+    try {
+      await configureAndCreate('awaiting-card-play', handCard);
+
+      const aiCard: Card = { suit: 'Copas', rank: '6', value: 6 };
+      stubs.setAiDecision({
+        cardToPlay: aiCard,
+        captureSubset: [],
+      });
+
+      stubs.confirmTurnSpy.mockImplementationOnce(() => {
+        stubs.setTurnPhase('awaiting-card-play');
+      });
+
+      stubs.setState({
+        deck: [],
+        table: [tableCardA],
+        players: [
+          {
+            id: 'p1',
+            name: 'Alice',
+            hand: [handCard],
+            capturedPile: [],
+            escobaCount: 0,
+          },
+          {
+            id: 'p2',
+            name: 'Laia',
+            hand: [aiCard],
+            capturedPile: [],
+            escobaCount: 0,
+          },
+        ],
+        turnIndex: 1,
+        roundNumber: 1,
+        matchScores: { p1: 0, p2: 0 },
+        lastCapturerId: null,
+      });
+
+      await vi.advanceTimersByTimeAsync(3200);
+
+      expect(stubs.decideSpy.mock.calls.length).toBeGreaterThanOrEqual(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('T-9 / FR-6.7 - keeps placement animation duration within 1.5 to 3 seconds', async () => {
+    vi.useFakeTimers();
+
+    try {
+      await configureAndCreate('awaiting-card-play', handCard);
+
+      const aiCard: Card = { suit: 'Oros', rank: '2', value: 2 };
+      stubs.setAiDecision({
+        cardToPlay: aiCard,
+        captureSubset: [],
+      });
+
+      stubs.setState({
+        deck: [],
+        table: [tableCardA],
+        players: [
+          {
+            id: 'p1',
+            name: 'Alice',
+            hand: [handCard],
+            capturedPile: [],
+            escobaCount: 0,
+          },
+          {
+            id: 'p2',
+            name: 'Laia',
+            hand: [aiCard],
+            capturedPile: [],
+            escobaCount: 0,
+          },
+        ],
+        turnIndex: 1,
+        roundNumber: 1,
+        matchScores: { p1: 0, p2: 0 },
+        lastCapturerId: null,
+      });
+
+      const aiRun = runAiTurnDirectly();
+      expect(readProtectedSignal<AiTurnAnimationState>('aiTurnAnimationState')?.phase).toBe(
+        'deliberating',
+      );
+
+      await vi.advanceTimersByTimeAsync(1499);
+      expect(readProtectedSignal<AiTurnAnimationState>('aiTurnAnimationState')).not.toEqual(
+        AI_TURN_IDLE,
+      );
+
+      await vi.advanceTimersByTimeAsync(1);
+      await aiRun;
+      expect(readProtectedSignal<AiTurnAnimationState>('aiTurnAnimationState')).toEqual(
+        AI_TURN_IDLE,
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('T-9 / SC-12 - keeps capture animation duration within 1.5 to 3 seconds', async () => {
+    vi.useFakeTimers();
+
+    try {
+      await configureAndCreate('awaiting-card-play', handCard);
+
+      const aiCard: Card = { suit: 'Bastos', rank: '7', value: 7 };
+      stubs.setAiDecision({
+        cardToPlay: aiCard,
+        captureSubset: [tableCardA],
+      });
+
+      stubs.setState({
+        deck: [],
+        table: [tableCardA],
+        players: [
+          {
+            id: 'p1',
+            name: 'Alice',
+            hand: [handCard],
+            capturedPile: [],
+            escobaCount: 0,
+          },
+          {
+            id: 'p2',
+            name: 'Laia',
+            hand: [aiCard],
+            capturedPile: [],
+            escobaCount: 0,
+          },
+        ],
+        turnIndex: 1,
+        roundNumber: 1,
+        matchScores: { p1: 0, p2: 0 },
+        lastCapturerId: null,
+      });
+
+      const aiRun = runAiTurnDirectly();
+      await vi.advanceTimersByTimeAsync(2199);
+      expect(readProtectedSignal<AiTurnAnimationState>('aiTurnAnimationState')).not.toEqual(
+        AI_TURN_IDLE,
+      );
+
+      await vi.advanceTimersByTimeAsync(1);
+      await aiRun;
+      expect(readProtectedSignal<AiTurnAnimationState>('aiTurnAnimationState')).toEqual(
+        AI_TURN_IDLE,
+      );
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
