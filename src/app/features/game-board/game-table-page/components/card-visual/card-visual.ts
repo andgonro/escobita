@@ -7,15 +7,28 @@ import { mapCardToVisual } from '../../../utils/card-asset-mapper';
   imports: [],
   templateUrl: './card-visual.html',
   styleUrl: './card-visual.scss',
+  host: {
+    '[attr.aria-label]': 'semanticLabel()',
+    '[class.card-visual--selected]': 'selectedSignal()',
+  },
 })
 export class CardVisual {
   private readonly cardState = signal<Card | null>(null);
   private readonly selectedState = signal(false);
+  private readonly faceDownState = signal(false);
 
   protected readonly cardSignal: Signal<Card | null> = this.cardState.asReadonly();
   protected readonly selectedSignal: Signal<boolean> = this.selectedState.asReadonly();
+  protected readonly faceDownSignal: Signal<boolean> = this.faceDownState.asReadonly();
 
   protected readonly mappedAsset = computed(() => {
+    if (this.faceDownSignal()) {
+      return {
+        assetPath: '/cards/Card_Back.png',
+        semanticLabel: 'Carta oculta',
+      };
+    }
+
     const card = this.cardSignal();
 
     if (!card) {
@@ -47,5 +60,14 @@ export class CardVisual {
 
   get selected(): boolean {
     return this.selectedState();
+  }
+
+  @Input()
+  set faceDown(value: boolean) {
+    this.faceDownState.set(value);
+  }
+
+  get faceDown(): boolean {
+    return this.faceDownState();
   }
 }

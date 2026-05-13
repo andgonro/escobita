@@ -8,6 +8,7 @@ import { CardVisual } from './card-visual';
 type CardVisualTestState = CardVisual & {
   card: Card | null;
   selected: boolean;
+  faceDown: boolean;
 };
 
 const sampleCard: Card = { suit: 'Oros', rank: '1', value: 1 };
@@ -70,5 +71,49 @@ describe('CardVisual', () => {
     const visual = fixture.nativeElement.querySelector('[data-testid="card-visual"]');
 
     expect(visual?.classList.contains('card-visual--selected')).toBe(true);
+  });
+
+  it('renders face-down semantics when faceDown is enabled', async () => {
+    testState.card = sampleCard;
+    testState.faceDown = true;
+    await fixture.whenStable();
+
+    const visual = fixture.nativeElement.querySelector(
+      '[data-testid="card-visual"]',
+    ) as HTMLElement | null;
+    const cardImage = fixture.nativeElement.querySelector(
+      '[data-testid="card-visual-image"]',
+    ) as HTMLImageElement | null;
+
+    expect(visual?.getAttribute('aria-label')).toBe('Carta oculta');
+    expect(cardImage?.getAttribute('src')).toContain('/cards/Card_Back.png');
+    expect(cardImage?.getAttribute('alt')).toBe('Carta oculta');
+  });
+
+  it('prioritizes faceDown rendering over provided card mapping', async () => {
+    testState.card = sampleCard;
+    testState.faceDown = true;
+    await fixture.whenStable();
+
+    const cardImage = fixture.nativeElement.querySelector(
+      '[data-testid="card-visual-image"]',
+    ) as HTMLImageElement | null;
+
+    expect(cardImage?.getAttribute('src')).toContain('/cards/Card_Back.png');
+    expect(cardImage?.getAttribute('src')).not.toContain('/cards/Oros_1.png');
+  });
+
+  it('keeps selected styling when faceDown is enabled', async () => {
+    testState.card = sampleCard;
+    testState.faceDown = true;
+    testState.selected = true;
+    await fixture.whenStable();
+
+    const visual = fixture.nativeElement.querySelector(
+      '[data-testid="card-visual"]',
+    ) as HTMLElement | null;
+
+    expect(visual?.classList.contains('card-visual--selected')).toBe(true);
+    expect(visual?.getAttribute('aria-label')).toBe('Carta oculta');
   });
 });

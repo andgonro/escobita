@@ -16,6 +16,23 @@
     >
       <p class="opponent-name">{{ opponent.name }}</p>
       <p class="opponent-captured">Captured: {{ opponent.capturedPile.length }}</p>
+
+      @if (isAiOpponent(opponent) && aiHandCardCountSignal() > 0) {
+        <div
+          class="ai-hand-zone"
+          data-testid="ai-hand-zone"
+          [class.ai-hand-zone--active]="isAiHandActive()"
+        >
+          @for (aiCardIndex of aiHandIndexes(); track aiCardIndex) {
+            <app-card-visual
+              [attr.data-testid]="'ai-hand-card-' + aiCardIndex"
+              [card]="aiCardAt(aiCardIndex)"
+              [faceDown]="isAiCardFaceDown(aiCardIndex)"
+              [selected]="isAiCardSelected(aiCardIndex)"
+            ></app-card-visual>
+          }
+        </div>
+      }
     </article>
   }
 </section>

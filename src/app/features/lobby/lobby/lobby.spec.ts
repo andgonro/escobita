@@ -235,7 +235,70 @@ describe('Lobby', () => {
 
     expect(setConfigurationSpy).toHaveBeenCalledWith({
       mode: 'Single Player',
-      playerNames: ['Jugador-1'],
+      playerNames: ['Jugador-1', 'Laia'],
+      playerCount: 2,
+      aiDifficulty: 'Easy',
+    });
+    expect(navigateSpy).toHaveBeenCalledWith(['/partida']);
+  });
+
+  it('stores the entered single player name and Laia when starting a game', async () => {
+    const singleNameInput = queryByTestId<HTMLInputElement>('single-player-name');
+    const aiDifficulty = queryByTestId<HTMLSelectElement>('ai-difficulty');
+    const playButton = queryByTestId<HTMLButtonElement>('play-button');
+
+    expect(singleNameInput).not.toBeNull();
+    expect(aiDifficulty).not.toBeNull();
+    expect(playButton).not.toBeNull();
+
+    if (!singleNameInput || !aiDifficulty || !playButton) {
+      throw new Error('Expected single player controls to be available');
+    }
+
+    setInputValue(singleNameInput, 'Carlos');
+    setSelectValue(aiDifficulty, 'Hard');
+
+    playButton.click();
+    await fixture.whenStable();
+
+    expect(setConfigurationSpy).toHaveBeenCalledWith({
+      mode: 'Single Player',
+      playerNames: ['Carlos', 'Laia'],
+      playerCount: 2,
+      aiDifficulty: 'Hard',
+    });
+    expect(navigateSpy).toHaveBeenCalledWith(['/partida']);
+  });
+
+  it('keeps multiplayer configuration payload unchanged when starting multiplayer', async () => {
+    const multiplayerMode = queryByTestId<HTMLInputElement>('mode-multiplayer');
+    const playButton = queryByTestId<HTMLButtonElement>('play-button');
+
+    expect(multiplayerMode).not.toBeNull();
+    expect(playButton).not.toBeNull();
+
+    multiplayerMode?.click();
+    await fixture.whenStable();
+
+    const playerOne = queryByTestId<HTMLInputElement>('multiplayer-name-1');
+    const playerTwo = queryByTestId<HTMLInputElement>('multiplayer-name-2');
+
+    expect(playerOne).not.toBeNull();
+    expect(playerTwo).not.toBeNull();
+
+    if (!playerOne || !playerTwo || !playButton) {
+      throw new Error('Expected multiplayer controls to be available');
+    }
+
+    setInputValue(playerOne, 'Ana');
+    setInputValue(playerTwo, 'Luis');
+
+    playButton.click();
+    await fixture.whenStable();
+
+    expect(setConfigurationSpy).toHaveBeenCalledWith({
+      mode: 'Multiplayer',
+      playerNames: ['Ana', 'Luis'],
       playerCount: 2,
       aiDifficulty: 'Easy',
     });

@@ -157,7 +157,7 @@ export class Lobby {
     if (this.isSinglePlayerMode()) {
       return {
         mode: 'Single Player',
-        playerNames: [this.singlePlayerForm.name().value()],
+        playerNames: [this.singlePlayerForm.name().value(), 'Laia'],
         playerCount: 2,
         aiDifficulty: this.aiDifficulty(),
       };
