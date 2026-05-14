@@ -221,6 +221,10 @@ export class GameTablePage {
   });
 
   protected readonly activeHandCards = computed(() => {
+    if (this.gameSession.configuration()?.mode === 'Single Player') {
+      return this.gameEngine.state()?.players[0]?.hand ?? [];
+    }
+
     return this.gameEngine.activePlayer()?.hand ?? [];
   });
 

@@ -1,0 +1,22 @@
+
+> escobita@0.0.0 build
+> ng build
+
+[33mÔØ»[39m Building...
+[32mÔ£ö[39m Building...
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m          [2m | [22m [1mRaw size[22m[2m | [22m[1mEstimated transfer size[22m
+[32mchunk-3R3OKHE6.js[39m  [2m | [22m[2m-[22m              [2m | [22m[36m217.30 kB[39m[2m | [22m               [36m59.49 kB[39m
+[32mchunk-FCUCY24D.js[39m  [2m | [22m[2m-[22m              [2m | [22m [36m13.99 kB[39m[2m | [22m                [36m3.38 kB[39m
+[32mstyles-XYGOWLRY.css[39m[2m | [22m[2mstyles[22m         [2m | [22m  [36m9.36 kB[39m[2m | [22m              [36m901 bytes[39m
+[32mmain-EOIDMAH2.js[39m   [2m | [22m[2mmain[22m           [2m | [22m  [36m1.33 kB[39m[2m | [22m              [36m689 bytes[39m
+
+[1m [22m                  [2m | [22m[1mInitial total[22m  [2m | [22m[1m241.99 kB[22m[2m | [22m               [1m64.47 kB[22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m          [2m | [22m [1mRaw size[22m[2m | [22m[1mEstimated transfer size[22m
+[32mchunk-NM2LRIAZ.js[39m  [2m | [22m[2mgame-table-page[22m[2m | [22m [36m56.25 kB[39m[2m | [22m               [36m11.66 kB[39m
+[32mchunk-LJP7T5DZ.js[39m  [2m | [22m[2mlobby[22m          [2m | [22m [36m55.23 kB[39m[2m | [22m               [36m13.97 kB[39m
+
+Application bundle generation complete. [8.017 seconds] - 2026-05-14T11:37:19.663Z
+
+Output location: D:\Personal\websites\jokuak\escobita\dist\escobita
+
