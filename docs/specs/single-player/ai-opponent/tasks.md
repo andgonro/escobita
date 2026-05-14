@@ -226,6 +226,7 @@ graph LR
 ### T-10: Wire AI animation state to OpponentZones and CenterTableZone in GameTablePage template
 
 - **Description:** Update the `GameTablePage` template to pass the new animation-related inputs to child components. Pass `aiHandCardCount` and `aiTurnAnimationState` to `OpponentZones`. Change the `selectedTableCards` binding on `CenterTableZone` to a computed that returns `aiHighlightedTableCards` when `aiTurnAnimationState.phase === 'capture-previewing'`, and the human's selected table cards otherwise.
+- **Status:** ✅ Implemented
 - **Architectural Decision:** AD-5, AD-8
 - **Depends on:** T-3, T-8
 - **Files affected:** `src/app/features/game-board/game-table-page/game-table-page.html`, `src/app/features/game-board/game-table-page/game-table-page.ts` (new computed for blended selectedTableCards)
@@ -243,6 +244,7 @@ graph LR
 ### T-11: Implement accessibility announcements for Laia's actions
 
 - **Description:** Inside `runAiTurn()`, after `confirmTurn()` returns, call the existing `announce()` method with an appropriate message. Detect escoba by comparing Laia's `escobaCount` before and after `playCard()`. Three announcement cases: placement ("Laia colocó una carta en la mesa"), capture without escoba ("Laia capturó N cartas de la mesa"), escoba ("¡Escoba! Laia limpió la mesa"). Card identity must not be mentioned in any announcement.
+- **Status:** ✅ Implemented
 - **Architectural Decision:** FR-9, US-10
 - **Depends on:** T-9, T-10
 - **Files affected:** `src/app/features/game-board/game-table-page/game-table-page.ts`
@@ -261,6 +263,7 @@ graph LR
 ### T-12: Extend E2E fixture mechanism to support AI-deterministic test scenarios
 
 - **Description:** Add new named fixtures to `GameEngine.applyE2eFixture()` to support deterministic E2E testing of AI turn scenarios. At minimum, two new fixtures are needed: one where it is Laia's turn with a known hand containing a guaranteed escoba opportunity (to verify SC-23/SC-28/SC-33), and one where it is Laia's turn with a non-escoba capture available (to verify SC-24/SC-29/SC-34). The fixtures must set up both players' hands, the table, and the turn index pointing to Laia. The existing five fixture names and their implementations are preserved unchanged.
+- **Status:** ✅ Implemented
 - **Architectural Decision:** TR-1.6, NFR-3.2
 - **Depends on:** T-11
 - **Files affected:** `src/app/core/services/game-engine.ts` (new fixture names added to the `applyE2eFixture` switch), `src/main.ts` (no change expected — the test API already exposes `applyEngineFixture`)
@@ -278,6 +281,7 @@ graph LR
 ### T-13: Unit tests for AiStrategyService and GameTablePage AI orchestration
 
 - **Description:** Write Vitest unit tests for the full `AiStrategyService`, covering all three difficulty strategies with deterministic random seams. Also write unit tests for the new `GameTablePage` signal logic: `interactionEnabled` with `isAiTurnInProgress`, the `aiPlayerId` derivation, and the `aiHandCardCount` computed. Tests must be independent of browser E2E infrastructure.
+- **Status:** ✅ Implemented
 - **Architectural Decision:** NFR-3.1, AD-10
 - **Depends on:** T-4, T-5, T-6, T-7, T-9
 - **Files affected (new):** `src/app/core/services/ai-strategy.service.spec.ts`
@@ -297,6 +301,7 @@ graph LR
 ### T-14: E2E tests for Single Player AI turn flow (Cypress / BDD)
 
 - **Description:** Create a new Cypress feature file and step-definition file covering the BDD scenarios from `bdd-test.md` that require E2E testing. Priority scenarios: SC-06 (AI turn fires automatically), SC-10 (full capture animation), SC-11 (placement animation), SC-14–SC-16 (interaction locking and re-enabling), SC-18 (face-down cards), SC-19 (card revealed on capture), SC-23/SC-28/SC-33 (escoba priority across all difficulties), SC-43–SC-47 (full match flow). Use the new E2E fixtures from T-12 for deterministic AI-turn scenarios. Use `cy.clock()` and `cy.tick()` to fast-forward animation delays in tests where timing is not the subject under test.
+- **Status:** ✅ Implemented
 - **Architectural Decision:** NFR-3.2, TR-1.6
 - **Depends on:** T-11, T-12
 - **Files affected (new):** `cypress/e2e/single-player-ai.feature`, `cypress/e2e/single-player-ai.ts`

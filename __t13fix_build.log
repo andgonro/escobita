@@ -1,0 +1,22 @@
+
+> escobita@0.0.0 build
+> ng build
+
+[33mÔØ»[39m Building...
+[32mÔ£ö[39m Building...
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m          [2m | [22m [1mRaw size[22m[2m | [22m[1mEstimated transfer size[22m
+[32mchunk-ESPEUEBW.js[39m  [2m | [22m[2m-[22m              [2m | [22m[36m217.29 kB[39m[2m | [22m               [36m59.50 kB[39m
+[32mchunk-5APLTKX5.js[39m  [2m | [22m[2m-[22m              [2m | [22m [36m12.64 kB[39m[2m | [22m                [36m3.32 kB[39m
+[32mstyles-XYGOWLRY.css[39m[2m | [22m[2mstyles[22m         [2m | [22m  [36m9.36 kB[39m[2m | [22m              [36m901 bytes[39m
+[32mmain-V5U2MS4T.js[39m   [2m | [22m[2mmain[22m           [2m | [22m  [36m1.33 kB[39m[2m | [22m              [36m680 bytes[39m
+
+[1m [22m                  [2m | [22m[1mInitial total[22m  [2m | [22m[1m240.62 kB[22m[2m | [22m               [1m64.41 kB[22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m          [2m | [22m [1mRaw size[22m[2m | [22m[1mEstimated transfer size[22m
+[32mchunk-6VGCEMB5.js[39m  [2m | [22m[2mgame-table-page[22m[2m | [22m [36m55.31 kB[39m[2m | [22m               [36m11.51 kB[39m
+[32mchunk-JH57NKNP.js[39m  [2m | [22m[2mlobby[22m          [2m | [22m [36m55.23 kB[39m[2m | [22m               [36m13.93 kB[39m
+
+Application bundle generation complete. [7.101 seconds] - 2026-05-14T07:25:38.638Z
+
+Output location: D:\Personal\websites\jokuak\escobita\dist\escobita
+

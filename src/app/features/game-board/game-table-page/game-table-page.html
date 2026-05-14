@@ -37,7 +37,11 @@
     [attr.inert]="showTurnHandoffOverlay() || showMatchOverOverlay() ? '' : null"
   >
     <div class="layout-opponents" data-testid="layout-opponents">
-      <app-opponent-zones [opponents]="opponents()"></app-opponent-zones>
+      <app-opponent-zones
+        [opponents]="opponents()"
+        [aiHandCardCount]="aiHandCardCount()"
+        [aiTurnAnimationState]="aiTurnAnimationState()"
+      ></app-opponent-zones>
     </div>
 
     <div class="layout-center" data-testid="layout-center">
@@ -62,6 +66,8 @@
   <app-play-action-bar
     [canSubmitPlay]="canSubmitPlay()"
     [isCaptureSelectionValid]="isCaptureSelectionValid()"
+    [interactionEnabled]="interactionEnabled()"
+    [submitLocked]="submitActionLocked()"
     [turnPhase]="turnPhase()"
     [validationMessage]="validationMessage()"
     [multiplayer]="isMultiplayer()"

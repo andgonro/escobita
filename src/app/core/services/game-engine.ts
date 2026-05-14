@@ -121,9 +121,13 @@ function freezeGameState(state: GameState): GameState {
 export type EngineE2eFixture =
   | 'escoba-visibility'
   | 'round-winner-visibility'
+  | 'round-winner-visibility-ai'
   | 'round-co-winner-visibility'
   | 'round-complete-no-winner'
-  | 'pre-final-turn-no-winner';
+  | 'pre-final-turn-no-winner'
+  | 'ai-turn-escoba'
+  | 'ai-turn-capture'
+  | 'ai-turn-placement';
 
 export interface EngineE2eFixtureResult {
   escobaPlayerName?: string;
@@ -231,6 +235,36 @@ export class GameEngine {
           roundNumber: roundResult.roundNumber,
           winnerName: winner.name,
           topScore: roundResult.playerScores[0]?.total ?? 0,
+        };
+      }
+
+      case 'round-winner-visibility-ai': {
+        const winner = state.players[1] ?? null;
+        if (!winner) {
+          throw new Error('[GameEngine] AI winner fixture requires at least two players.');
+        }
+
+        const roundResult: RoundResult = {
+          roundNumber: state.roundNumber + 41,
+          playerScores: state.players.map((player, playerIndex) => ({
+            playerId: player.id,
+            escobas: playerIndex === 1 ? 2 : 0,
+            mostCards: playerIndex === 1 ? 1 : 0,
+            mostOros: playerIndex === 1 ? 1 : 0,
+            mostSevens: playerIndex === 1 ? 1 : 0,
+            sieteDiVelo: 0,
+            total: playerIndex === 1 ? 13 : 1,
+          })),
+        };
+
+        this._roundResult.set(roundResult);
+        this._matchWinner.set([winner]);
+        this._turnPhase.set('awaiting-card-play');
+
+        return {
+          roundNumber: roundResult.roundNumber,
+          winnerName: winner.name,
+          topScore: roundResult.playerScores[1]?.total ?? 0,
         };
       }
 
@@ -427,6 +461,218 @@ export class GameEngine {
         return {
           roundNumber: preFinalTurnState.roundNumber,
           topScore: 0,
+        };
+      }
+
+      case 'ai-turn-escoba': {
+        const humanPlayer = state.players[0] ?? null;
+        const aiPlayer = state.players[1] ?? null;
+        if (!humanPlayer || !aiPlayer) {
+          throw new Error('[GameEngine] ai-turn fixtures require at least two players.');
+        }
+
+        const aiEscobaHand: Card[] = [
+          { suit: 'Bastos', rank: '3', value: 3 },
+          { suit: 'Oros', rank: '7', value: 7 },
+          { suit: 'Copas', rank: '1', value: 1 },
+        ];
+        const aiEscobaTable: Card[] = [
+          { suit: 'Espadas', rank: '5', value: 5 },
+          { suit: 'Oros', rank: '4', value: 4 },
+          { suit: 'Copas', rank: '3', value: 3 },
+        ];
+
+        const players: Player[] = state.players.map((player, index): Player => {
+          if (index === 0) {
+            return {
+              ...player,
+              hand: [{ suit: 'Bastos', rank: '6', value: 6 }],
+              capturedPile: [],
+              escobaCount: 0,
+            };
+          }
+
+          if (index === 1) {
+            return {
+              ...player,
+              name: 'Laia',
+              hand: aiEscobaHand,
+              capturedPile: [],
+              escobaCount: 0,
+            };
+          }
+
+          return {
+            ...player,
+            hand: [],
+            capturedPile: [],
+            escobaCount: 0,
+          };
+        });
+
+        const matchScores = players.reduce<Record<string, number>>((scoreMap, player) => {
+          scoreMap[player.id] = 0;
+          return scoreMap;
+        }, {});
+
+        const escobaTurnState: GameState = {
+          ...state,
+          deck: [],
+          table: aiEscobaTable,
+          players,
+          turnIndex: 1,
+          roundNumber: 1,
+          matchScores,
+          lastCapturerId: null,
+        };
+
+        this._state.set(freezeGameState(escobaTurnState));
+        this._roundResult.set(null);
+        this._matchWinner.set(null);
+        this._turnPhase.set('awaiting-card-play');
+
+        return {
+          roundNumber: escobaTurnState.roundNumber,
+        };
+      }
+
+      case 'ai-turn-capture': {
+        const humanPlayer = state.players[0] ?? null;
+        const aiPlayer = state.players[1] ?? null;
+        if (!humanPlayer || !aiPlayer) {
+          throw new Error('[GameEngine] ai-turn fixtures require at least two players.');
+        }
+
+        const aiCaptureHand: Card[] = [
+          { suit: 'Oros', rank: 'Caballo', value: 9 },
+          { suit: 'Copas', rank: '4', value: 4 },
+          { suit: 'Espadas', rank: '1', value: 1 },
+        ];
+        const aiCaptureTable: Card[] = [
+          { suit: 'Bastos', rank: '6', value: 6 },
+          { suit: 'Oros', rank: '4', value: 4 },
+          { suit: 'Copas', rank: '2', value: 2 },
+        ];
+
+        const players: Player[] = state.players.map((player, index): Player => {
+          if (index === 0) {
+            return {
+              ...player,
+              hand: [{ suit: 'Bastos', rank: '5', value: 5 }],
+              capturedPile: [],
+              escobaCount: 0,
+            };
+          }
+
+          if (index === 1) {
+            return {
+              ...player,
+              name: 'Laia',
+              hand: aiCaptureHand,
+              capturedPile: [],
+              escobaCount: 0,
+            };
+          }
+
+          return {
+            ...player,
+            hand: [],
+            capturedPile: [],
+            escobaCount: 0,
+          };
+        });
+
+        const matchScores = players.reduce<Record<string, number>>((scoreMap, player) => {
+          scoreMap[player.id] = 0;
+          return scoreMap;
+        }, {});
+
+        const captureTurnState: GameState = {
+          ...state,
+          deck: [],
+          table: aiCaptureTable,
+          players,
+          turnIndex: 1,
+          roundNumber: 1,
+          matchScores,
+          lastCapturerId: null,
+        };
+
+        this._state.set(freezeGameState(captureTurnState));
+        this._roundResult.set(null);
+        this._matchWinner.set(null);
+        this._turnPhase.set('awaiting-card-play');
+
+        return {
+          roundNumber: captureTurnState.roundNumber,
+        };
+      }
+
+      case 'ai-turn-placement': {
+        const humanPlayer = state.players[0] ?? null;
+        const aiPlayer = state.players[1] ?? null;
+        if (!humanPlayer || !aiPlayer) {
+          throw new Error('[GameEngine] ai-turn fixtures require at least two players.');
+        }
+
+        const aiPlacementHand: Card[] = [{ suit: 'Copas', rank: 'Sota', value: 8 }];
+        const aiPlacementTable: Card[] = [
+          { suit: 'Bastos', rank: '1', value: 1 },
+          { suit: 'Oros', rank: '1', value: 1 },
+          { suit: 'Espadas', rank: '1', value: 1 },
+        ];
+
+        const players: Player[] = state.players.map((player, index): Player => {
+          if (index === 0) {
+            return {
+              ...player,
+              hand: [{ suit: 'Bastos', rank: '5', value: 5 }],
+              capturedPile: [],
+              escobaCount: 0,
+            };
+          }
+
+          if (index === 1) {
+            return {
+              ...player,
+              name: 'Laia',
+              hand: aiPlacementHand,
+              capturedPile: [],
+              escobaCount: 0,
+            };
+          }
+
+          return {
+            ...player,
+            hand: [],
+            capturedPile: [],
+            escobaCount: 0,
+          };
+        });
+
+        const matchScores = players.reduce<Record<string, number>>((scoreMap, player) => {
+          scoreMap[player.id] = 0;
+          return scoreMap;
+        }, {});
+
+        const placementTurnState: GameState = {
+          ...state,
+          deck: [],
+          table: aiPlacementTable,
+          players,
+          turnIndex: 1,
+          roundNumber: 1,
+          matchScores,
+          lastCapturerId: null,
+        };
+
+        this._state.set(freezeGameState(placementTurnState));
+        this._roundResult.set(null);
+        this._matchWinner.set(null);
+        this._turnPhase.set('awaiting-card-play');
+
+        return {
+          roundNumber: placementTurnState.roundNumber,
         };
       }
 

@@ -1,7 +1,7 @@
 import {
   Component,
   Injector,
-  afterNextRender,
+  ChangeDetectorRef,
   computed,
   effect,
   inject,
@@ -70,6 +70,7 @@ interface MatchScoreEntry {
 })
 export class GameTablePage {
   private readonly injector = inject(Injector);
+  private readonly changeDetectorRef = inject(ChangeDetectorRef);
   private readonly gameEngine = inject(GameEngine);
   private readonly gameSession = inject(GameSession);
   private readonly aiStrategyService = inject(AiStrategyService);
@@ -135,7 +136,15 @@ export class GameTablePage {
   protected readonly validationMessage = signal('');
   protected readonly liveAnnouncement = this.liveAnnouncementState.asReadonly();
   protected readonly selectedHandCard = this.interactionState.selectedHandCard;
-  protected readonly selectedTableCards = this.interactionState.selectedTableCards;
+  protected readonly selectedTableCards = computed(() => {
+    const aiAnimationState = this.aiTurnAnimationState();
+
+    if (aiAnimationState.phase === 'capture-previewing') {
+      return aiAnimationState.highlightedTableCards;
+    }
+
+    return this.interactionState.selectedTableCards();
+  });
   protected readonly isCaptureSelectionValid = this.interactionState.isCaptureSelectionValid;
   protected readonly handoffEnabled = computed(() => {
     if (typeof this.interactionState.handoffEnabled !== 'function') {
@@ -165,16 +174,24 @@ export class GameTablePage {
     return this.interactionState.canSubmitPlay();
   });
   protected readonly interactionEnabled = computed(() => {
+    const configuration = this.gameSession.configuration();
+    const activePlayer = this.gameEngine.activePlayer();
+
     return (
       this.gameEngine.turnPhase() === 'awaiting-card-play' &&
       !this.showTurnHandoffOverlay() &&
-      !this.isAiTurnInProgress()
+      !this.isAiTurnInProgress() &&
+      !(configuration?.mode === 'Single Player' && activePlayer?.id === this.aiPlayerId())
     );
   });
   protected readonly aiPlayerId = computed(() => {
     return this.gameEngine.state()?.players[1]?.id ?? null;
   });
   protected readonly aiHandCardCount = computed(() => {
+    if (this.gameSession.configuration()?.mode !== 'Single Player') {
+      return 0;
+    }
+
     const aiPlayerId = this.aiPlayerId();
     if (aiPlayerId === null) {
       return 0;
@@ -190,6 +207,9 @@ export class GameTablePage {
   });
   protected readonly aiHighlightedTableCards = computed(() => {
     return this.aiTurnAnimationState().highlightedTableCards;
+  });
+  protected readonly submitActionLocked = computed(() => {
+    return this.isAiTurnInProgress();
   });
 
   protected readonly activePlayerName = computed(() => {
@@ -297,6 +317,16 @@ export class GameTablePage {
   protected readonly opponents = computed(() => {
     const state = this.gameEngine.state();
     if (state) {
+      if (this.gameSession.configuration()?.mode === 'Single Player') {
+        const aiPlayerId = this.aiPlayerId();
+
+        if (aiPlayerId === null) {
+          return [];
+        }
+
+        return state.players.filter((player) => player.id === aiPlayerId);
+      }
+
       return state.players.filter((_, index) => index !== state.turnIndex);
     }
 
@@ -487,6 +517,19 @@ export class GameTablePage {
 
   private announce(message: string): void {
     this.liveAnnouncementState.set(message);
+
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    const liveRegionElement = document.querySelector<HTMLElement>(
+      '[data-testid="a11y-live-region"]',
+    );
+    if (!liveRegionElement) {
+      return;
+    }
+
+    liveRegionElement.textContent = message;
   }
 
   private readEngineRoundResult(): RoundResult | null {
@@ -514,17 +557,14 @@ export class GameTablePage {
   }
 
   private focusByTestIdAfterRender(testId: string): void {
-    afterNextRender(
-      () => {
-        if (typeof document === 'undefined') {
-          return;
-        }
+    if (typeof document === 'undefined') {
+      return;
+    }
 
-        const target = document.querySelector<HTMLElement>(`[data-testid="${testId}"]`);
-        target?.focus();
-      },
-      { injector: this.injector },
-    );
+    this.changeDetectorRef.detectChanges();
+
+    const target = document.querySelector<HTMLElement>(`[data-testid="${testId}"]`);
+    target?.focus();
   }
 
   private async runAiTurn(): Promise<void> {
@@ -551,6 +591,7 @@ export class GameTablePage {
     }
 
     const difficulty = configuration.aiDifficulty;
+    const aiEscobaCountBeforePlay = aiPlayer.escobaCount;
 
     this.isAiTurnInProgress.set(true);
     this.aiTurnAnimationState.set({
@@ -596,6 +637,18 @@ export class GameTablePage {
       this.gameEngine.playCard(decision.cardToPlay, decision.captureSubset);
       await delay(300);
       this.gameEngine.confirmTurn();
+
+      const aiEscobaCountAfterPlay =
+        this.gameEngine.state()?.players.find((player) => player.id === aiPlayerId)?.escobaCount ??
+        aiEscobaCountBeforePlay;
+
+      if (aiEscobaCountAfterPlay > aiEscobaCountBeforePlay) {
+        this.announce('¡Escoba! Laia limpió la mesa');
+      } else if (decision.captureSubset.length > 0) {
+        this.announce(`Laia capturó ${decision.captureSubset.length} cartas de la mesa`);
+      } else {
+        this.announce('Laia colocó una carta en la mesa');
+      }
     } catch (error) {
       console.warn('AI turn orchestration failed', {
         aiPlayerId,

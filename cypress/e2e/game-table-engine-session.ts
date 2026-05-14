@@ -26,7 +26,11 @@ let injectedTopScore = 0;
 let injectedEscobaPlayerName = '';
 let injectedEscobaCount = 0;
 
-type EngineFixture = 'escoba-visibility' | 'round-winner-visibility';
+type EngineFixture =
+  | 'escoba-visibility'
+  | 'round-winner-visibility'
+  | 'ai-turn-escoba'
+  | 'ai-turn-capture';
 
 interface EngineFixtureResult {
   escobaPlayerName?: string;

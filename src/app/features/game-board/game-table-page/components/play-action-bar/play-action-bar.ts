@@ -15,6 +15,8 @@ export class PlayActionBar {
   private readonly multiplayerState = signal(false);
   private readonly handoffEnabledState = signal(false);
   private readonly overlayBlockedState = signal(false);
+  private readonly interactionEnabledState = signal(true);
+  private readonly submitLockedState = signal(false);
 
   protected readonly canSubmitPlaySignal: Signal<boolean> = this.canSubmitPlayState.asReadonly();
   protected readonly isCaptureSelectionValidSignal: Signal<boolean> =
@@ -25,6 +27,9 @@ export class PlayActionBar {
   protected readonly multiplayerSignal: Signal<boolean> = this.multiplayerState.asReadonly();
   protected readonly handoffEnabledSignal: Signal<boolean> = this.handoffEnabledState.asReadonly();
   protected readonly overlayBlockedSignal: Signal<boolean> = this.overlayBlockedState.asReadonly();
+  protected readonly interactionEnabledSignal: Signal<boolean> =
+    this.interactionEnabledState.asReadonly();
+  protected readonly submitLockedSignal: Signal<boolean> = this.submitLockedState.asReadonly();
 
   readonly submitPlayClicked = output<void>();
   readonly confirmTurnClicked = output<void>();
@@ -93,8 +98,31 @@ export class PlayActionBar {
     return this.overlayBlockedState();
   }
 
+  @Input()
+  set interactionEnabled(value: boolean) {
+    this.interactionEnabledState.set(value ?? true);
+  }
+
+  get interactionEnabled(): boolean {
+    return this.interactionEnabledState();
+  }
+
+  @Input()
+  set submitLocked(value: boolean) {
+    this.submitLockedState.set(value ?? false);
+  }
+
+  get submitLocked(): boolean {
+    return this.submitLockedState();
+  }
+
   protected onSubmitPlay(): void {
-    if (this.submitPlayDisabled() || this.turnPhaseSignal() !== 'awaiting-card-play') {
+    if (
+      this.submitLockedSignal() ||
+      !this.interactionEnabledSignal() ||
+      this.submitPlayDisabled() ||
+      this.turnPhaseSignal() !== 'awaiting-card-play'
+    ) {
       return;
     }
 
@@ -119,7 +147,11 @@ export class PlayActionBar {
   }
 
   protected submitPlayDisabled(): boolean {
-    return !this.canSubmitPlaySignal() || !this.isCaptureSelectionValidSignal();
+    return (
+      this.submitLockedSignal() ||
+      !this.canSubmitPlaySignal() ||
+      !this.isCaptureSelectionValidSignal()
+    );
   }
 
   protected confirmTurnDisabled(): boolean {

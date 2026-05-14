@@ -16,9 +16,11 @@ import { RoundResult } from '../../../models/round-result';
 
 import { GameTablePage } from './game-table-page';
 import { MatchContextHud } from './components/match-context-hud/match-context-hud';
+import { CenterTableZone } from './zones/center-table-zone/center-table-zone';
+import { OpponentZones } from './zones/opponent-zones/opponent-zones';
 
-// Covers: FR-2.4, FR-3.4, FR-3.5, FR-3.6, FR-4.6, FR-6.3, FR-6.4, FR-8.2, FR-8.3, FR-8.4, FR-8.5, TR-6.3, NFR-2.1, NFR-2.2, NFR-3.1, US-2, US-3, US-4, US-6, US-8
-// BDD Scenarios: SC-06, SC-09, SC-10, SC-15, SC-22, SC-23, SC-26, SC-27, SC-28, SC-29
+// Covers: FR-2.4, FR-3.4, FR-3.5, FR-3.6, FR-4.6, FR-6.1, FR-6.3, FR-6.4, FR-7.1, FR-7.3, FR-8.1, FR-8.2, FR-8.3, FR-8.4, FR-8.5, TR-6.3, NFR-2.1, NFR-2.2, NFR-3.1, US-2, US-3, US-4, US-5, US-6, US-8
+// BDD Scenarios: SC-06, SC-09, SC-10, SC-14, SC-15, SC-16, SC-18, SC-19, SC-20, SC-22, SC-23, SC-26, SC-27, SC-28, SC-29, SC-43
 
 interface GameEnginePort {
   state: () => GameState | null;
@@ -413,6 +415,24 @@ describe('GameTablePage', () => {
     }
 
     return hudDebugElement.componentInstance as MatchContextHud;
+  };
+
+  const getOpponentZonesInstance = (): OpponentZones => {
+    const opponentZonesDebugElement = fixture.debugElement.query(By.directive(OpponentZones));
+    if (!opponentZonesDebugElement) {
+      throw new Error('Expected OpponentZones to be present in GameTablePage template');
+    }
+
+    return opponentZonesDebugElement.componentInstance as OpponentZones;
+  };
+
+  const getCenterTableZoneInstance = (): CenterTableZone => {
+    const centerTableDebugElement = fixture.debugElement.query(By.directive(CenterTableZone));
+    if (!centerTableDebugElement) {
+      throw new Error('Expected CenterTableZone to be present in GameTablePage template');
+    }
+
+    return centerTableDebugElement.componentInstance as CenterTableZone;
   };
 
   const runAiTurnDirectly = (): Promise<void> => {
@@ -1640,6 +1660,94 @@ describe('GameTablePage', () => {
     ]);
   });
 
+  it('T-10 / AD-5 - blends AI highlighted cards into the center table selection during capture preview', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    stubs.setState({
+      deck: [],
+      table: [tableCardA, tableCardB],
+      players: [
+        {
+          id: 'p1',
+          name: 'Alice',
+          hand: [handCard],
+          capturedPile: [],
+          escobaCount: 0,
+        },
+        {
+          id: 'p2',
+          name: 'Laia',
+          hand: [tableCardA, tableCardB],
+          capturedPile: [],
+          escobaCount: 0,
+        },
+      ],
+      turnIndex: 0,
+      roundNumber: 1,
+      matchScores: { p1: 0, p2: 0 },
+      lastCapturerId: null,
+    });
+
+    setProtectedWritableSignal('aiTurnAnimationState', {
+      phase: 'capture-previewing',
+      selectedCardIndex: 1,
+      revealedCard: tableCardB,
+      highlightedTableCards: [tableCardA],
+    });
+    await fixture.whenStable();
+
+    const centerTableZone = getCenterTableZoneInstance();
+    const opponentZones = getOpponentZonesInstance();
+
+    expect(readProtectedSignal<Card[]>('selectedTableCards')).toEqual([tableCardA]);
+    expect(centerTableZone.selectedTableCards).toEqual([tableCardA]);
+    expect(opponentZones.aiHandCardCount).toBe(2);
+    expect(opponentZones.aiTurnAnimationState.phase).toBe('capture-previewing');
+  });
+
+  it('T-10 / AD-8 - suppresses AI hand cards in Multiplayer mode', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    stubs.setSessionConfiguration({
+      mode: 'Multiplayer',
+      playerNames: ['Alice', 'Bob'],
+      playerCount: 2,
+      aiDifficulty: 'Easy',
+    });
+    stubs.setState({
+      deck: [],
+      table: [tableCardA, tableCardB],
+      players: [
+        {
+          id: 'p1',
+          name: 'Alice',
+          hand: [handCard],
+          capturedPile: [],
+          escobaCount: 0,
+        },
+        {
+          id: 'p2',
+          name: 'Laia',
+          hand: [tableCardA, tableCardB],
+          capturedPile: [],
+          escobaCount: 0,
+        },
+      ],
+      turnIndex: 0,
+      roundNumber: 1,
+      matchScores: { p1: 0, p2: 0 },
+      lastCapturerId: null,
+    });
+    await fixture.whenStable();
+
+    const opponentZones = getOpponentZonesInstance();
+
+    expect(readProtectedSignal<number>('aiHandCardCount')).toBe(0);
+    expect(readProtectedSignal<AiTurnAnimationState>('aiTurnAnimationState')).toEqual(AI_TURN_IDLE);
+    expect(opponentZones.aiHandCardCount).toBe(0);
+    expect(fixture.nativeElement.querySelector('[data-testid="ai-hand-zone"]')).toBeNull();
+  });
+
   it('T-9 / FR-2.1 - automatically triggers AI play and confirm when Laia is active in awaiting-card-play', async () => {
     vi.useFakeTimers();
 
@@ -1857,6 +1965,45 @@ describe('GameTablePage', () => {
       warnSpy.mockRestore();
       vi.useRealTimers();
     }
+  });
+
+  it('T-9 / NFR-2.2 - short-circuits runAiTurn when AI has no hand cards', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    stubs.setState({
+      deck: [],
+      table: [tableCardA],
+      players: [
+        {
+          id: 'p1',
+          name: 'Alice',
+          hand: [handCard],
+          capturedPile: [],
+          escobaCount: 0,
+        },
+        {
+          id: 'p2',
+          name: 'Laia',
+          hand: [],
+          capturedPile: [],
+          escobaCount: 0,
+        },
+      ],
+      turnIndex: 1,
+      roundNumber: 1,
+      matchScores: { p1: 0, p2: 0 },
+      lastCapturerId: null,
+    });
+
+    await fixture.whenStable();
+
+    await runAiTurnDirectly();
+
+    expect(stubs.decideSpy).not.toHaveBeenCalled();
+    expect(stubs.playCardSpy).not.toHaveBeenCalled();
+    expect(stubs.confirmTurnSpy).not.toHaveBeenCalled();
+    expect(readProtectedSignal<boolean>('isAiTurnInProgress')).toBe(false);
+    expect(readProtectedSignal<AiTurnAnimationState>('aiTurnAnimationState')).toEqual(AI_TURN_IDLE);
   });
 
   it('T-9 / FR-6.1-FR-6.5 - progresses animation phases through card-selected and capture-previewing before resolving', async () => {
@@ -2173,6 +2320,183 @@ describe('GameTablePage', () => {
       expect(readProtectedSignal<AiTurnAnimationState>('aiTurnAnimationState')).toEqual(
         AI_TURN_IDLE,
       );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('T-11 / FR-9.1 - announces AI placement through the live region after confirmTurn resolves', async () => {
+    vi.useFakeTimers();
+
+    try {
+      await configureAndCreate('awaiting-card-play', handCard);
+
+      const aiCard: Card = { suit: 'Copas', rank: '6', value: 6 };
+      stubs.setAiDecision({
+        cardToPlay: aiCard,
+        captureSubset: [],
+      });
+
+      stubs.setState({
+        deck: [],
+        table: [tableCardA],
+        players: [
+          {
+            id: 'p1',
+            name: 'Alice',
+            hand: [handCard],
+            capturedPile: [],
+            escobaCount: 0,
+          },
+          {
+            id: 'p2',
+            name: 'Laia',
+            hand: [aiCard],
+            capturedPile: [],
+            escobaCount: 0,
+          },
+        ],
+        turnIndex: 1,
+        roundNumber: 1,
+        matchScores: { p1: 0, p2: 0 },
+        lastCapturerId: null,
+      });
+
+      const aiRun = runAiTurnDirectly();
+
+      await vi.advanceTimersByTimeAsync(1499);
+      const liveRegionBeforeConfirm = getByTestId<HTMLElement>('a11y-live-region');
+      expect((liveRegionBeforeConfirm.textContent ?? '').trim()).toBe('');
+
+      await vi.advanceTimersByTimeAsync(1);
+      await aiRun;
+
+      const liveRegion = getByTestId<HTMLElement>('a11y-live-region');
+      expect((liveRegion.textContent ?? '').trim()).toContain('Laia colocó una carta en la mesa');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('T-11 / FR-9.2 - announces AI capture count without revealing card identity', async () => {
+    vi.useFakeTimers();
+
+    try {
+      await configureAndCreate('awaiting-card-play', handCard);
+
+      const aiCard: Card = { suit: 'Bastos', rank: '7', value: 7 };
+      stubs.setAiDecision({
+        cardToPlay: aiCard,
+        captureSubset: [tableCardA, tableCardB],
+      });
+
+      stubs.setState({
+        deck: [],
+        table: [tableCardA, tableCardB],
+        players: [
+          {
+            id: 'p1',
+            name: 'Alice',
+            hand: [handCard],
+            capturedPile: [],
+            escobaCount: 0,
+          },
+          {
+            id: 'p2',
+            name: 'Laia',
+            hand: [aiCard],
+            capturedPile: [],
+            escobaCount: 0,
+          },
+        ],
+        turnIndex: 1,
+        roundNumber: 1,
+        matchScores: { p1: 0, p2: 0 },
+        lastCapturerId: null,
+      });
+
+      const aiRun = runAiTurnDirectly();
+      await vi.advanceTimersByTimeAsync(2200);
+      await aiRun;
+
+      const liveRegion = getByTestId<HTMLElement>('a11y-live-region');
+      const announcement = (liveRegion.textContent ?? '').trim();
+
+      expect(announcement).toContain('Laia capturó 2 cartas de la mesa');
+      expect(announcement).not.toContain('Bastos');
+      expect(announcement).not.toContain('7');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('T-11 / FR-9.3 - announces escoba instead of generic capture message', async () => {
+    vi.useFakeTimers();
+
+    try {
+      await configureAndCreate('awaiting-card-play', handCard);
+
+      const aiCard: Card = { suit: 'Oros', rank: '3', value: 3 };
+      stubs.setAiDecision({
+        cardToPlay: aiCard,
+        captureSubset: [tableCardA],
+      });
+
+      stubs.setState({
+        deck: [],
+        table: [tableCardA],
+        players: [
+          {
+            id: 'p1',
+            name: 'Alice',
+            hand: [handCard],
+            capturedPile: [],
+            escobaCount: 0,
+          },
+          {
+            id: 'p2',
+            name: 'Laia',
+            hand: [aiCard],
+            capturedPile: [],
+            escobaCount: 0,
+          },
+        ],
+        turnIndex: 1,
+        roundNumber: 1,
+        matchScores: { p1: 0, p2: 0 },
+        lastCapturerId: null,
+      });
+
+      stubs.playCardSpy.mockImplementationOnce(() => {
+        const currentState = stubs.engineStub.state();
+        if (currentState !== null) {
+          stubs.setState({
+            ...currentState,
+            players: currentState.players.map((player) => {
+              if (player.id !== 'p2') {
+                return player;
+              }
+
+              return {
+                ...player,
+                escobaCount: 1,
+              };
+            }),
+          });
+        }
+
+        stubs.setTurnPhase('awaiting-confirmation');
+      });
+
+      const aiRun = runAiTurnDirectly();
+      await vi.advanceTimersByTimeAsync(2200);
+      await aiRun;
+
+      const liveRegion = getByTestId<HTMLElement>('a11y-live-region');
+      const announcement = (liveRegion.textContent ?? '').trim();
+
+      expect(announcement).toContain('¡Escoba! Laia limpió la mesa');
+      expect(announcement).not.toContain('capturó');
     } finally {
       vi.useRealTimers();
     }

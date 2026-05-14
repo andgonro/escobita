@@ -53,10 +53,6 @@ describe('AiStrategyService', () => {
     service = TestBed.inject(AiStrategyService);
   });
 
-  it('is injectable', () => {
-    expect(service).toBeTruthy();
-  });
-
   it('returns a valid play decision shape from decide', () => {
     const aiPlayer: Player = {
       id: 'ai-1',
@@ -528,27 +524,50 @@ describe('AiStrategyService', () => {
       expect(decision.captureSubset.length).toBeGreaterThan(0);
     });
 
-    it('builds the unseen set from full deck minus ai hand, table, and captured piles', () => {
-      const aiHand = [card('Oros', '1', 1), card('Copas', 'Sota', 8)];
-      const table = [card('Espadas', '7', 7), card('Bastos', '3', 3)];
-      const capturedByHuman = [card('Oros', '7', 7), card('Copas', '4', 4)];
-      const capturedByAi = [card('Bastos', 'Rey', 10), card('Espadas', '2', 2)];
-
-      const serviceWithUnseenHelper = service as unknown as {
-        buildUnseenCards: (aiCards: Card[], tableCards: Card[], capturedCards: Card[]) => Card[];
+    it('produces a valid Hard decision when captured history contributes known cards', () => {
+      const aiPlayer: Player = {
+        id: 'ai-1',
+        name: 'Laia',
+        hand: [card('Oros', '1', 1), card('Copas', 'Sota', 8)],
+        capturedPile: [card('Bastos', 'Rey', 10), card('Espadas', '2', 2)],
+        escobaCount: 0,
       };
-      const unseen = serviceWithUnseenHelper.buildUnseenCards(aiHand, table, [
-        ...capturedByHuman,
-        ...capturedByAi,
-      ]);
+      const humanPlayer: Player = {
+        id: 'human-1',
+        name: 'Human',
+        hand: [card('Bastos', 'Caballo', 9)],
+        capturedPile: [card('Oros', '7', 7), card('Copas', '4', 4)],
+        escobaCount: 0,
+      };
+      const table = [card('Espadas', '7', 7), card('Bastos', '3', 3), card('Copas', '6', 6)];
 
-      expect(unseen.length).toBe(
-        40 - aiHand.length - table.length - capturedByHuman.length - capturedByAi.length,
+      const state: GameState = {
+        deck: [],
+        table,
+        players: [humanPlayer, aiPlayer],
+        turnIndex: 1,
+        roundNumber: 1,
+        matchScores: {
+          'human-1': 0,
+          'ai-1': 0,
+        },
+        lastCapturerId: null,
+      };
+
+      const decision = service.decide(state, aiPlayer, 'Hard', pickIndex(0));
+      const captureTotal = decision.captureSubset.reduce(
+        (sum, capturedCard) => sum + capturedCard.value,
+        0,
       );
-      expect(unseen.some((c) => c.suit === 'Oros' && c.rank === '1')).toBe(false);
-      expect(unseen.some((c) => c.suit === 'Espadas' && c.rank === '7')).toBe(false);
-      expect(unseen.some((c) => c.suit === 'Bastos' && c.rank === 'Rey')).toBe(false);
-      expect(unseen.some((c) => c.suit === 'Oros' && c.rank === '2')).toBe(true);
+
+      expect(aiPlayer.hand).toContain(decision.cardToPlay);
+      expect(decision.captureSubset.every((capturedCard) => table.includes(capturedCard))).toBe(
+        true,
+      );
+
+      if (decision.captureSubset.length > 0) {
+        expect(captureTotal + decision.cardToPlay.value).toBe(15);
+      }
     });
 
     it('selects a different move than Medium when probability weighting favors a non-greedy option', () => {

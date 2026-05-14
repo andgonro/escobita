@@ -1,0 +1,28 @@
+
+> escobita@0.0.0 test
+> ng test --watch=false --include src/app/features/game-board/game-table-page/game-table-page.spec.ts
+
+[33mÔØ»[39m Building...
+[32mÔ£ö[39m Building...
+[1mInitial chunk files[22m                                            [2m | [22m[1mNames[22m                                                       [2m | [22m [1mRaw size[22m
+[32mspec-app-features-game-board-game-table-page-game-table-page.js[39m[2m | [22m[2mspec-app-features-game-board-game-table-page-game-table-page[22m[2m | [22m[36m239.54 kB[39m[2m | [22m
+[32mchunk-RSTWSNOR.js[39m                                              [2m | [22m[2m-[22m                                                           [2m | [22m  [36m4.75 kB[39m[2m | [22m
+[32minit-testbed.js[39m                                                [2m | [22m[2minit-testbed[22m                                                [2m | [22m  [36m1.21 kB[39m[2m | [22m
+[32mstyles.css[39m                                                     [2m | [22m[2mstyles[22m                                                      [2m | [22m  [36m1.06 kB[39m[2m | [22m
+[32mvitest-mock-patch.js[39m                                           [2m | [22m[2mvitest-mock-patch[22m                                           [2m | [22m[36m969 bytes[39m[2m | [22m
+
+[1m [22m                                                              [2m | [22m[1mInitial total[22m                                               [2m | [22m[1m247.53 kB[22m
+
+Application bundle generation complete. [7.911 seconds] - 2026-05-14T07:28:26.012Z
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.5 [39m[90mD:/Personal/websites/jokuak/escobita[39m
+
+ [32mÔ£ô[39m [30m[42m escobita [49m[39m src/app/features/game-board/game-table-page/game-table-page.spec.ts [2m([22m[2m56 tests[22m[2m)[22m[33m 2346[2mms[22m[39m
+     [33m[2mÔ£ô[22m[39m SC-26 / FR-8.2 - renders active-player and turn-phase indicators from engine signals [33m 356[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m56 passed[39m[22m[90m (56)[39m
+[2m   Start at [22m 09:28:26
+[2m   Duration [22m 6.90s[2m (transform 534ms, setup 989ms, import 562ms, tests 2.35s, environment 2.57s)[22m
+

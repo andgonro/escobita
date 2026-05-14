@@ -142,6 +142,94 @@ describe('GameEngine', () => {
       expect(winners).toHaveLength(1);
       expect(winners[0]?.name).toBe(fixtureResult.winnerName);
     });
+
+    it('round-winner-ai fixture exposes Laia as the single winner', () => {
+      engine.initGame(twoPlayerConfig());
+
+      const secondPlayerName = engine.state()?.players[1]?.name;
+
+      const fixtureResult = engine.applyE2eFixture('round-winner-visibility-ai');
+      const winners = engine.matchWinner();
+
+      expect(Array.isArray(winners)).toBe(true);
+
+      if (!Array.isArray(winners)) {
+        throw new Error('Expected matchWinner to expose an array winner contract.');
+      }
+
+      expect(winners).toHaveLength(1);
+      expect(winners[0]?.name).toBe(secondPlayerName);
+      expect(winners[0]?.name).toBe(fixtureResult.winnerName);
+    });
+
+    it('T-12 / TR-1.6 - ai-turn-escoba fixture prepares a valid escoba opportunity on Laia turn', () => {
+      engine.initGame(twoPlayerConfig());
+
+      engine.applyE2eFixture(
+        'ai-turn-escoba' as unknown as Parameters<typeof engine.applyE2eFixture>[0],
+      );
+
+      const state = engine.state();
+      expect(state).not.toBeNull();
+      if (state === null) {
+        throw new Error('Expected a non-null state after ai-turn-escoba fixture.');
+      }
+
+      expect(state.players.length).toBeGreaterThanOrEqual(2);
+      expect(state.turnIndex).toBe(1);
+      expect(engine.turnPhase()).toBe('awaiting-card-play');
+
+      const laia = state.players[1]!;
+      expect(laia.name).toBe('Laia');
+      expect(laia.hand.length).toBeGreaterThan(0);
+
+      const canEscoba = laia.hand.some((handCard) => {
+        const tableSum = state.table.reduce((sum, tableCard) => sum + tableCard.value, 0);
+        return handCard.value + tableSum === 15;
+      });
+
+      expect(canEscoba).toBe(true);
+    });
+
+    it('T-12 / TR-1.6 - ai-turn-capture fixture prepares non-escoba capture on Laia turn', () => {
+      engine.initGame(twoPlayerConfig());
+
+      engine.applyE2eFixture(
+        'ai-turn-capture' as unknown as Parameters<typeof engine.applyE2eFixture>[0],
+      );
+
+      const state = engine.state();
+      expect(state).not.toBeNull();
+      if (state === null) {
+        throw new Error('Expected a non-null state after ai-turn-capture fixture.');
+      }
+
+      expect(state.players.length).toBeGreaterThanOrEqual(2);
+      expect(state.turnIndex).toBe(1);
+      expect(engine.turnPhase()).toBe('awaiting-card-play');
+      expect(state.table.length).toBeGreaterThan(1);
+
+      const laia = state.players[1]!;
+      expect(laia.name).toBe('Laia');
+      expect(laia.hand.length).toBeGreaterThan(0);
+
+      const table = state.table;
+      const hasCapture = laia.hand.some((handCard) => {
+        for (const tableCard of table) {
+          if (handCard.value + tableCard.value === 15) {
+            return true;
+          }
+        }
+
+        return false;
+      });
+
+      const tableSum = table.reduce((sum, card) => sum + card.value, 0);
+      const hasEscoba = laia.hand.some((handCard) => handCard.value + tableSum === 15);
+
+      expect(hasCapture).toBe(true);
+      expect(hasEscoba).toBe(false);
+    });
   });
 
   // -------------------------------------------------------------------------
