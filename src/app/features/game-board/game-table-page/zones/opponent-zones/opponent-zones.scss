@@ -54,6 +54,13 @@
   border-top: 1px solid rgba(255, 255, 255, 0.18);
 }
 
+.ai-hand-card {
+  flex: 0 0 auto;
+  inline-size: clamp(2.5rem, 11vw, 3.5rem);
+  block-size: clamp(3.5rem, 16vw, 4.75rem);
+  display: block;
+}
+
 .ai-hand-zone--active {
   border-top-color: rgba(255, 225, 120, 0.8);
 }

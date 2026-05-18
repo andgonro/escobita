@@ -128,9 +128,11 @@ describe('OpponentZones', () => {
     await fixture.whenStable();
 
     const aiHandZone = fixture.nativeElement.querySelector('[data-testid="ai-hand-zone"]');
+    const aiCardShells = fixture.nativeElement.querySelectorAll('[data-testid^="ai-hand-shell-"]');
     const aiCards = fixture.nativeElement.querySelectorAll('[data-testid^="ai-hand-card-"]');
 
     expect(aiHandZone).not.toBeNull();
+    expect(aiCardShells.length).toBe(3);
     expect(aiCards.length).toBe(3);
     expect(aiCards[0]?.getAttribute('aria-label')).toBe('Carta oculta');
   });
@@ -216,5 +218,114 @@ describe('OpponentZones', () => {
 
     expect(revealedImage?.getAttribute('src')).toContain('/cards/Oros_1.png');
     expect(hiddenImage?.getAttribute('src')).toContain('/cards/Card_Back.png');
+  });
+
+  it('keeps AI hand shell sizing stable when hand count decreases', async () => {
+    testState.opponents = [
+      {
+        id: 'p-laia',
+        name: 'Laia',
+        hand: [],
+        capturedPile: [],
+        escobaCount: 0,
+      },
+    ];
+    testState.aiTurnAnimationState = defaultAiTurnAnimationState;
+    testState.aiHandCardCount = 3;
+    await fixture.whenStable();
+
+    const initialShells = fixture.nativeElement.querySelectorAll(
+      '[data-testid^="ai-hand-shell-"]',
+    ) as NodeListOf<HTMLElement>;
+    const initialFirstShellStyle = getComputedStyle(initialShells[0]);
+    const initialWidth = initialFirstShellStyle.width;
+    const initialHeight = initialFirstShellStyle.height;
+    const initialFlex = initialFirstShellStyle.flex;
+
+    testState.aiHandCardCount = 2;
+    await fixture.whenStable();
+
+    const reducedShells = fixture.nativeElement.querySelectorAll(
+      '[data-testid^="ai-hand-shell-"]',
+    ) as NodeListOf<HTMLElement>;
+    const reducedFirstShellStyle = getComputedStyle(reducedShells[0]);
+
+    expect(reducedShells.length).toBe(2);
+    expect(reducedFirstShellStyle.width).toBe(initialWidth);
+    expect(reducedFirstShellStyle.height).toBe(initialHeight);
+    expect(reducedFirstShellStyle.flex).toBe(initialFlex);
+  });
+
+  it('does not render AI hand zone when aiHandCardCount is zero', async () => {
+    testState.opponents = [
+      {
+        id: 'p-laia',
+        name: 'Laia',
+        hand: [],
+        capturedPile: [],
+        escobaCount: 0,
+      },
+    ];
+    testState.aiHandCardCount = 0;
+    testState.aiTurnAnimationState = defaultAiTurnAnimationState;
+    await fixture.whenStable();
+
+    const aiHandZone = fixture.nativeElement.querySelector('[data-testid="ai-hand-zone"]');
+    const aiCards = fixture.nativeElement.querySelectorAll('[data-testid^="ai-hand-card-"]');
+
+    expect(aiHandZone).toBeNull();
+    expect(aiCards.length).toBe(0);
+  });
+
+  it('does not apply active styling when AI turn phase is idle', async () => {
+    testState.opponents = [
+      {
+        id: 'p-laia',
+        name: 'Laia',
+        hand: [],
+        capturedPile: [],
+        escobaCount: 0,
+      },
+    ];
+    testState.aiHandCardCount = 2;
+    testState.aiTurnAnimationState = defaultAiTurnAnimationState;
+    await fixture.whenStable();
+
+    const aiHandZone = fixture.nativeElement.querySelector(
+      '[data-testid="ai-hand-zone"]',
+    ) as HTMLElement | null;
+
+    expect(aiHandZone?.classList.contains('ai-hand-zone--active')).toBe(false);
+  });
+
+  it('keeps selected AI card face-down in placement scenario when revealedCard is null', async () => {
+    testState.opponents = [
+      {
+        id: 'p-laia',
+        name: 'Laia',
+        hand: [],
+        capturedPile: [],
+        escobaCount: 0,
+      },
+    ];
+    testState.aiHandCardCount = 3;
+    testState.aiTurnAnimationState = {
+      ...defaultAiTurnAnimationState,
+      phase: 'card-selected',
+      selectedCardIndex: 1,
+      revealedCard: null,
+    };
+    await fixture.whenStable();
+
+    const selectedImage = fixture.nativeElement.querySelector(
+      '[data-testid="ai-hand-card-1"] [data-testid="card-visual-image"]',
+    ) as HTMLImageElement | null;
+    const selectedCard = fixture.nativeElement.querySelector(
+      '[data-testid="ai-hand-card-1"]',
+    ) as HTMLElement | null;
+
+    expect(selectedCard?.classList.contains('card-visual--selected')).toBe(true);
+    expect(selectedImage?.getAttribute('src')).toContain('/cards/Card_Back.png');
+    expect(selectedImage?.getAttribute('alt')).toBe('Carta oculta');
   });
 });
