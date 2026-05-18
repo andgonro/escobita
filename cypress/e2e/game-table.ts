@@ -117,6 +117,34 @@ const findLegalCaptureSelection = (
   return null;
 };
 
+const withLegalCaptureSelection = (
+  onSelection: (selection: { handIndex: number; tableIndexes: number[] }) => void,
+  attemptsRemaining = 4,
+): void => {
+  openSinglePlayerGame();
+  captureCountsBeforeSubmit();
+
+  cy.get(selectors.handCards).then(($handCards) => {
+    const handIndexedCards = buildIndexedCards($handCards as JQuery<HTMLElement>);
+
+    cy.get(selectors.tableCards).then(($tableCards) => {
+      const tableIndexedCards = buildIndexedCards($tableCards as JQuery<HTMLElement>);
+      const selection = findLegalCaptureSelection(handIndexedCards, tableIndexedCards);
+
+      if (selection !== null) {
+        onSelection(selection);
+        return;
+      }
+
+      if (attemptsRemaining <= 1) {
+        throw new Error('Could not find a legal capture setup after multiple attempts.');
+      }
+
+      withLegalCaptureSelection(onSelection, attemptsRemaining - 1);
+    });
+  });
+};
+
 const captureCountsBeforeSubmit = (): void => {
   cy.get(selectors.tableCards)
     .its('length')
@@ -184,55 +212,23 @@ Given('no hand card is selected', () => {
 });
 
 Given('a hand card is selected and no table cards are selected', () => {
-  openSinglePlayerGame();
-  captureCountsBeforeSubmit();
-
-  cy.get(selectors.handCards).then(($handCards) => {
-    const handIndexedCards = buildIndexedCards($handCards as JQuery<HTMLElement>);
-
-    cy.get(selectors.tableCards).then(($tableCards) => {
-      const tableIndexedCards = buildIndexedCards($tableCards as JQuery<HTMLElement>);
-      const selection = findLegalCaptureSelection(handIndexedCards, tableIndexedCards);
-
-      expect(selection).not.toBeNull();
-      if (selection === null) {
-        return;
-      }
-
-      cy.wrap(selection.tableIndexes.length).as('potentialCaptureSubsetSize');
-      cy.wrap(0).as('selectedCaptureTableCount');
-      cy.get(selectors.handCards).eq(selection.handIndex).focus().type('{enter}');
-      cy.get(selectors.handCards)
-        .eq(selection.handIndex)
-        .should('have.attr', 'aria-pressed', 'true');
-      cy.get(selectors.tableCards).each(($tableCard) => {
-        cy.wrap($tableCard).should('have.attr', 'aria-selected', 'false');
-      });
+  withLegalCaptureSelection((selection) => {
+    cy.wrap(selection.tableIndexes.length).as('potentialCaptureSubsetSize');
+    cy.wrap(0).as('selectedCaptureTableCount');
+    cy.get(selectors.handCards).eq(selection.handIndex).focus().type('{enter}');
+    cy.get(selectors.handCards).eq(selection.handIndex).should('have.attr', 'aria-pressed', 'true');
+    cy.get(selectors.tableCards).each(($tableCard) => {
+      cy.wrap($tableCard).should('have.attr', 'aria-selected', 'false');
     });
   });
 });
 
 Given('a legal capture subset is selected', () => {
-  openSinglePlayerGame();
-  captureCountsBeforeSubmit();
-
-  cy.get(selectors.handCards).then(($handCards) => {
-    const handIndexedCards = buildIndexedCards($handCards as JQuery<HTMLElement>);
-
-    cy.get(selectors.tableCards).then(($tableCards) => {
-      const tableIndexedCards = buildIndexedCards($tableCards as JQuery<HTMLElement>);
-      const selection = findLegalCaptureSelection(handIndexedCards, tableIndexedCards);
-
-      expect(selection).not.toBeNull();
-      if (selection === null) {
-        return;
-      }
-
-      cy.wrap(selection.tableIndexes.length).as('selectedCaptureTableCount');
-      cy.get(selectors.handCards).eq(selection.handIndex).focus().type('{enter}');
-      selection.tableIndexes.forEach((tableIndex) => {
-        cy.get(selectors.tableCards).eq(tableIndex).focus().type('{enter}');
-      });
+  withLegalCaptureSelection((selection) => {
+    cy.wrap(selection.tableIndexes.length).as('selectedCaptureTableCount');
+    cy.get(selectors.handCards).eq(selection.handIndex).focus().type('{enter}');
+    selection.tableIndexes.forEach((tableIndex) => {
+      cy.get(selectors.tableCards).eq(tableIndex).focus().type('{enter}');
     });
   });
 });
@@ -334,12 +330,21 @@ When('the player toggles table cards', () => {
 });
 
 When('the player attempts to submit play', () => {
-  cy.get(selectors.submitPlay).focus().type('{enter}');
+  cy.get(selectors.submitPlay).then(($submitButton) => {
+    const isDisabled = $submitButton.is(':disabled');
+
+    if (isDisabled) {
+      cy.wrap($submitButton).should('be.disabled');
+      return;
+    }
+
+    cy.wrap($submitButton).should('not.be.disabled').click();
+  });
 });
 
 When('the player submits play from the action bar', () => {
   cy.get(selectors.playActionBar).should('be.visible');
-  cy.get(selectors.submitPlay).focus().type('{enter}');
+  cy.get(selectors.submitPlay).should('not.be.disabled').click();
 });
 
 When('invalid submission occurs or turn changes', () => {
