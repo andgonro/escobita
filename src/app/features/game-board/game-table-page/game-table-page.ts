@@ -16,6 +16,16 @@ import { Card } from '../../../models/card';
 import { AI_TURN_IDLE, AiTurnAnimationState } from '../../../models/ai-turn';
 import { Player } from '../../../models/player';
 import { RoundResult } from '../../../models/round-result';
+import {
+  type ActiveHandZoneAnimationMetadata,
+  type CardAnimationActionType,
+  type CardAnimationState,
+  type CardAnimationVisualState,
+  type CenterTableZoneAnimationMetadata,
+  type OpponentZonesAnimationMetadata,
+} from '../models/animation-contracts';
+import { CardAnimationOrchestrator } from '../services/card-animation-orchestrator';
+import { TurnPausePolicy } from '../services/turn-pause-policy';
 import { TableInteractionState } from '../services/table-interaction-state';
 import { A11yLiveRegion } from './components/a11y-live-region/a11y-live-region';
 import { PlayActionBar } from './components/play-action-bar/play-action-bar';
@@ -64,7 +74,7 @@ interface MatchScoreEntry {
     TurnHandoffOverlay,
     MatchOverOverlay,
   ],
-  providers: [TableInteractionState],
+  providers: [TableInteractionState, CardAnimationOrchestrator, TurnPausePolicy],
   templateUrl: './game-table-page.html',
   styleUrl: './game-table-page.scss',
 })
@@ -81,6 +91,8 @@ export class GameTablePage {
     optional: true,
   });
   private readonly interactionState = this.resolveInteractionState();
+  private readonly turnPausePolicy = inject(TurnPausePolicy);
+  private readonly cardAnimationOrchestrator = inject(CardAnimationOrchestrator);
   private readonly showTurnHandoffOverlayState = signal(false);
   private readonly showMatchOverOverlayState = signal(false);
   private readonly isAiTurnInProgress = signal(false);
@@ -133,6 +145,7 @@ export class GameTablePage {
   }
 
   protected readonly turnPhase = this.gameEngine.turnPhase;
+  protected readonly animationState = this.cardAnimationOrchestrator.animationState;
   protected readonly validationMessage = signal('');
   protected readonly liveAnnouncement = this.liveAnnouncementState.asReadonly();
   protected readonly selectedHandCard = this.interactionState.selectedHandCard;
@@ -230,6 +243,38 @@ export class GameTablePage {
 
   protected readonly tableCards = computed(() => {
     return this.gameEngine.state()?.table ?? [];
+  });
+  protected readonly activeHandAnimationMetadata = computed<ActiveHandZoneAnimationMetadata>(() => {
+    const animationState = this.activeAnimationVisualState();
+
+    return {
+      hand: this.activeHandCards().map((card) => ({
+        card,
+        animationState: this.resolveCardAnimationState(animationState, card),
+      })),
+    };
+  });
+  protected readonly centerTableAnimationMetadata = computed<CenterTableZoneAnimationMetadata>(
+    () => {
+      const animationState = this.activeAnimationVisualState();
+
+      return {
+        table: this.tableCards().map((card) => ({
+          card,
+          animationState: this.resolveCardAnimationState(animationState, card),
+        })),
+      };
+    },
+  );
+  protected readonly opponentAnimationMetadata = computed<OpponentZonesAnimationMetadata>(() => {
+    const animationState = this.activeAnimationVisualState();
+
+    return {
+      opponent: this.activeAnimationCardIds().map((_, index) => ({
+        cardIndex: index,
+        animationState,
+      })),
+    };
   });
 
   protected readonly scoreEntries = computed<ScoreEntry[]>(() => {
@@ -571,6 +616,70 @@ export class GameTablePage {
     target?.focus();
   }
 
+  private activeAnimationCardIds(): string[] {
+    const activeGroup = this.resolveActiveAnimationGroup(this.animationState());
+    if (activeGroup === null) {
+      return [];
+    }
+
+    return activeGroup.participantCards.map((participant) => participant.cardId);
+  }
+
+  private activeAnimationVisualState(): CardAnimationVisualState {
+    const activeGroup = this.resolveActiveAnimationGroup(this.animationState());
+    if (activeGroup === null) {
+      return null;
+    }
+
+    return this.mapActionTypeToVisualState(activeGroup.actionType);
+  }
+
+  private resolveCardAnimationState(
+    animationState: CardAnimationVisualState,
+    card: Card,
+  ): CardAnimationVisualState {
+    if (animationState === null) {
+      return null;
+    }
+
+    return this.activeAnimationCardIds().includes(this.toCardId(card)) ? animationState : null;
+  }
+
+  private resolveActiveAnimationGroup(state: CardAnimationState) {
+    if (state.activeGroupId === null) {
+      return null;
+    }
+
+    return (
+      state.groups.find(
+        (group) => group.id === state.activeGroupId && group.status === 'running',
+      ) ?? null
+    );
+  }
+
+  private mapActionTypeToVisualState(
+    actionType: CardAnimationActionType,
+  ): CardAnimationVisualState {
+    switch (actionType) {
+      case 'play':
+        return 'play';
+      case 'capture':
+        return 'capture';
+      case 'deal':
+        return 'deal';
+      case 'escoba':
+        return 'escoba';
+      case 'opponent-play':
+        return 'opponent';
+      default:
+        return null;
+    }
+  }
+
+  private toCardId(card: Card): string {
+    return `${card.suit}-${card.rank}`;
+  }
+
   private async runAiTurn(): Promise<void> {
     const configuration = this.gameSession.configuration();
     const aiPlayerId = this.aiPlayerId();
@@ -589,6 +698,8 @@ export class GameTablePage {
       return;
     }
 
+    const reducedMotion = this.prefersReducedMotion();
+
     const aiPlayer = state.players.find((player) => player.id === aiPlayerId);
     if (!aiPlayer || aiPlayer.hand.length === 0) {
       return;
@@ -604,7 +715,7 @@ export class GameTablePage {
     });
 
     try {
-      await delay(600);
+      await delay(this.turnPausePolicy.resolvePauseMs('ai-deliberation', { reducedMotion }));
 
       const decision = this.aiStrategyService.decide(state, aiPlayer, difficulty);
       const selectedCardIndex = aiPlayer.hand.findIndex((card) =>
@@ -618,7 +729,7 @@ export class GameTablePage {
         highlightedTableCards: [],
       });
 
-      await delay(600);
+      await delay(this.turnPausePolicy.resolvePauseMs('ai-selection-preview', { reducedMotion }));
 
       if (decision.captureSubset.length > 0) {
         this.aiTurnAnimationState.set({
@@ -628,7 +739,7 @@ export class GameTablePage {
           highlightedTableCards: decision.captureSubset,
         });
 
-        await delay(700);
+        await delay(this.turnPausePolicy.resolvePauseMs('ai-capture-preview', { reducedMotion }));
       }
 
       this.aiTurnAnimationState.set({
@@ -639,7 +750,7 @@ export class GameTablePage {
       });
 
       this.gameEngine.playCard(decision.cardToPlay, decision.captureSubset);
-      await delay(300);
+      await delay(this.turnPausePolicy.resolvePauseMs('ai-post-play-confirm', { reducedMotion }));
       this.gameEngine.confirmTurn();
 
       const aiEscobaCountAfterPlay =
@@ -669,5 +780,13 @@ export class GameTablePage {
 
   private areCardsEqual(left: Card, right: Card): boolean {
     return left.suit === right.suit && left.rank === right.rank && left.value === right.value;
+  }
+
+  private prefersReducedMotion(): boolean {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return false;
+    }
+
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   }
 }

@@ -1,6 +1,10 @@
 import { Component, Input, Signal, signal } from '@angular/core';
 import { Card } from '../../../../../models/card';
 import { Player } from '../../../../../models/player';
+import {
+  type CardAnimationVisualState,
+  type OpponentZonesAnimationMetadata,
+} from '../../../models/animation-contracts';
 import { CardVisual } from '../../components/card-visual/card-visual';
 
 type AiTurnAnimationPhase =
@@ -34,10 +38,13 @@ export class OpponentZones {
   private readonly opponentsState = signal<Player[]>([]);
   private readonly aiHandCardCountState = signal(0);
   private readonly aiTurnAnimationStateState = signal<AiTurnAnimationState>(AI_TURN_IDLE);
+  private readonly animationMetadataState = signal<OpponentZonesAnimationMetadata | null>(null);
   protected readonly opponentsSignal: Signal<Player[]> = this.opponentsState.asReadonly();
   protected readonly aiHandCardCountSignal: Signal<number> = this.aiHandCardCountState.asReadonly();
   protected readonly aiTurnAnimationStateSignal: Signal<AiTurnAnimationState> =
     this.aiTurnAnimationStateState.asReadonly();
+  protected readonly animationMetadataSignal: Signal<OpponentZonesAnimationMetadata | null> =
+    this.animationMetadataState.asReadonly();
 
   @Input()
   set opponents(players: Player[]) {
@@ -64,6 +71,15 @@ export class OpponentZones {
 
   get aiTurnAnimationState(): AiTurnAnimationState {
     return this.aiTurnAnimationStateState();
+  }
+
+  @Input()
+  set animationMetadata(metadata: OpponentZonesAnimationMetadata | null) {
+    this.animationMetadataState.set(metadata);
+  }
+
+  get animationMetadata(): OpponentZonesAnimationMetadata | null {
+    return this.animationMetadataState();
   }
 
   protected seatPosition(index: number): 'north' | 'west' | 'east' {
@@ -114,6 +130,15 @@ export class OpponentZones {
 
   protected isAiCardFaceDown(index: number): boolean {
     return !this.isAiCardRevealed(index);
+  }
+
+  protected aiCardAnimationState(index: number): CardAnimationVisualState {
+    const metadata = this.animationMetadataSignal();
+    if (metadata === null) {
+      return null;
+    }
+
+    return metadata.opponent.find((entry) => entry.cardIndex === index)?.animationState ?? null;
   }
 
   private isAiCardRevealed(index: number): boolean {

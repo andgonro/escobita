@@ -3,11 +3,17 @@ import { Card } from '../../../../../models/card';
 
 import { ActiveHandZone } from './active-hand-zone';
 
-// Covers: FR-1.5, FR-6.2, TR-3.1, TR-3.4, TR-6.2, US-1
+// Covers: FR-1, FR-3, TR-3.1, TR-3.4, TR-6.2, US-1, US-3, US-12
 
 type ActiveHandZoneTestState = ActiveHandZone & {
   handCards: Card[];
   selectedHandCard: Card | null;
+  animationMetadata: {
+    hand: {
+      card: Card;
+      animationState: 'idle' | 'play' | 'capture' | 'deal' | 'opponent' | 'escoba' | null;
+    }[];
+  } | null;
 };
 
 const firstCard: Card = { suit: 'Oros', rank: '7', value: 7 };
@@ -46,5 +52,63 @@ describe('ActiveHandZone card visual integration', () => {
     );
 
     expect(cardVisualImage?.getAttribute('alt')).toBe('7 de Oros');
+  });
+
+  it('T-5 / FR-3 - applies deal animation metadata for the matching hand card visual', async () => {
+    testState.handCards = [firstCard, secondCard];
+    testState.animationMetadata = {
+      hand: [
+        { card: firstCard, animationState: 'deal' },
+        { card: secondCard, animationState: null },
+      ],
+    };
+    await fixture.whenStable();
+
+    const firstHandCardVisual = fixture.nativeElement.querySelector(
+      '[data-testid="hand-card-0"] app-card-visual',
+    ) as HTMLElement | null;
+    const secondHandCardVisual = fixture.nativeElement.querySelector(
+      '[data-testid="hand-card-1"] app-card-visual',
+    ) as HTMLElement | null;
+
+    expect(firstHandCardVisual?.classList.contains('card-visual--animation-deal')).toBe(true);
+    expect(secondHandCardVisual?.classList.contains('card-visual--animation-deal')).toBe(false);
+  });
+
+  it('T-5 / FR-1 - renders simultaneous play animation metadata across multiple hand cards', async () => {
+    testState.handCards = [firstCard, secondCard];
+    testState.animationMetadata = {
+      hand: [
+        { card: firstCard, animationState: 'play' },
+        { card: secondCard, animationState: 'play' },
+      ],
+    };
+    await fixture.whenStable();
+
+    const animatedHandCards = fixture.nativeElement.querySelectorAll(
+      '.card-visual--animation-play',
+    );
+
+    expect(animatedHandCards.length).toBe(2);
+  });
+
+  it('T-5 / US-12 - applying animation metadata does not mutate active hand game state', async () => {
+    testState.handCards = [firstCard, secondCard];
+    testState.selectedHandCard = secondCard;
+    await fixture.whenStable();
+
+    const handCardsBeforeMetadata = [...testState.handCards];
+    const selectedHandCardBeforeMetadata = testState.selectedHandCard;
+
+    testState.animationMetadata = {
+      hand: [
+        { card: firstCard, animationState: 'play' },
+        { card: secondCard, animationState: 'deal' },
+      ],
+    };
+    await fixture.whenStable();
+
+    expect(testState.handCards).toEqual(handCardsBeforeMetadata);
+    expect(testState.selectedHandCard).toBe(selectedHandCardBeforeMetadata);
   });
 });

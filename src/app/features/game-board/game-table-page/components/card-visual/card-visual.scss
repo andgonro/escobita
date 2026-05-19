@@ -27,3 +27,32 @@
   box-shadow: 0 0 0 3px rgba(244, 211, 94, 0.85);
   transform: translateY(-2px);
 }
+
+.card-visual--animation-play {
+  transform: translateY(-4px);
+}
+
+.card-visual--animation-capture {
+  box-shadow:
+    0 0 0 3px rgba(34, 197, 94, 0.65),
+    0 0 16px rgba(34, 197, 94, 0.45);
+}
+
+.card-visual--animation-deal {
+  transform: translateY(-3px) scale(1.01);
+}
+
+.card-visual--animation-opponent {
+  transform: translateY(-2px) scale(0.99);
+}
+
+.card-visual--animation-escoba {
+  box-shadow:
+    0 0 0 3px rgba(249, 115, 22, 0.75),
+    0 0 18px rgba(249, 115, 22, 0.5);
+}
+
+.card-visual--focus-visible:focus-visible {
+  outline: 3px solid rgba(56, 189, 248, 0.95);
+  outline-offset: 3px;
+}

@@ -32,6 +32,8 @@ graph LR
 
 ### T-1: Define animation domain contracts
 
+- **Status:** ✅ Implemented
+
 - **Description:** Define feature-level animation concepts, group lifecycle states, action categories, and completion accounting in plain architecture terms aligned to existing game-table boundaries.
 - **Architectural Decision:** AD-1, AD-2, AD-4.
 - **Depends on:** None.
@@ -44,6 +46,8 @@ graph LR
 - **Spec traceability:** TR-1, TR-8, US-12.
 
 ### T-2: Implement feature-scoped animation orchestrator
+
+- **Status:** ✅ Implemented
 
 - **Description:** Add a feature-scoped orchestrator that owns animation state signal, group creation, and completion collection.
 - **Architectural Decision:** AD-1, AD-2.
@@ -58,6 +62,8 @@ graph LR
 
 ### T-3: Implement pause policy with runtime test override
 
+- **Status:** ✅ Implemented
+
 - **Description:** Add feature-level pause policy that resolves effective pause durations and supports deterministic override for automated tests.
 - **Architectural Decision:** AD-3, AD-5.
 - **Depends on:** T-1.
@@ -71,6 +77,8 @@ graph LR
 
 ### T-4: Wire atomic card visual animation states
 
+- **Status:** ✅ Implemented
+
 - **Description:** Extend card visual presentation states to support movement, glow, depth, and Escoba emphasis classes while preserving selection semantics.
 - **Architectural Decision:** AD-4, AD-6.
 - **Depends on:** T-2.
@@ -83,6 +91,8 @@ graph LR
 - **Spec traceability:** FR-4, FR-6, TR-2, NFR-2, NFR-7, US-4, US-6.
 
 ### T-5: Integrate animation metadata into zone components
+
+- **Status:** ✅ Implemented
 
 - **Description:** Pass orchestrator metadata into hand, table, and opponent zones and map per-card state rendering responsibilities.
 - **Architectural Decision:** AD-1, AD-7.

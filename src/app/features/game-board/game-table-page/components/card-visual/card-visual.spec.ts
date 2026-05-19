@@ -3,12 +3,13 @@ import { Card } from '../../../../../models/card';
 
 import { CardVisual } from './card-visual';
 
-// Covers: FR-1.5, FR-6.2, TR-3.1, TR-3.2, TR-6.2, US-1
+// Covers: FR-1.5, FR-4, FR-6.2, TR-2, TR-3.1, TR-3.2, TR-6.2, NFR-2, NFR-7, US-1, US-4, US-6
 
 type CardVisualTestState = CardVisual & {
   card: Card | null;
   selected: boolean;
   faceDown: boolean;
+  animationState?: 'idle' | 'play' | 'capture' | 'deal' | 'opponent' | 'escoba' | null;
 };
 
 const sampleCard: Card = { suit: 'Oros', rank: '1', value: 1 };
@@ -115,5 +116,64 @@ describe('CardVisual', () => {
 
     expect(visual?.classList.contains('card-visual--selected')).toBe(true);
     expect(visual?.getAttribute('aria-label')).toBe('Carta oculta');
+  });
+
+  it.each<NonNullable<CardVisualTestState['animationState']>>([
+    'play',
+    'capture',
+    'deal',
+    'opponent',
+    'escoba',
+  ])('applies the visual animation class for %s state', async (animationState) => {
+    testState.card = sampleCard;
+    testState.animationState = animationState;
+    await fixture.whenStable();
+
+    const visual = fixture.nativeElement.querySelector(
+      '[data-testid="card-visual"]',
+    ) as HTMLElement | null;
+
+    expect(visual?.classList.contains(`card-visual--animation-${animationState}`)).toBe(true);
+  });
+
+  it('keeps selected style visually distinct when capture animation state is active', async () => {
+    testState.card = sampleCard;
+    testState.selected = true;
+    testState.animationState = 'capture';
+    await fixture.whenStable();
+
+    const visual = fixture.nativeElement.querySelector(
+      '[data-testid="card-visual"]',
+    ) as HTMLElement | null;
+
+    expect(visual?.classList.contains('card-visual--selected')).toBe(true);
+    expect(visual?.classList.contains('card-visual--animation-capture')).toBe(true);
+  });
+
+  it('keeps selected style visually distinct when escoba animation emphasis is active', async () => {
+    testState.card = sampleCard;
+    testState.selected = true;
+    testState.animationState = 'escoba';
+    await fixture.whenStable();
+
+    const visual = fixture.nativeElement.querySelector(
+      '[data-testid="card-visual"]',
+    ) as HTMLElement | null;
+
+    expect(visual?.classList.contains('card-visual--selected')).toBe(true);
+    expect(visual?.classList.contains('card-visual--animation-escoba')).toBe(true);
+  });
+
+  it('keeps focus visibility class hook while escoba animation emphasis is active', async () => {
+    testState.card = sampleCard;
+    testState.animationState = 'escoba';
+    await fixture.whenStable();
+
+    const visual = fixture.nativeElement.querySelector(
+      '[data-testid="card-visual"]',
+    ) as HTMLElement | null;
+
+    expect(visual?.classList.contains('card-visual--focus-visible')).toBe(true);
+    expect(visual?.classList.contains('card-visual--animation-escoba')).toBe(true);
   });
 });

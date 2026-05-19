@@ -16,7 +16,11 @@
       [disabled]="!interactionEnabledSignal()"
       (click)="toggleTableCard(card)"
     >
-      <app-card-visual [card]="card" [selected]="isSelected(card)"></app-card-visual>
+      <app-card-visual
+        [card]="card"
+        [selected]="isSelected(card)"
+        [animationState]="animationStateForCard(card)"
+      ></app-card-visual>
     </button>
   }
 </section>

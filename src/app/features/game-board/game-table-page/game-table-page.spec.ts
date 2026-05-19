@@ -7,6 +7,8 @@ import { AiStrategyService } from '../../../core/services/ai-strategy.service';
 import { GameEngine } from '../../../core/services/game-engine';
 import { GameSession } from '../../../core/services/game-session';
 import { TableInteractionState } from '../services/table-interaction-state';
+import { CardAnimationOrchestrator } from '../services/card-animation-orchestrator';
+import { TurnPausePolicy } from '../services/turn-pause-policy';
 import { Card } from '../../../models/card';
 import { AiPlayDecision, AiTurnAnimationState, AI_TURN_IDLE } from '../../../models/ai-turn';
 import { GameConfiguration } from '../../../models/game-configuration';
@@ -16,6 +18,7 @@ import { RoundResult } from '../../../models/round-result';
 
 import { GameTablePage } from './game-table-page';
 import { MatchContextHud } from './components/match-context-hud/match-context-hud';
+import { ActiveHandZone } from './zones/active-hand-zone/active-hand-zone';
 import { CenterTableZone } from './zones/center-table-zone/center-table-zone';
 import { OpponentZones } from './zones/opponent-zones/opponent-zones';
 
@@ -426,6 +429,15 @@ describe('GameTablePage', () => {
     return opponentZonesDebugElement.componentInstance as OpponentZones;
   };
 
+  const getActiveHandZoneInstance = (): ActiveHandZone => {
+    const activeHandZoneDebugElement = fixture.debugElement.query(By.directive(ActiveHandZone));
+    if (!activeHandZoneDebugElement) {
+      throw new Error('Expected ActiveHandZone to be present in GameTablePage template');
+    }
+
+    return activeHandZoneDebugElement.componentInstance as ActiveHandZone;
+  };
+
   const getCenterTableZoneInstance = (): CenterTableZone => {
     const centerTableDebugElement = fixture.debugElement.query(By.directive(CenterTableZone));
     if (!centerTableDebugElement) {
@@ -628,6 +640,99 @@ describe('GameTablePage', () => {
     await fixture.whenStable();
 
     expect(stubs.confirmTurnSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('T-6 / FR-7 / TR-8 - waits for animation-group completion before confirming player turn', async () => {
+    await configureAndCreate('awaiting-confirmation', handCard);
+
+    const animationOrchestrator = fixture.componentRef.injector.get(CardAnimationOrchestrator);
+    const pausePolicy = fixture.componentRef.injector.get(TurnPausePolicy);
+    const resolvePauseSpy = vi.spyOn(pausePolicy, 'resolvePauseMs').mockReturnValue(50);
+
+    animationOrchestrator.startGroup({
+      actionType: 'play',
+      cardIds: ['Oros-7'],
+    });
+    await fixture.whenStable();
+
+    getByTestId<HTMLButtonElement>('confirm-turn').click();
+    await fixture.whenStable();
+
+    expect(stubs.confirmTurnSpy).not.toHaveBeenCalled();
+    expect(resolvePauseSpy).not.toHaveBeenCalled();
+  });
+
+  it('T-6 / FR-7 / TR-4 - applies completion-driven sequencing in AI flow before confirmTurn', async () => {
+    vi.useFakeTimers();
+
+    try {
+      await configureAndCreate('awaiting-card-play', handCard);
+
+      const aiCard: Card = { suit: 'Oros', rank: '1', value: 1 };
+      stubs.setAiDecision({
+        cardToPlay: aiCard,
+        captureSubset: [],
+      });
+
+      stubs.setState({
+        deck: [],
+        table: [tableCardA],
+        players: [
+          {
+            id: 'p1',
+            name: 'Alice',
+            hand: [handCard],
+            capturedPile: [],
+            escobaCount: 0,
+          },
+          {
+            id: 'p2',
+            name: 'Laia',
+            hand: [aiCard],
+            capturedPile: [],
+            escobaCount: 0,
+          },
+        ],
+        turnIndex: 1,
+        roundNumber: 1,
+        matchScores: { p1: 0, p2: 0 },
+        lastCapturerId: null,
+      });
+
+      const animationOrchestrator = fixture.componentRef.injector.get(CardAnimationOrchestrator);
+      const pausePolicy = fixture.componentRef.injector.get(TurnPausePolicy);
+      pausePolicy.setRuntimeOverrideMs(1);
+
+      let aiGroupId: string | null = null;
+      stubs.playCardSpy.mockImplementationOnce(() => {
+        aiGroupId = animationOrchestrator.startGroup({
+          actionType: 'opponent-play',
+          cardIds: ['ai-play-card'],
+        });
+        stubs.setTurnPhase('awaiting-confirmation');
+      });
+
+      const aiRun = runAiTurnDirectly();
+      await vi.advanceTimersByTimeAsync(2);
+
+      expect(stubs.playCardSpy).toHaveBeenCalledWith(aiCard, []);
+      expect(stubs.confirmTurnSpy).not.toHaveBeenCalled();
+
+      await vi.advanceTimersByTimeAsync(100);
+      expect(stubs.confirmTurnSpy).not.toHaveBeenCalled();
+
+      if (aiGroupId === null) {
+        throw new Error('Expected AI animation group id to be initialized before completion.');
+      }
+
+      animationOrchestrator.finalizeGroup(aiGroupId);
+      await vi.advanceTimersByTimeAsync(1);
+      await aiRun;
+
+      expect(stubs.confirmTurnSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('SC-15 / FR-4.6 - renders escoba outcome visibility from engine-authoritative state', async () => {
@@ -1705,6 +1810,35 @@ describe('GameTablePage', () => {
     expect(opponentZones.aiTurnAnimationState.phase).toBe('capture-previewing');
   });
 
+  it('T-5 / AD-1 - propagates structured animation metadata to hand, table, and opponent zones', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    const animationOrchestrator = fixture.componentRef.injector.get(CardAnimationOrchestrator);
+    animationOrchestrator.startGroup({
+      actionType: 'capture',
+      cardIds: ['Oros-7', 'Copas-5', 'Bastos-3'],
+    });
+    await fixture.whenStable();
+
+    const activeHandZone = getActiveHandZoneInstance() as ActiveHandZone & {
+      animationMetadata?: { hand?: unknown[] } | null;
+    };
+    const centerTableZone = getCenterTableZoneInstance() as CenterTableZone & {
+      animationMetadata?: { table?: unknown[] } | null;
+    };
+    const opponentZones = getOpponentZonesInstance() as OpponentZones & {
+      animationMetadata?: { opponent?: unknown[] } | null;
+    };
+
+    expect(Array.isArray(activeHandZone.animationMetadata?.hand)).toBe(true);
+    expect(Array.isArray(centerTableZone.animationMetadata?.table)).toBe(true);
+    expect(Array.isArray(opponentZones.animationMetadata?.opponent)).toBe(true);
+
+    expect((activeHandZone.animationMetadata?.hand ?? []).length).toBeGreaterThan(0);
+    expect((centerTableZone.animationMetadata?.table ?? []).length).toBeGreaterThan(0);
+    expect((opponentZones.animationMetadata?.opponent ?? []).length).toBeGreaterThan(0);
+  });
+
   it('T-10 / AD-8 - suppresses AI hand cards in Multiplayer mode', async () => {
     await configureAndCreate('awaiting-card-play', handCard);
 
@@ -1791,6 +1925,62 @@ describe('GameTablePage', () => {
       expect(stubs.playCardSpy).toHaveBeenCalledWith(aiCard, [tableCardA]);
       expect(stubs.confirmTurnSpy).toHaveBeenCalledTimes(1);
       expect(readProtectedSignal<boolean>('isAiTurnInProgress')).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('T-3 / FR-7 / TR-4 - resolves AI turn pause timing through TurnPausePolicy', async () => {
+    vi.useFakeTimers();
+
+    try {
+      await configureAndCreate('awaiting-card-play', handCard);
+
+      const aiCard: Card = { suit: 'Oros', rank: '1', value: 1 };
+      stubs.setAiDecision({
+        cardToPlay: aiCard,
+        captureSubset: [tableCardA],
+      });
+
+      stubs.setState({
+        deck: [],
+        table: [tableCardA, tableCardB],
+        players: [
+          {
+            id: 'p1',
+            name: 'Alice',
+            hand: [handCard],
+            capturedPile: [],
+            escobaCount: 0,
+          },
+          {
+            id: 'p2',
+            name: 'Laia',
+            hand: [aiCard],
+            capturedPile: [],
+            escobaCount: 0,
+          },
+        ],
+        turnIndex: 1,
+        roundNumber: 1,
+        matchScores: { p1: 0, p2: 0 },
+        lastCapturerId: null,
+      });
+
+      const pausePolicy = fixture.debugElement.injector.get(TurnPausePolicy);
+      const resolvePauseSpy = vi.spyOn(pausePolicy, 'resolvePauseMs').mockReturnValue(50);
+
+      const aiRun = runAiTurnDirectly();
+      await vi.advanceTimersByTimeAsync(199);
+
+      expect(stubs.confirmTurnSpy).not.toHaveBeenCalled();
+
+      await vi.advanceTimersByTimeAsync(1);
+      await aiRun;
+
+      expect(resolvePauseSpy).toHaveBeenCalled();
+      expect(stubs.playCardSpy).toHaveBeenCalledWith(aiCard, [tableCardA]);
+      expect(stubs.confirmTurnSpy).toHaveBeenCalledTimes(1);
     } finally {
       vi.useRealTimers();
     }

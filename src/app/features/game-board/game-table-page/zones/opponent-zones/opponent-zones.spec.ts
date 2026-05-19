@@ -19,6 +19,12 @@ const makeOpponents = (count: number): Player[] => {
 type OpponentZonesTestState = OpponentZones & {
   opponents: Player[];
   aiHandCardCount: number;
+  animationMetadata: {
+    opponent: {
+      cardIndex: number;
+      animationState: 'idle' | 'play' | 'capture' | 'deal' | 'opponent' | 'escoba' | null;
+    }[];
+  } | null;
   aiTurnAnimationState: {
     phase: 'idle' | 'deliberating' | 'card-selected' | 'capture-previewing' | 'resolving';
     selectedCardIndex: number | null;
@@ -327,5 +333,94 @@ describe('OpponentZones', () => {
     expect(selectedCard?.classList.contains('card-visual--selected')).toBe(true);
     expect(selectedImage?.getAttribute('src')).toContain('/cards/Card_Back.png');
     expect(selectedImage?.getAttribute('alt')).toBe('Carta oculta');
+  });
+
+  it('T-5 / FR-5 - applies opponent animation metadata to selected AI hand card shell', async () => {
+    testState.opponents = [
+      {
+        id: 'p-laia',
+        name: 'Laia',
+        hand: [],
+        capturedPile: [],
+        escobaCount: 0,
+      },
+    ];
+    testState.aiHandCardCount = 3;
+    testState.aiTurnAnimationState = defaultAiTurnAnimationState;
+    testState.animationMetadata = {
+      opponent: [
+        { cardIndex: 1, animationState: 'opponent' },
+        { cardIndex: 0, animationState: null },
+      ],
+    };
+    await fixture.whenStable();
+
+    const animatedCard = fixture.nativeElement.querySelector(
+      '[data-testid="ai-hand-card-1"]',
+    ) as HTMLElement | null;
+    const nonAnimatedCard = fixture.nativeElement.querySelector(
+      '[data-testid="ai-hand-card-0"]',
+    ) as HTMLElement | null;
+
+    expect(animatedCard?.classList.contains('card-visual--animation-opponent')).toBe(true);
+    expect(nonAnimatedCard?.classList.contains('card-visual--animation-opponent')).toBe(false);
+  });
+
+  it('T-5 / FR-8 - renders simultaneous opponent metadata states for multiple AI cards', async () => {
+    testState.opponents = [
+      {
+        id: 'p-laia',
+        name: 'Laia',
+        hand: [],
+        capturedPile: [],
+        escobaCount: 0,
+      },
+    ];
+    testState.aiHandCardCount = 3;
+    testState.aiTurnAnimationState = defaultAiTurnAnimationState;
+    testState.animationMetadata = {
+      opponent: [
+        { cardIndex: 0, animationState: 'opponent' },
+        { cardIndex: 1, animationState: 'opponent' },
+      ],
+    };
+    await fixture.whenStable();
+
+    const opponentAnimatedCards = fixture.nativeElement.querySelectorAll(
+      '.card-visual--animation-opponent',
+    );
+
+    expect(opponentAnimatedCards.length).toBe(2);
+  });
+
+  it('T-5 / US-12 - applying opponent animation metadata does not mutate opponent game state', async () => {
+    const laiaOpponent: Player = {
+      id: 'p-laia',
+      name: 'Laia',
+      hand: [],
+      capturedPile: [],
+      escobaCount: 0,
+    };
+
+    testState.opponents = [laiaOpponent];
+    testState.aiHandCardCount = 3;
+    testState.aiTurnAnimationState = defaultAiTurnAnimationState;
+    await fixture.whenStable();
+
+    const opponentsBeforeMetadata = [...testState.opponents];
+    const aiHandCountBeforeMetadata = testState.aiHandCardCount;
+    const aiTurnStateBeforeMetadata = testState.aiTurnAnimationState;
+
+    testState.animationMetadata = {
+      opponent: [
+        { cardIndex: 0, animationState: 'opponent' },
+        { cardIndex: 1, animationState: 'opponent' },
+      ],
+    };
+    await fixture.whenStable();
+
+    expect(testState.opponents).toEqual(opponentsBeforeMetadata);
+    expect(testState.aiHandCardCount).toBe(aiHandCountBeforeMetadata);
+    expect(testState.aiTurnAnimationState).toEqual(aiTurnStateBeforeMetadata);
   });
 });

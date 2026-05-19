@@ -41,6 +41,7 @@
         [opponents]="opponents()"
         [aiHandCardCount]="aiHandCardCount()"
         [aiTurnAnimationState]="aiTurnAnimationState()"
+        [animationMetadata]="opponentAnimationMetadata()"
       ></app-opponent-zones>
     </div>
 
@@ -49,6 +50,7 @@
         [tableCards]="tableCards()"
         [selectedTableCards]="selectedTableCards()"
         [interactionEnabled]="interactionEnabled()"
+        [animationMetadata]="centerTableAnimationMetadata()"
         (tableCardToggled)="onTableCardToggled($event)"
       ></app-center-table-zone>
     </div>
@@ -58,6 +60,7 @@
         [handCards]="activeHandCards()"
         [selectedHandCard]="selectedHandCard()"
         [interactionEnabled]="interactionEnabled()"
+        [animationMetadata]="activeHandAnimationMetadata()"
         (handCardSelected)="onHandCardSelected($event)"
       ></app-active-hand-zone>
     </div>
