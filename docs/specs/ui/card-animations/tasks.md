@@ -107,6 +107,8 @@ graph LR
 
 ### T-6: Integrate completion-driven turn sequencing
 
+- **Status:** ✅ Implemented
+
 - **Description:** Update game-table flow so turn advancement waits for animation-group completion, then applies pause policy before confirm progression.
 - **Architectural Decision:** AD-2, AD-3.
 - **Depends on:** T-2, T-3.

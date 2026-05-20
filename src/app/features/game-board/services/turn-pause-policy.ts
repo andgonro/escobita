@@ -4,7 +4,8 @@ export type TurnPauseStage =
   | 'ai-deliberation'
   | 'ai-selection-preview'
   | 'ai-capture-preview'
-  | 'ai-post-play-confirm';
+  | 'ai-post-play-confirm'
+  | 'player-post-play-confirm';
 
 interface ResolvePauseOptions {
   reducedMotion: boolean;
@@ -15,6 +16,7 @@ const DEFAULT_STAGE_PAUSE_MS: Record<TurnPauseStage, number> = {
   'ai-selection-preview': 600,
   'ai-capture-preview': 700,
   'ai-post-play-confirm': 300,
+  'player-post-play-confirm': 600,
 };
 
 @Injectable()

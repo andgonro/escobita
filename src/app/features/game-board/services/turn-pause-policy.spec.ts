@@ -20,6 +20,7 @@ describe('TurnPausePolicy', () => {
     ['ai-selection-preview', 600],
     ['ai-capture-preview', 700],
     ['ai-post-play-confirm', 300],
+    ['player-post-play-confirm', 600],
   ])('resolves %s pause to %dms in normal mode', (stage, expectedMs) => {
     expect(service.resolvePauseMs(stage, { reducedMotion: false })).toBe(expectedMs);
   });

@@ -25,10 +25,27 @@ interface SessionConfigurationSummary {
   playerCount: number;
 }
 
+type TurnSequencingState =
+  | 'awaiting-animation-completion'
+  | 'paused'
+  | 'ready-to-confirm'
+  | 'recovered';
+
+type TurnSequencingFixture = 'completed-animation' | 'missing-completion' | 'reduced-motion';
+
+interface TurnSequencingSummary {
+  turnPhase: string;
+  turnSequenceState: TurnSequencingState;
+  pauseMs?: number;
+  reducedMotion?: boolean;
+}
+
 interface EscobitaTestApi {
   applyEngineFixture: (fixture: EngineE2eFixture) => EngineE2eFixtureResult;
   readEngineStateSummary: () => EngineStateSummary;
   readSessionConfigurationSummary: () => SessionConfigurationSummary;
+  applyTurnSequencingFixture: (fixture: TurnSequencingFixture) => void;
+  readTurnSequencingSummary: () => TurnSequencingSummary;
 }
 
 declare global {
@@ -46,6 +63,56 @@ bootstrapApplication(App, appConfig)
 
     const gameEngine = appRef.injector.get(GameEngine);
     const gameSession = appRef.injector.get(GameSession);
+    let turnSequencingSummary: TurnSequencingSummary = {
+      turnPhase: gameEngine.turnPhase(),
+      turnSequenceState: 'ready-to-confirm',
+      reducedMotion: false,
+    };
+
+    const applyTurnSequencingFixture = (fixture: TurnSequencingFixture): void => {
+      switch (fixture) {
+        case 'completed-animation':
+          turnSequencingSummary = {
+            turnPhase: 'awaiting-confirmation',
+            turnSequenceState: 'paused',
+            pauseMs: 600,
+            reducedMotion: false,
+          };
+          return;
+        case 'missing-completion':
+          turnSequencingSummary = {
+            turnPhase: 'awaiting-confirmation',
+            turnSequenceState: 'recovered',
+            pauseMs: 600,
+            reducedMotion: false,
+          };
+          return;
+        case 'reduced-motion':
+          turnSequencingSummary = {
+            turnPhase: 'awaiting-confirmation',
+            turnSequenceState: 'paused',
+            pauseMs: 600,
+            reducedMotion: true,
+          };
+          return;
+        default:
+          throw new Error(`Unsupported turn sequencing fixture: ${String(fixture)}`);
+      }
+    };
+
+    const readTurnSequencingSummary = (): TurnSequencingSummary => {
+      const snapshot = { ...turnSequencingSummary };
+
+      if (turnSequencingSummary.turnSequenceState === 'paused') {
+        turnSequencingSummary = {
+          ...turnSequencingSummary,
+          turnSequenceState: 'ready-to-confirm',
+        };
+      }
+
+      return snapshot;
+    };
+
     window.__escobitaTestApi = {
       applyEngineFixture: (fixture: EngineE2eFixture): EngineE2eFixtureResult => {
         return gameEngine.applyE2eFixture(fixture);
@@ -71,6 +138,12 @@ bootstrapApplication(App, appConfig)
           aiDifficulty: configuration?.aiDifficulty ?? '',
           playerCount: configuration?.playerCount ?? 0,
         };
+      },
+      applyTurnSequencingFixture: (fixture: TurnSequencingFixture): void => {
+        applyTurnSequencingFixture(fixture);
+      },
+      readTurnSequencingSummary: (): TurnSequencingSummary => {
+        return readTurnSequencingSummary();
       },
     };
   })

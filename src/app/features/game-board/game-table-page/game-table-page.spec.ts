@@ -642,7 +642,7 @@ describe('GameTablePage', () => {
     expect(stubs.confirmTurnSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('T-6 / FR-7 / TR-8 - waits for animation-group completion before confirming player turn', async () => {
+  it('T-6 / SC-17 / FR-7 / TR-8 - waits for animation-group completion before confirming player turn', async () => {
     await configureAndCreate('awaiting-confirmation', handCard);
 
     const animationOrchestrator = fixture.componentRef.injector.get(CardAnimationOrchestrator);
@@ -662,7 +662,45 @@ describe('GameTablePage', () => {
     expect(resolvePauseSpy).not.toHaveBeenCalled();
   });
 
-  it('T-6 / FR-7 / TR-4 - applies completion-driven sequencing in AI flow before confirmTurn', async () => {
+  it('T-6 / SC-17 / FR-7 / TR-4 - confirms player turn only after completion and post-completion pause', async () => {
+    vi.useFakeTimers();
+
+    try {
+      await configureAndCreate('awaiting-confirmation', handCard);
+
+      const animationOrchestrator = fixture.componentRef.injector.get(CardAnimationOrchestrator);
+      const pausePolicy = fixture.componentRef.injector.get(TurnPausePolicy);
+      const resolvePauseSpy = vi.spyOn(pausePolicy, 'resolvePauseMs').mockReturnValue(25);
+
+      const groupId = animationOrchestrator.startGroup({
+        actionType: 'play',
+        cardIds: ['Oros-7'],
+      });
+
+      const confirmTurnResult = (
+        component as unknown as { confirmTurn: () => unknown }
+      ).confirmTurn();
+
+      expect(stubs.confirmTurnSpy).not.toHaveBeenCalled();
+
+      animationOrchestrator.finalizeGroup(groupId);
+      await vi.advanceTimersByTimeAsync(24);
+
+      expect(stubs.confirmTurnSpy).not.toHaveBeenCalled();
+
+      await vi.advanceTimersByTimeAsync(1);
+      await Promise.resolve(confirmTurnResult);
+
+      expect(resolvePauseSpy).toHaveBeenCalledWith('player-post-play-confirm', {
+        reducedMotion: false,
+      });
+      expect(stubs.confirmTurnSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('T-6 / SC-19 / FR-7 / TR-4 - applies completion-driven sequencing in AI flow before confirmTurn', async () => {
     vi.useFakeTimers();
 
     try {

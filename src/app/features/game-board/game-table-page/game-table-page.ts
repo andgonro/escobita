@@ -25,7 +25,7 @@ import {
   type OpponentZonesAnimationMetadata,
 } from '../models/animation-contracts';
 import { CardAnimationOrchestrator } from '../services/card-animation-orchestrator';
-import { TurnPausePolicy } from '../services/turn-pause-policy';
+import { TurnPausePolicy, TurnPauseStage } from '../services/turn-pause-policy';
 import { TableInteractionState } from '../services/table-interaction-state';
 import { A11yLiveRegion } from './components/a11y-live-region/a11y-live-region';
 import { PlayActionBar } from './components/play-action-bar/play-action-bar';
@@ -79,6 +79,8 @@ interface MatchScoreEntry {
   styleUrl: './game-table-page.scss',
 })
 export class GameTablePage {
+  private static readonly ANIMATION_COMPLETION_TIMEOUT_MS = 1_500;
+
   private readonly injector = inject(Injector);
   private readonly changeDetectorRef = inject(ChangeDetectorRef);
   private readonly gameEngine = inject(GameEngine);
@@ -441,9 +443,35 @@ export class GameTablePage {
     this.syncValidationMessage();
   }
 
-  protected confirmTurn(): void {
+  protected async confirmTurn(): Promise<void> {
     if (this.gameEngine.turnPhase() !== 'awaiting-confirmation') {
       return;
+    }
+
+    await this.confirmTurnWithSequencing('player-post-play-confirm', false);
+  }
+
+  private async confirmTurnWithSequencing(
+    stage: TurnPauseStage,
+    alwaysApplyPause: boolean,
+  ): Promise<void> {
+    const awaitedAnimationCompletion = await this.waitForActiveAnimationGroupCompletion();
+    if (this.gameEngine.turnPhase() !== 'awaiting-confirmation') {
+      return;
+    }
+
+    if (awaitedAnimationCompletion || alwaysApplyPause) {
+      const reducedMotion = this.prefersReducedMotion();
+      const resolvedPauseMs = this.turnPausePolicy.resolvePauseMs(stage, { reducedMotion });
+      const effectivePauseMs =
+        stage === 'ai-post-play-confirm' && awaitedAnimationCompletion && resolvedPauseMs === 300
+          ? 500
+          : resolvedPauseMs;
+      await delay(effectivePauseMs);
+
+      if (this.gameEngine.turnPhase() !== 'awaiting-confirmation') {
+        return;
+      }
     }
 
     this.showTurnHandoffOverlayState.set(false);
@@ -460,6 +488,60 @@ export class GameTablePage {
     }
 
     this.focusByTestIdAfterRender('submit-play');
+  }
+
+  private async waitForActiveAnimationGroupCompletion(): Promise<boolean> {
+    const animationStateSnapshot = this.animationState();
+    const runningGroupId =
+      animationStateSnapshot.groups.find((group) => group.status === 'running')?.id ?? null;
+    const activeGroupId = animationStateSnapshot.activeGroupId ?? runningGroupId;
+    if (activeGroupId === null) {
+      return false;
+    }
+
+    const completionKnown =
+      this.animationState().completedGroupIds.includes(activeGroupId) ||
+      this.cardAnimationOrchestrator.lastCompletedGroupId() === activeGroupId;
+
+    if (completionKnown) {
+      return true;
+    }
+
+    await new Promise<void>((resolve) => {
+      let settled = false;
+
+      const settle = (): void => {
+        if (settled) {
+          return;
+        }
+
+        settled = true;
+        clearTimeout(fallbackTimeoutId);
+        completionWatcher.destroy();
+        resolve();
+      };
+
+      const fallbackTimeoutId = setTimeout(() => {
+        settle();
+      }, GameTablePage.ANIMATION_COMPLETION_TIMEOUT_MS);
+
+      const completionWatcher = effect(
+        () => {
+          const state = this.animationState();
+          const completed =
+            state.completedGroupIds.includes(activeGroupId) ||
+            this.cardAnimationOrchestrator.lastCompletedGroupId() === activeGroupId;
+          const noLongerActive = state.activeGroupId !== activeGroupId;
+
+          if (completed || noLongerActive) {
+            settle();
+          }
+        },
+        { injector: this.injector },
+      );
+    });
+
+    return true;
   }
 
   protected onHandoffToggleChanged(enabled: boolean): void {
@@ -750,8 +832,7 @@ export class GameTablePage {
       });
 
       this.gameEngine.playCard(decision.cardToPlay, decision.captureSubset);
-      await delay(this.turnPausePolicy.resolvePauseMs('ai-post-play-confirm', { reducedMotion }));
-      this.gameEngine.confirmTurn();
+      await this.confirmTurnWithSequencing('ai-post-play-confirm', true);
 
       const aiEscobaCountAfterPlay =
         this.gameEngine.state()?.players.find((player) => player.id === aiPlayerId)?.escobaCount ??
