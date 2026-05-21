@@ -26,10 +26,11 @@
           @for (aiCardIndex of aiHandIndexes(); track aiCardIndex) {
             <div class="ai-hand-card" [attr.data-testid]="'ai-hand-shell-' + aiCardIndex">
               <app-card-visual
-                [attr.data-testid]="'ai-hand-card-' + aiCardIndex"
+                [testId]="'ai-hand-card-' + aiCardIndex"
                 [card]="aiCardAt(aiCardIndex)"
                 [faceDown]="isAiCardFaceDown(aiCardIndex)"
                 [selected]="isAiCardSelected(aiCardIndex)"
+                [mirrorStateToFigure]="false"
                 [animationState]="aiCardAnimationState(aiCardIndex)"
               ></app-card-visual>
             </div>

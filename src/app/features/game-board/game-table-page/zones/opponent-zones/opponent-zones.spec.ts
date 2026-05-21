@@ -19,6 +19,7 @@ const makeOpponents = (count: number): Player[] => {
 type OpponentZonesTestState = OpponentZones & {
   opponents: Player[];
   aiHandCardCount: number;
+  suppressAiAnimations: boolean;
   animationMetadata: {
     opponent: {
       cardIndex: number;
@@ -391,6 +392,34 @@ describe('OpponentZones', () => {
     );
 
     expect(opponentAnimatedCards.length).toBe(2);
+  });
+
+  it('does not animate AI cards when suppression is active', async () => {
+    testState.opponents = [
+      {
+        id: 'p-laia',
+        name: 'Laia',
+        hand: [],
+        capturedPile: [],
+        escobaCount: 0,
+      },
+    ];
+    testState.aiHandCardCount = 3;
+    testState.aiTurnAnimationState = defaultAiTurnAnimationState;
+    testState.animationMetadata = {
+      opponent: [
+        { cardIndex: 0, animationState: 'opponent' },
+        { cardIndex: 1, animationState: 'opponent' },
+      ],
+    };
+    testState.suppressAiAnimations = true;
+    await fixture.whenStable();
+
+    const opponentAnimatedCards = fixture.nativeElement.querySelectorAll(
+      '.card-visual--animation-opponent',
+    );
+
+    expect(opponentAnimatedCards.length).toBe(0);
   });
 
   it('T-5 / US-12 - applying opponent animation metadata does not mutate opponent game state', async () => {

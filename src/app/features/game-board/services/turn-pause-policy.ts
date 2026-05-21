@@ -23,6 +23,10 @@ const DEFAULT_STAGE_PAUSE_MS: Record<TurnPauseStage, number> = {
 export class TurnPausePolicy {
   private runtimeOverrideMs: number | null = null;
 
+  hasRuntimeOverride(): boolean {
+    return this.runtimeOverrideMs !== null;
+  }
+
   resolvePauseMs(stage: TurnPauseStage, options: ResolvePauseOptions): number {
     const configuredPause = this.runtimeOverrideMs ?? DEFAULT_STAGE_PAUSE_MS[stage];
 

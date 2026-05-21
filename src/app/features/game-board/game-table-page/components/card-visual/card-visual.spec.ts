@@ -176,4 +176,25 @@ describe('CardVisual', () => {
     expect(visual?.classList.contains('card-visual--focus-visible')).toBe(true);
     expect(visual?.classList.contains('card-visual--animation-escoba')).toBe(true);
   });
+
+  it('SC-15 / FR-6 - applies burst keyframe timing for escoba emphasis within 600-800ms', async () => {
+    testState.card = sampleCard;
+    testState.animationState = 'escoba';
+    await fixture.whenStable();
+
+    const visual = fixture.nativeElement.querySelector(
+      '[data-testid="card-visual"]',
+    ) as HTMLElement | null;
+
+    const computedStyle = getComputedStyle(visual as HTMLElement);
+    const animationName = computedStyle.getPropertyValue('animation-name').trim();
+    const animationDuration = computedStyle.getPropertyValue('animation-duration').trim();
+    const durationMs = animationDuration.endsWith('ms')
+      ? Number.parseFloat(animationDuration)
+      : Number.parseFloat(animationDuration) * 1000;
+
+    expect(animationName).toContain('card-escoba-burst');
+    expect(durationMs).toBeGreaterThanOrEqual(600);
+    expect(durationMs).toBeLessThanOrEqual(800);
+  });
 });

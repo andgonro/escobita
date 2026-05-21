@@ -122,6 +122,8 @@ graph LR
 
 ### T-7: Implement player play and capture animation flows
 
+- **Status:** ✅ Implemented
+
 - **Description:** Implement orchestration for play-card pathing, capture glow-disappear behavior, and simultaneous capture handling.
 - **Architectural Decision:** AD-1, AD-2, AD-4.
 - **Depends on:** T-4, T-5.
@@ -135,6 +137,8 @@ graph LR
 
 ### T-8: Implement deal and opponent animation flows
 
+- **Status:** ✅ Implemented
+
 - **Description:** Implement simultaneous hand-deal motion and single-player opponent action visuals aligned to shared animation profiles.
 - **Architectural Decision:** AD-4, AD-7.
 - **Depends on:** T-4, T-5.
@@ -147,6 +151,8 @@ graph LR
 - **Spec traceability:** FR-3, FR-5, FR-8, TR-2, TR-5, US-3, US-5, US-8.
 
 ### T-9: Implement Escoba mandatory burst emphasis
+
+- **Status:** ✅ Implemented
 
 - **Description:** Add Escoba-specific effect profile with required burst-style emphasis and distinct completion handling.
 - **Architectural Decision:** AD-6.

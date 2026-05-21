@@ -80,6 +80,11 @@ interface MatchScoreEntry {
 })
 export class GameTablePage {
   private static readonly ANIMATION_COMPLETION_TIMEOUT_MS = 1_500;
+  private static readonly PLAY_ANIMATION_DURATION_MS = 1_000;
+  private static readonly CAPTURE_ANIMATION_DURATION_MS = 900;
+  private static readonly ESCOBA_ANIMATION_DURATION_MS = 700;
+  private static readonly DEAL_ANIMATION_DURATION_MS = 1_000;
+  private static readonly OPPONENT_PLAY_ANIMATION_DURATION_MS = 1_000;
 
   private readonly injector = inject(Injector);
   private readonly changeDetectorRef = inject(ChangeDetectorRef);
@@ -100,6 +105,8 @@ export class GameTablePage {
   private readonly isAiTurnInProgress = signal(false);
   protected readonly aiTurnAnimationState = signal<AiTurnAnimationState>(AI_TURN_IDLE);
   private readonly liveAnnouncementState = signal('');
+  private readonly transientPlayedHandCardState = signal<Card | null>(null);
+  private readonly transientCapturedTableCardsState = signal<Card[]>([]);
   private lastAnnouncedRoundNumber: number | null = null;
 
   constructor() {
@@ -223,6 +230,20 @@ export class GameTablePage {
   protected readonly aiHighlightedTableCards = computed(() => {
     return this.aiTurnAnimationState().highlightedTableCards;
   });
+  protected readonly suppressAiCardAnimations = computed(() => {
+    const configuration = this.gameSession.configuration();
+    const activePlayer = this.gameEngine.activePlayer();
+    const aiPlayerId = this.aiPlayerId();
+
+    return (
+      configuration?.mode === 'Single Player' &&
+      this.gameEngine.turnPhase() === 'awaiting-card-play' &&
+      !this.isAiTurnInProgress() &&
+      activePlayer !== null &&
+      aiPlayerId !== null &&
+      activePlayer.id !== aiPlayerId
+    );
+  });
   protected readonly submitActionLocked = computed(() => {
     return this.isAiTurnInProgress();
   });
@@ -236,15 +257,26 @@ export class GameTablePage {
   });
 
   protected readonly activeHandCards = computed(() => {
+    const transientPlayedCard = this.transientPlayedHandCardState();
+
     if (this.gameSession.configuration()?.mode === 'Single Player') {
-      return this.gameEngine.state()?.players[0]?.hand ?? [];
+      const activeHand = this.gameEngine.state()?.players[0]?.hand ?? [];
+      return this.withTransientCard(activeHand, transientPlayedCard);
     }
 
-    return this.gameEngine.activePlayer()?.hand ?? [];
+    const activeHand = this.gameEngine.activePlayer()?.hand ?? [];
+    return this.withTransientCard(activeHand, transientPlayedCard);
   });
 
   protected readonly tableCards = computed(() => {
-    return this.gameEngine.state()?.table ?? [];
+    const transientPlayedCard = this.transientPlayedHandCardState();
+    const stateTableCards = this.gameEngine.state()?.table ?? [];
+    const visibleTableCards =
+      transientPlayedCard === null
+        ? stateTableCards
+        : stateTableCards.filter((card) => !this.areCardsEqual(card, transientPlayedCard));
+
+    return this.withTransientCards(visibleTableCards, this.transientCapturedTableCardsState());
   });
   protected readonly activeHandAnimationMetadata = computed<ActiveHandZoneAnimationMetadata>(() => {
     const animationState = this.activeAnimationVisualState();
@@ -270,6 +302,24 @@ export class GameTablePage {
   );
   protected readonly opponentAnimationMetadata = computed<OpponentZonesAnimationMetadata>(() => {
     const animationState = this.activeAnimationVisualState();
+    const aiAnimationState = this.aiTurnAnimationState();
+    const aiFallbackCardIndex = aiAnimationState.selectedCardIndex ?? 0;
+
+    if (
+      animationState === null &&
+      this.gameSession.configuration()?.mode === 'Single Player' &&
+      aiAnimationState.phase !== 'idle' &&
+      this.aiHandCardCount() > 0
+    ) {
+      return {
+        opponent: [
+          {
+            cardIndex: aiFallbackCardIndex,
+            animationState: 'opponent',
+          },
+        ],
+      };
+    }
 
     return {
       opponent: this.activeAnimationCardIds().map((_, index) => ({
@@ -420,7 +470,70 @@ export class GameTablePage {
 
     this.validationMessage.set('');
     this.announce('');
-    this.gameEngine.playCard(selectedHandCard, this.interactionState.selectedTableCards());
+    const selectedCaptureCards = this.interactionState.selectedTableCards();
+
+    this.transientPlayedHandCardState.set(selectedHandCard);
+    this.transientCapturedTableCardsState.set(selectedCaptureCards);
+
+    const playedCardId = this.toCardId(selectedHandCard);
+    const playGroupId = this.cardAnimationOrchestrator.startGroup({
+      actionType: 'play',
+      cardIds: [playedCardId],
+    });
+    this.cardAnimationOrchestrator.completeParticipant(playGroupId, playedCardId, 100);
+
+    this.scheduleAnimationGroupCompletion(
+      playGroupId,
+      this.resolveAnimationCompletionDelayMs(GameTablePage.PLAY_ANIMATION_DURATION_MS),
+      () => {
+        this.transientPlayedHandCardState.set(null);
+      },
+    );
+
+    if (selectedCaptureCards.length > 0) {
+      const capturedCardIds = selectedCaptureCards.map((card) => this.toCardId(card));
+      const captureGroupId = this.cardAnimationOrchestrator.startGroup({
+        actionType: 'capture',
+        cardIds: capturedCardIds,
+      });
+
+      for (const capturedCardId of capturedCardIds) {
+        this.cardAnimationOrchestrator.completeParticipant(captureGroupId, capturedCardId, 100);
+      }
+
+      this.scheduleAnimationGroupCompletion(
+        captureGroupId,
+        GameTablePage.CAPTURE_ANIMATION_DURATION_MS,
+        () => {
+          this.transientCapturedTableCardsState.set([]);
+        },
+      );
+    } else {
+      this.transientCapturedTableCardsState.set([]);
+    }
+
+    this.gameEngine.playCard(selectedHandCard, selectedCaptureCards);
+
+    if (selectedCaptureCards.length > 0 && this.escobaOutcome() !== null) {
+      const capturedCardIds = selectedCaptureCards.map((card) => this.toCardId(card));
+      const escobaGroupId = this.cardAnimationOrchestrator.startGroup({
+        actionType: 'escoba',
+        cardIds: capturedCardIds,
+      });
+
+      for (const capturedCardId of capturedCardIds) {
+        this.cardAnimationOrchestrator.completeParticipant(escobaGroupId, capturedCardId, 100);
+      }
+
+      this.scheduleAnimationGroupCompletion(
+        escobaGroupId,
+        this.resolveAnimationCompletionDelayMs(GameTablePage.ESCOBA_ANIMATION_DURATION_MS),
+        () => {
+          this.transientCapturedTableCardsState.set([]);
+        },
+      );
+    }
+
     this.interactionState.resetForNextAction?.();
     this.focusByTestIdAfterRender('confirm-turn');
   }
@@ -455,6 +568,9 @@ export class GameTablePage {
     stage: TurnPauseStage,
     alwaysApplyPause: boolean,
   ): Promise<void> {
+    const stateBeforeConfirm = this.gameEngine.state();
+    const playersBeforeConfirm = stateBeforeConfirm?.players ?? [];
+
     const awaitedAnimationCompletion = await this.waitForActiveAnimationGroupCompletion();
     if (this.gameEngine.turnPhase() !== 'awaiting-confirmation') {
       return;
@@ -477,6 +593,7 @@ export class GameTablePage {
     this.showTurnHandoffOverlayState.set(false);
     this.validationMessage.set('');
     this.gameEngine.confirmTurn();
+    this.startDealAnimationForNewHandCards(playersBeforeConfirm);
 
     const nextPlayerName = this.gameEngine.activePlayer()?.name ?? 'No active player';
     this.announce(`Turn changed to ${nextPlayerName}.`);
@@ -501,10 +618,25 @@ export class GameTablePage {
 
     const completionKnown =
       this.animationState().completedGroupIds.includes(activeGroupId) ||
-      this.cardAnimationOrchestrator.lastCompletedGroupId() === activeGroupId;
+      this.cardAnimationOrchestrator.lastCompletedGroupId() === activeGroupId ||
+      this.animationState().groups.some(
+        (group) =>
+          group.id === activeGroupId &&
+          group.status === 'running' &&
+          group.participantCards.every((participant) => participant.completed),
+      );
+
+    const participantCompletionOnly = this.animationState().groups.some(
+      (group) =>
+        group.id === activeGroupId &&
+        group.status === 'running' &&
+        group.participantCards.every((participant) => participant.completed) &&
+        !this.animationState().completedGroupIds.includes(activeGroupId) &&
+        this.cardAnimationOrchestrator.lastCompletedGroupId() !== activeGroupId,
+    );
 
     if (completionKnown) {
-      return true;
+      return !participantCompletionOnly;
     }
 
     await new Promise<void>((resolve) => {
@@ -699,12 +831,13 @@ export class GameTablePage {
   }
 
   private activeAnimationCardIds(): string[] {
-    const activeGroup = this.resolveActiveAnimationGroup(this.animationState());
-    if (activeGroup === null) {
-      return [];
-    }
+    const runningGroups = this.animationState().groups.filter(
+      (group) => group.status === 'running',
+    );
 
-    return activeGroup.participantCards.map((participant) => participant.cardId);
+    return runningGroups.flatMap((group) =>
+      group.participantCards.map((participant) => participant.cardId),
+    );
   }
 
   private activeAnimationVisualState(): CardAnimationVisualState {
@@ -724,7 +857,30 @@ export class GameTablePage {
       return null;
     }
 
-    return this.activeAnimationCardIds().includes(this.toCardId(card)) ? animationState : null;
+    return this.resolveVisualStateForCard(card);
+  }
+
+  private resolveVisualStateForCard(card: Card): CardAnimationVisualState {
+    const cardId = this.toCardId(card);
+    const runningGroups = this.animationState().groups;
+
+    for (let groupIndex = runningGroups.length - 1; groupIndex >= 0; groupIndex -= 1) {
+      const group = runningGroups[groupIndex];
+      if (group.status !== 'running') {
+        continue;
+      }
+
+      const containsCard = group.participantCards.some(
+        (participant) => participant.cardId === cardId,
+      );
+      if (!containsCard) {
+        continue;
+      }
+
+      return this.mapActionTypeToVisualState(group.actionType);
+    }
+
+    return null;
   }
 
   private resolveActiveAnimationGroup(state: CardAnimationState) {
@@ -742,6 +898,10 @@ export class GameTablePage {
   private mapActionTypeToVisualState(
     actionType: CardAnimationActionType,
   ): CardAnimationVisualState {
+    if (actionType === 'escoba' && this.prefersReducedMotion()) {
+      return null;
+    }
+
     switch (actionType) {
       case 'play':
         return 'play';
@@ -760,6 +920,105 @@ export class GameTablePage {
 
   private toCardId(card: Card): string {
     return `${card.suit}-${card.rank}`;
+  }
+
+  private scheduleAnimationGroupCompletion(
+    groupId: string,
+    delayMs: number,
+    onCompleted?: () => void,
+  ): void {
+    setTimeout(() => {
+      this.cardAnimationOrchestrator.finalizeGroup(groupId);
+      onCompleted?.();
+    }, delayMs);
+  }
+
+  private resolveAnimationCompletionDelayMs(maxDurationMs: number): number {
+    const reducedMotion = this.prefersReducedMotion();
+    const policyDelay = this.turnPausePolicy.resolvePauseMs('player-post-play-confirm', {
+      reducedMotion,
+    });
+
+    return Math.max(1, Math.min(maxDurationMs, policyDelay));
+  }
+
+  private withTransientCard(cards: Card[], transientCard: Card | null): Card[] {
+    if (transientCard === null || this.includesCard(cards, transientCard)) {
+      return cards;
+    }
+
+    return [...cards, transientCard];
+  }
+
+  private withTransientCards(cards: Card[], transientCards: Card[]): Card[] {
+    if (transientCards.length === 0) {
+      return cards;
+    }
+
+    const missingCards = transientCards.filter((card) => !this.includesCard(cards, card));
+    if (missingCards.length === 0) {
+      return cards;
+    }
+
+    return [...cards, ...missingCards];
+  }
+
+  private includesCard(cards: Card[], targetCard: Card): boolean {
+    return cards.some((card) => this.areCardsEqual(card, targetCard));
+  }
+
+  private resolveAiPhasePauseMs(stage: TurnPauseStage, reducedMotion: boolean): number {
+    const resolvedPauseMs = this.turnPausePolicy.resolvePauseMs(stage, { reducedMotion });
+
+    if (!this.turnPausePolicy.hasRuntimeOverride()) {
+      return resolvedPauseMs;
+    }
+
+    return Math.min(resolvedPauseMs, 10);
+  }
+
+  private startDealAnimationForNewHandCards(playersBeforeConfirm: Player[]): void {
+    const stateAfterConfirm = this.gameEngine.state();
+    if (stateAfterConfirm === null) {
+      return;
+    }
+
+    const recipients = stateAfterConfirm.players
+      .map((player) => ({
+        playerId: player.id,
+        handAfterConfirm: player.hand,
+        handBeforeConfirm:
+          playersBeforeConfirm.find((beforePlayer) => beforePlayer.id === player.id)?.hand ?? [],
+      }))
+      .map(({ playerId, handAfterConfirm, handBeforeConfirm: previousHand }) => ({
+        playerId,
+        newlyDealtCards: handAfterConfirm.filter(
+          (afterCard) =>
+            !previousHand.some((beforeCard) => this.areCardsEqual(beforeCard, afterCard)),
+        ),
+      }))
+      .filter((recipient) => recipient.newlyDealtCards.length > 0);
+
+    if (recipients.length === 0) {
+      return;
+    }
+
+    const dealCardIds = recipients.flatMap((recipient) =>
+      recipient.newlyDealtCards.map((card) => this.toCardId(card)),
+    );
+    const dealGroupId = this.cardAnimationOrchestrator.startGroup({
+      actionType: 'deal',
+      cardIds: dealCardIds,
+    });
+
+    for (const dealCardId of dealCardIds) {
+      this.cardAnimationOrchestrator.completeParticipant(dealGroupId, dealCardId, 100);
+    }
+
+    this.scheduleAnimationGroupCompletion(
+      dealGroupId,
+      this.resolveAnimationCompletionDelayMs(GameTablePage.DEAL_ANIMATION_DURATION_MS),
+    );
   }
 
   private async runAiTurn(): Promise<void> {
@@ -797,7 +1056,7 @@ export class GameTablePage {
     });
 
     try {
-      await delay(this.turnPausePolicy.resolvePauseMs('ai-deliberation', { reducedMotion }));
+      await delay(this.resolveAiPhasePauseMs('ai-deliberation', reducedMotion));
 
       const decision = this.aiStrategyService.decide(state, aiPlayer, difficulty);
       const selectedCardIndex = aiPlayer.hand.findIndex((card) =>
@@ -811,7 +1070,7 @@ export class GameTablePage {
         highlightedTableCards: [],
       });
 
-      await delay(this.turnPausePolicy.resolvePauseMs('ai-selection-preview', { reducedMotion }));
+      await delay(this.resolveAiPhasePauseMs('ai-selection-preview', reducedMotion));
 
       if (decision.captureSubset.length > 0) {
         this.aiTurnAnimationState.set({
@@ -821,7 +1080,7 @@ export class GameTablePage {
           highlightedTableCards: decision.captureSubset,
         });
 
-        await delay(this.turnPausePolicy.resolvePauseMs('ai-capture-preview', { reducedMotion }));
+        await delay(this.resolveAiPhasePauseMs('ai-capture-preview', reducedMotion));
       }
 
       this.aiTurnAnimationState.set({
@@ -830,6 +1089,17 @@ export class GameTablePage {
         revealedCard: decision.captureSubset.length > 0 ? decision.cardToPlay : null,
         highlightedTableCards: decision.captureSubset.length > 0 ? decision.captureSubset : [],
       });
+
+      const aiPlayedCardId = this.toCardId(decision.cardToPlay);
+      const opponentPlayGroupId = this.cardAnimationOrchestrator.startGroup({
+        actionType: 'opponent-play',
+        cardIds: [aiPlayedCardId],
+      });
+      this.cardAnimationOrchestrator.completeParticipant(opponentPlayGroupId, aiPlayedCardId, 100);
+      this.scheduleAnimationGroupCompletion(
+        opponentPlayGroupId,
+        this.resolveAnimationCompletionDelayMs(GameTablePage.OPPONENT_PLAY_ANIMATION_DURATION_MS),
+      );
 
       this.gameEngine.playCard(decision.cardToPlay, decision.captureSubset);
       await this.confirmTurnWithSequencing('ai-post-play-confirm', true);

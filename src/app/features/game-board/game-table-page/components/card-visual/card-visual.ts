@@ -17,7 +17,7 @@ export type CardVisualAnimationState =
   templateUrl: './card-visual.html',
   styleUrl: './card-visual.scss',
   host: {
-    '[attr.data-testid]': '"card-visual"',
+    '[attr.data-testid]': 'resolvedTestId()',
     '[attr.aria-label]': 'semanticLabel()',
     '[class.card-visual--focus-visible]': 'true',
     '[class.card-visual--selected]': 'selectedSignal()',
@@ -32,13 +32,19 @@ export class CardVisual {
   private readonly cardState = signal<Card | null>(null);
   private readonly selectedState = signal(false);
   private readonly faceDownState = signal(false);
+  private readonly testIdState = signal<string | null>(null);
+  private readonly mirrorStateToFigureState = signal(true);
   private readonly animationStateStore = signal<CardVisualAnimationState>(null);
 
   protected readonly cardSignal: Signal<Card | null> = this.cardState.asReadonly();
   protected readonly selectedSignal: Signal<boolean> = this.selectedState.asReadonly();
   protected readonly faceDownSignal: Signal<boolean> = this.faceDownState.asReadonly();
+  protected readonly testIdSignal: Signal<string | null> = this.testIdState.asReadonly();
+  protected readonly mirrorStateToFigureSignal: Signal<boolean> =
+    this.mirrorStateToFigureState.asReadonly();
   protected readonly animationStateSignal: Signal<CardVisualAnimationState> =
     this.animationStateStore.asReadonly();
+  protected readonly resolvedTestId = computed(() => this.testIdSignal() ?? 'card-visual');
 
   protected readonly mappedAsset = computed(() => {
     if (this.faceDownSignal()) {
@@ -95,6 +101,24 @@ export class CardVisual {
 
   get faceDown(): boolean {
     return this.faceDownState();
+  }
+
+  @Input()
+  set testId(value: string | null) {
+    this.testIdState.set(value ?? null);
+  }
+
+  get testId(): string | null {
+    return this.testIdState();
+  }
+
+  @Input()
+  set mirrorStateToFigure(value: boolean) {
+    this.mirrorStateToFigureState.set(value);
+  }
+
+  get mirrorStateToFigure(): boolean {
+    return this.mirrorStateToFigureState();
   }
 
   @Input()

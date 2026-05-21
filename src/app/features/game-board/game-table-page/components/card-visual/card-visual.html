@@ -1,7 +1,14 @@
 <figure
-  class="card-visual card-visual--focus-visible"
-  [attr.aria-label]="semanticLabel()"
-  [class.card-visual--selected]="selectedSignal()"
+  class="card-visual"
+  [attr.data-testid]="mirrorStateToFigureSignal() ? 'card-visual' : null"
+  [attr.aria-label]="mirrorStateToFigureSignal() ? semanticLabel() : null"
+  [class.card-visual--focus-visible]="mirrorStateToFigureSignal()"
+  [class.card-visual--selected]="mirrorStateToFigureSignal() && selectedSignal()"
+  [class.card-visual--animation-play]="mirrorStateToFigureSignal() && isPlayAnimation()"
+  [class.card-visual--animation-capture]="mirrorStateToFigureSignal() && isCaptureAnimation()"
+  [class.card-visual--animation-deal]="mirrorStateToFigureSignal() && isDealAnimation()"
+  [class.card-visual--animation-opponent]="mirrorStateToFigureSignal() && isOpponentAnimation()"
+  [class.card-visual--animation-escoba]="mirrorStateToFigureSignal() && isEscobaAnimation()"
 >
   <img
     class="card-visual-image"

@@ -39,12 +39,15 @@ export class OpponentZones {
   private readonly aiHandCardCountState = signal(0);
   private readonly aiTurnAnimationStateState = signal<AiTurnAnimationState>(AI_TURN_IDLE);
   private readonly animationMetadataState = signal<OpponentZonesAnimationMetadata | null>(null);
+  private readonly suppressAiAnimationsState = signal(false);
   protected readonly opponentsSignal: Signal<Player[]> = this.opponentsState.asReadonly();
   protected readonly aiHandCardCountSignal: Signal<number> = this.aiHandCardCountState.asReadonly();
   protected readonly aiTurnAnimationStateSignal: Signal<AiTurnAnimationState> =
     this.aiTurnAnimationStateState.asReadonly();
   protected readonly animationMetadataSignal: Signal<OpponentZonesAnimationMetadata | null> =
     this.animationMetadataState.asReadonly();
+  protected readonly suppressAiAnimationsSignal: Signal<boolean> =
+    this.suppressAiAnimationsState.asReadonly();
 
   @Input()
   set opponents(players: Player[]) {
@@ -80,6 +83,15 @@ export class OpponentZones {
 
   get animationMetadata(): OpponentZonesAnimationMetadata | null {
     return this.animationMetadataState();
+  }
+
+  @Input()
+  set suppressAiAnimations(value: boolean) {
+    this.suppressAiAnimationsState.set(Boolean(value));
+  }
+
+  get suppressAiAnimations(): boolean {
+    return this.suppressAiAnimationsState();
   }
 
   protected seatPosition(index: number): 'north' | 'west' | 'east' {
@@ -133,6 +145,10 @@ export class OpponentZones {
   }
 
   protected aiCardAnimationState(index: number): CardAnimationVisualState {
+    if (this.suppressAiAnimationsSignal()) {
+      return null;
+    }
+
     const metadata = this.animationMetadataSignal();
     if (metadata === null) {
       return null;

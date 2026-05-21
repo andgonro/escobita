@@ -181,7 +181,47 @@ function createStubs(turnPhase: TurnPhase, selectedCard: Card | null): Stubs {
     matchWinnerSignal.set(null);
   });
 
-  const playCardSpy = vi.fn(() => {
+  const playCardSpy = vi.fn((card: Card, captureSubset: Card[]) => {
+    stateSignal.update((state) => {
+      if (!state) {
+        return state;
+      }
+
+      if (state.turnIndex !== 0) {
+        return state;
+      }
+
+      const activePlayer = state.players[state.turnIndex];
+      if (!activePlayer) {
+        return state;
+      }
+
+      const isSameCard = (left: Card, right: Card): boolean => {
+        return left.suit === right.suit && left.rank === right.rank && left.value === right.value;
+      };
+
+      const nextHand = activePlayer.hand.filter((handEntry) => !isSameCard(handEntry, card));
+      const nextTable = state.table.filter(
+        (tableEntry) => !captureSubset.some((capturedCard) => isSameCard(tableEntry, capturedCard)),
+      );
+
+      return {
+        ...state,
+        table: nextTable,
+        players: state.players.map((player, playerIndex) => {
+          if (playerIndex !== state.turnIndex) {
+            return player;
+          }
+
+          return {
+            ...player,
+            hand: nextHand,
+          };
+        }),
+        lastCapturerId: captureSubset.length > 0 ? activePlayer.id : state.lastCapturerId,
+      };
+    });
+
     turnPhaseSignal.set('awaiting-confirmation');
   });
   const confirmTurnSpy = vi.fn(() => {
@@ -771,6 +811,54 @@ describe('GameTablePage', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('T-7 / FR-1 - starts a play animation group when submit play is triggered (SC-01/SC-02 partial)', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    const animationOrchestrator = fixture.componentRef.injector.get(CardAnimationOrchestrator);
+    const startGroupSpy = vi.spyOn(animationOrchestrator, 'startGroup');
+
+    getByTestId<HTMLButtonElement>('submit-play').click();
+    await fixture.whenStable();
+
+    expect(stubs.playCardSpy).toHaveBeenCalledWith(handCard, [tableCardA, tableCardB]);
+    expect(startGroupSpy).toHaveBeenCalledWith({
+      actionType: 'play',
+      cardIds: ['Oros-7'],
+    });
+  });
+
+  it('T-7 / FR-2 - starts one capture animation group with all captured table cards (SC-04/SC-05 partial)', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    const animationOrchestrator = fixture.componentRef.injector.get(CardAnimationOrchestrator);
+    const startGroupSpy = vi.spyOn(animationOrchestrator, 'startGroup');
+
+    getByTestId<HTMLButtonElement>('submit-play').click();
+    await fixture.whenStable();
+
+    expect(startGroupSpy).toHaveBeenCalledWith({
+      actionType: 'capture',
+      cardIds: ['Copas-5', 'Bastos-3'],
+    });
+  });
+
+  it('T-7 / SC-05 / FR-2 - renders capture animation state simultaneously on all selected table cards after submit', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    getByTestId<HTMLButtonElement>('submit-play').click();
+    await fixture.whenStable();
+
+    const tableCardZeroVisual = fixture.nativeElement.querySelector(
+      '[data-testid="table-card-0"] [data-testid="card-visual"]',
+    ) as HTMLElement | null;
+    const tableCardOneVisual = fixture.nativeElement.querySelector(
+      '[data-testid="table-card-1"] [data-testid="card-visual"]',
+    ) as HTMLElement | null;
+
+    expect(tableCardZeroVisual?.classList.contains('card-visual--animation-capture')).toBe(true);
+    expect(tableCardOneVisual?.classList.contains('card-visual--animation-capture')).toBe(true);
   });
 
   it('SC-15 / FR-4.6 - renders escoba outcome visibility from engine-authoritative state', async () => {

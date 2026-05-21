@@ -10,12 +10,12 @@ This specification defines the complete card animation system for Escobita, incl
 
 ### FR-1: Card Play Animation (Player Plays a Card)
 
-When a player selects a card from their hand and submits the action, the selected card shall animate from its position in the active hand zone to either the center table zone (if placing without capture) or disappear into the captured pile zone (if capturing), with a smooth arc motion and card rotation effect.
+When a player selects a card from their hand and submits the action, the selected card shall animate from its position in the active hand zone to either the center table zone (if placing without capture) or disappear into the captured pile zone (if capturing), with a smooth arc motion.
 
 **Details:**
 
 - Animation duration: 800–1200ms with ease-in-out easing
-- Card rotates 180° on the Y-axis (flip effect) during movement
+- Card movement uses translate-based motion without flip/rotation
 - Path: Cards follow a cubic-bezier arc from hand position to target position (not linear)
 - Endpoint: Card reaches target zone and settles into layout
 - Applies to: Player's own card plays in local and single-player modes
@@ -143,8 +143,8 @@ Animation movements shall be implemented via CSS keyframes and transitions, not 
 
 **Details:**
 
-- Keyframes defined in SCSS for reusability: `@keyframes card-play-arc`, `card-capture-fade`, `card-deal-slide`, `card-flip`, `card-glow`, `card-disappear`
-- Each keyframe uses `transform: translate()`, `rotate()`, and `opacity` properties (GPU-accelerated)
+- Keyframes defined in SCSS for reusability: `@keyframes card-play-arc`, `card-capture-fade`, `card-deal-slide`, `card-glow`, `card-disappear`
+- Each keyframe uses `transform: translate()/scale()` and `opacity` properties (GPU-accelerated)
 - No layout-affecting properties (width, height, margin) animate within keyframes to prevent layout thrashing
 - Easing: `cubic-bezier(0.25, 0.1, 0.25, 1.0)` for ease-in-out effect on card movement
 - Duration: 800–1200ms (configurable via CSS custom properties or SCSS variables)
