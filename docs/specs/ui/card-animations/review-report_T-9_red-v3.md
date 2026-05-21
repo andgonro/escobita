@@ -80,14 +80,15 @@ All Major findings from prior reviews have been addressed. See review-report_T-9
 
 ## 4. Traceability Matrix
 
-| Finding | Severity  | Category      | Related Spec                   | Status                         |
+<<<<<<< Updated upstream
+| Finding | Severity | Category | Related Spec | Status |
 | ------- | --------- | ------------- | ------------------------------ | ------------------------------ |
-| RV-01   | ~~Major~~ | Test Coverage | T-9 AC-3, FR-6, SC-14          | ✅ Closed                      |
-| RV-02   | ~~Major~~ | Test Quality  | SC-15, FR-6, T-9 AC-2          | ✅ Closed                      |
-| RV-03   | ~~Major~~ | Test Quality  | SC-16, TR-6, NFR-3, US-6, AD-6 | ✅ Closed (selector corrected) |
-| RV-04   | Minor     | Test Quality  | SC-15, FR-6, TR-2              | Open                           |
-| RV-05   | Minor     | Test Coverage | SC-14, FR-6, NFR-7             | Open                           |
-| RV-06   | Minor     | Test Coverage | FR-6, NFR-7, T-9 AC-1          | Open (informational)           |
+| RV-01 | ~~Major~~ | Test Coverage | T-9 AC-3, FR-6, SC-14 | ✅ Closed |
+| RV-02 | ~~Major~~ | Test Quality | SC-15, FR-6, T-9 AC-2 | ✅ Closed |
+| RV-03 | ~~Major~~ | Test Quality | SC-16, TR-6, NFR-3, US-6, AD-6 | ✅ Closed (selector corrected) |
+| RV-04 | Minor | Test Quality | SC-15, FR-6, TR-2 | Open |
+| RV-05 | Minor | Test Coverage | SC-14, FR-6, NFR-7 | Open |
+| RV-06 | Minor | Test Coverage | FR-6, NFR-7, T-9 AC-1 | Open (informational) |
 
 ## 5. Spec Compliance Summary (T-9 Scope)
 
@@ -102,17 +103,46 @@ All Major findings from prior reviews have been addressed. See review-report_T-9
 
 ## 6. Task Completion Summary
 
-| Task | Title                                     | Status                    | Findings                 |
-| ---- | ----------------------------------------- | ------------------------- | ------------------------ |
-| T-9  | Implement Escoba mandatory burst emphasis | ✅ Complete (RED battery) | RV-04/05/06 (Minor only) |
+| Task | Title | Status | Findings |
+| ---- | ----- | ------ | -------- |
+
+=======
+| Finding | Severity | Category | Related Spec | Status |
+|---------|----------|----------|-------------|--------|
+| RV-01 | ~~Major~~ | Test Coverage | T-9 AC-3, FR-6, SC-14 | ✅ Closed |
+| RV-02 | ~~Major~~ | Test Quality | SC-15, FR-6, T-9 AC-2 | ✅ Closed |
+| RV-03 | ~~Major~~ | Test Quality | SC-16, TR-6, NFR-3, US-6, AD-6 | ✅ Closed (selector corrected) |
+| RV-04 | Minor | Test Quality | SC-15, FR-6, TR-2 | Open |
+| RV-05 | Minor | Test Coverage | SC-14, FR-6, NFR-7 | Open |
+| RV-06 | Minor | Test Coverage | FR-6, NFR-7, T-9 AC-1 | Open (informational) |
+
+## 5. Spec Compliance Summary (T-9 Scope)
+
+| Requirement | Test Coverage Status | Notes                                                                                      |
+| ----------- | -------------------- | ------------------------------------------------------------------------------------------ |
+| FR-6        | ✅ Met               | Triggering, timing, table clear, state preservation, and visual suppression all covered    |
+| TR-2        | ⚠️ Partial           | Burst keyframe computed style depends on test environment (Minor)                          |
+| TR-6        | ✅ Met               | Reduced-motion orchestration, state outcome, and visual suppression all asserted correctly |
+| NFR-3       | ✅ Met               | Instant state update path validated; selector now meaningful                               |
+| NFR-7       | ✅ Met               | Class differentiation and metadata propagation covered                                     |
+| US-6        | ✅ Met               | All three SC-16 clauses verified                                                           |
+
+## 6. Task Completion Summary
+
+| Task | Title | Status | Findings |
+| ---- | ----- | ------ | -------- |
+
+> > > > > > > Stashed changes
+> > > > > > > | T-9 | Implement Escoba mandatory burst emphasis | ✅ Complete (RED battery) | RV-04/05/06 (Minor only) |
 
 ## 7. Test Coverage Summary
 
-| Scenario | Unit Test | E2E Step Defs | Meaningful | Findings      |
+<<<<<<< Updated upstream
+| Scenario | Unit Test | E2E Step Defs | Meaningful | Findings |
 | -------- | --------- | ------------- | ---------- | ------------- |
-| SC-14    | ✅ Yes    | ✅ Yes        | ✅ Yes     | RV-05 (minor) |
-| SC-15    | ✅ Yes    | ✅ Yes        | ✅ Yes     | RV-04 (minor) |
-| SC-16    | ✅ Yes    | ✅ Yes        | ✅ Yes     | —             |
+| SC-14 | ✅ Yes | ✅ Yes | ✅ Yes | RV-05 (minor) |
+| SC-15 | ✅ Yes | ✅ Yes | ✅ Yes | RV-04 (minor) |
+| SC-16 | ✅ Yes | ✅ Yes | ✅ Yes | — |
 
 ## 8. Test Quality Summary
 
@@ -121,6 +151,23 @@ All Major findings from prior reviews have been addressed. See review-report_T-9
 | game-table-page.escoba-burst.spec.ts | Unit | ✅ Yes                | None (selector corrected)             |
 | card-visual.spec.ts (escoba section) | Unit | ✅ Yes                | Computed style env concern (Minor)    |
 | escoba-burst-emphasis.feature + .ts  | E2E  | ✅ Yes                | Post-completion emptiness gap (Minor) |
+
+=======
+| Scenario | Unit Test | E2E Step Defs | Meaningful | Findings |
+|----------|-----------|---------------|------------|----------|
+| SC-14 | ✅ Yes | ✅ Yes | ✅ Yes | RV-05 (minor) |
+| SC-15 | ✅ Yes | ✅ Yes | ✅ Yes | RV-04 (minor) |
+| SC-16 | ✅ Yes | ✅ Yes | ✅ Yes | — |
+
+## 8. Test Quality Summary
+
+| Test File                            | Type | Meaningful Assertions | Issues                                |
+| ------------------------------------ | ---- | --------------------- | ------------------------------------- |
+| game-table-page.escoba-burst.spec.ts | Unit | ✅ Yes                | None (selector corrected)             |
+| card-visual.spec.ts (escoba section) | Unit | ✅ Yes                | Computed style env concern (Minor)    |
+| escoba-burst-emphasis.feature + .ts  | E2E  | ✅ Yes                | Post-completion emptiness gap (Minor) |
+
+> > > > > > > Stashed changes
 
 ## 9. Security Cross-Reference
 

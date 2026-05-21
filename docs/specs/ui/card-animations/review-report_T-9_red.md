@@ -51,6 +51,12 @@ The test architecture correctly mirrors the planned component hierarchy for T-9 
 
 ### RV-01: Table clear reconciliation assertion — RESOLVED ✅
 
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
+
 - **Category:** Test Coverage
 - **Severity:** ~~Major~~ → Closed
 - **Related:** T-9 AC-3, FR-6, SC-14
@@ -58,11 +64,23 @@ The test architecture correctly mirrors the planned component hierarchy for T-9 
 
 ### RV-02: SC-15 timing test precondition — RESOLVED ✅
 
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
+
 - **Category:** Test Quality
 - **Severity:** ~~Major~~ → Closed
 - **Resolution:** The timing test now includes `expect(escobaCall).toBeDefined()` immediately after the click and before advancing timers. This establishes the precondition that an escoba group was actually started, eliminating the silent false-positive risk.
 
 ### RV-03: SC-16 reduced-motion visual suppression — PARTIALLY RESOLVED ⚠️
+
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
 
 - **Category:** Test Coverage
 - **Severity:** Major (downgraded scope)
@@ -76,6 +94,12 @@ The test architecture correctly mirrors the planned component hierarchy for T-9 
 
 ### RV-04: CardVisual burst keyframe assertion relies on computed style in headless environment [Minor]
 
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
+
 - **Category:** Test Quality
 - **Severity:** Minor
 - **Related:** SC-15, FR-6, TR-2
@@ -84,6 +108,12 @@ The test architecture correctly mirrors the planned component hierarchy for T-9 
 - **Impact:** Environmental false failure or false pass depending on CSS resolution behavior.
 
 ### RV-05: E2E SC-14 assertion is necessary but insufficient for full scenario [Minor]
+
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
 
 - **Category:** Test Coverage
 - **Severity:** Minor
@@ -94,6 +124,12 @@ The test architecture correctly mirrors the planned component hierarchy for T-9 
 
 ### RV-06: No single test contrasts escoba versus normal capture visual distinctness [Minor]
 
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
+
 - **Category:** Test Coverage
 - **Severity:** Minor
 - **Related:** FR-6, NFR-7, US-6, T-9 AC-1
@@ -103,14 +139,15 @@ The test architecture correctly mirrors the planned component hierarchy for T-9 
 
 ## 4. Traceability Matrix
 
-| Finding | Severity         | Category      | Related Spec                | Status               |
+<<<<<<< Updated upstream
+| Finding | Severity | Category | Related Spec | Status |
 | ------- | ---------------- | ------------- | --------------------------- | -------------------- |
-| RV-01   | ~~Major~~        | Test Coverage | T-9 AC-3, FR-6, SC-14       | ✅ Closed            |
-| RV-02   | ~~Major~~        | Test Quality  | SC-15, FR-6, T-9 AC-2       | ✅ Closed            |
-| RV-03   | Major (narrowed) | Test Coverage | SC-16, TR-6, NFR-3, US-6    | ⚠️ Partial           |
-| RV-04   | Minor            | Test Quality  | SC-15, FR-6, TR-2           | Open                 |
-| RV-05   | Minor            | Test Coverage | SC-14, FR-6, NFR-7, US-6    | Open                 |
-| RV-06   | Minor            | Test Coverage | FR-6, NFR-7, US-6, T-9 AC-1 | Open (informational) |
+| RV-01 | ~~Major~~ | Test Coverage | T-9 AC-3, FR-6, SC-14 | ✅ Closed |
+| RV-02 | ~~Major~~ | Test Quality | SC-15, FR-6, T-9 AC-2 | ✅ Closed |
+| RV-03 | Major (narrowed) | Test Coverage | SC-16, TR-6, NFR-3, US-6 | ⚠️ Partial |
+| RV-04 | Minor | Test Quality | SC-15, FR-6, TR-2 | Open |
+| RV-05 | Minor | Test Coverage | SC-14, FR-6, NFR-7, US-6 | Open |
+| RV-06 | Minor | Test Coverage | FR-6, NFR-7, US-6, T-9 AC-1 | Open (informational) |
 
 ## 5. Spec Compliance Summary (T-9 Scope)
 
@@ -124,17 +161,45 @@ The test architecture correctly mirrors the planned component hierarchy for T-9 
 
 ## 6. Task Completion Summary
 
-| Task | Title                                     | Status                   | Findings                                 |
-| ---- | ----------------------------------------- | ------------------------ | ---------------------------------------- |
-| T-9  | Implement Escoba mandatory burst emphasis | ⚠️ Partial (RED battery) | RV-01, RV-02, RV-03, RV-04, RV-05, RV-06 |
+| Task | Title | Status | Findings |
+| ---- | ----- | ------ | -------- |
+
+=======
+| Finding | Severity | Category | Related Spec | Status |
+|---------|----------|----------|-------------|--------|
+| RV-01 | ~~Major~~ | Test Coverage | T-9 AC-3, FR-6, SC-14 | ✅ Closed |
+| RV-02 | ~~Major~~ | Test Quality | SC-15, FR-6, T-9 AC-2 | ✅ Closed |
+| RV-03 | Major (narrowed) | Test Coverage | SC-16, TR-6, NFR-3, US-6 | ⚠️ Partial |
+| RV-04 | Minor | Test Quality | SC-15, FR-6, TR-2 | Open |
+| RV-05 | Minor | Test Coverage | SC-14, FR-6, NFR-7, US-6 | Open |
+| RV-06 | Minor | Test Coverage | FR-6, NFR-7, US-6, T-9 AC-1 | Open (informational) |
+
+## 5. Spec Compliance Summary (T-9 Scope)
+
+| Requirement | Test Coverage Status | Notes                                                                                                                            |
+| ----------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| FR-6        | ⚠️ Partial           | Triggering, timing, and table clear reconciliation now covered; reduced-motion visual suppression still unasserted at unit level |
+| TR-2        | ⚠️ Partial           | Burst keyframe assertion depends on test environment CSS processing                                                              |
+| NFR-3       | ⚠️ Partial           | Reduced-motion orchestration tested; visual suppression not asserted                                                             |
+| NFR-7       | ✅ Met               | Class differentiation and metadata propagation adequately specified                                                              |
+| US-6        | ⚠️ Partial           | Reduced-motion visual suppression assertion remains the single gap                                                               |
+
+## 6. Task Completion Summary
+
+| Task | Title | Status | Findings |
+| ---- | ----- | ------ | -------- |
+
+> > > > > > > Stashed changes
+> > > > > > > | T-9 | Implement Escoba mandatory burst emphasis | ⚠️ Partial (RED battery) | RV-01, RV-02, RV-03, RV-04, RV-05, RV-06 |
 
 ## 7. Test Coverage Summary
 
-| Scenario | Unit Test  | E2E Step Defs | Meaningful | Findings                       |
+<<<<<<< Updated upstream
+| Scenario | Unit Test | E2E Step Defs | Meaningful | Findings |
 | -------- | ---------- | ------------- | ---------- | ------------------------------ |
-| SC-14    | ✅ Yes     | ✅ Yes        | ✅ Yes     | RV-05 (minor E2E gap)          |
-| SC-15    | ✅ Yes     | ✅ Yes        | ✅ Yes     | RV-04 (env concern)            |
-| SC-16    | ⚠️ Partial | ✅ Yes        | ⚠️ Partial | RV-03 (visual suppression gap) |
+| SC-14 | ✅ Yes | ✅ Yes | ✅ Yes | RV-05 (minor E2E gap) |
+| SC-15 | ✅ Yes | ✅ Yes | ✅ Yes | RV-04 (env concern) |
+| SC-16 | ⚠️ Partial | ✅ Yes | ⚠️ Partial | RV-03 (visual suppression gap) |
 
 ## 8. Test Quality Summary
 
@@ -145,6 +210,24 @@ The test architecture correctly mirrors the planned component hierarchy for T-9 
 | escoba-burst-emphasis.feature        | E2E       | ⚠️ Partial            | Assertions are necessary but insufficient for full SC-14 scope (RV-05)     |
 | escoba-burst-emphasis.ts             | E2E Steps | ✅ Yes                | Step implementations are non-trivial and use valid test seam pattern       |
 
+=======
+| Scenario | Unit Test | E2E Step Defs | Meaningful | Findings |
+|----------|-----------|---------------|------------|----------|
+| SC-14 | ✅ Yes | ✅ Yes | ✅ Yes | RV-05 (minor E2E gap) |
+| SC-15 | ✅ Yes | ✅ Yes | ✅ Yes | RV-04 (env concern) |
+| SC-16 | ⚠️ Partial | ✅ Yes | ⚠️ Partial | RV-03 (visual suppression gap) |
+
+## 8. Test Quality Summary
+
+| Test File                            | Type      | Meaningful Assertions | Issues                                                                     |
+| ------------------------------------ | --------- | --------------------- | -------------------------------------------------------------------------- |
+| game-table-page.escoba-burst.spec.ts | Unit      | ✅ Yes                | SC-16 test omits visual suppression and state assertions (RV-03)           |
+| card-visual.spec.ts (escoba section) | Unit      | ✅ Yes                | Computed style reliability concern (RV-04), but class assertions are solid |
+| escoba-burst-emphasis.feature        | E2E       | ⚠️ Partial            | Assertions are necessary but insufficient for full SC-14 scope (RV-05)     |
+| escoba-burst-emphasis.ts             | E2E Steps | ✅ Yes                | Step implementations are non-trivial and use valid test seam pattern       |
+
+> > > > > > > Stashed changes
+
 ## 9. Security Cross-Reference
 
 No security review performed — this is a RED phase test-only review. No security-sensitive concerns identified in the test files.
@@ -153,9 +236,19 @@ No security review performed — this is a RED phase test-only review. No securi
 
 ### Major (fix before proceeding to GREEN)
 
+<<<<<<< Updated upstream
+
 1. Extend the SC-16 reduced-motion test to assert visual suppression (absence of `card-visual--animation-escoba` in rendered DOM or instant-mode flag in metadata) and state preservation (`escobaCount` incremented) — completing RV-03.
 
 ### Minor (improvement)
+
+=======
+
+1. Extend the SC-16 reduced-motion test to assert visual suppression (absence of `card-visual--animation-escoba` in rendered DOM or instant-mode flag in metadata) and state preservation (`escobaCount` incremented) — completing RV-03.
+
+### Minor (improvement)
+
+> > > > > > > Stashed changes
 
 1. Verify the computed style test (RV-04) passes in CI; if not, restructure to rely on class presence (already covered elsewhere) and defer timing verification to E2E.
 2. Consider extending E2E SC-14 to assert post-completion table emptiness (RV-05) — now lower priority since unit test covers this.

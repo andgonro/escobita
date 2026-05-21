@@ -128,14 +128,15 @@ The unit tests accurately model the planned orchestration sequence. The GameTabl
 
 ## 4. Traceability Matrix
 
-| Finding | Severity | Category                | Related Spec                                | Status       |
+<<<<<<< Updated upstream
+| Finding | Severity | Category | Related Spec | Status |
 | ------- | -------- | ----------------------- | ------------------------------------------- | ------------ |
-| RV-01   | Major    | Test Quality            | SC-01, SC-02, SC-04, SC-05, FR-1, FR-2, T-7 | Open         |
-| RV-02   | Major    | Test Quality            | SC-04, FR-2, US-2, T-7                      | Open         |
-| RV-03   | Major    | Test Quality            | SC-05, FR-2, TR-2, US-2, T-7                | Open         |
-| RV-04   | Minor    | Test Quality            | SC-02, FR-1, TR-2, US-1, T-7                | Open         |
-| RV-05   | Minor    | Test Coverage Alignment | SC-01, SC-02, FR-1, T-7                     | Open         |
-| RV-06   | Note     | Test Coverage Alignment | T-7, AD-1, AD-2, FR-1, FR-2                 | Acknowledged |
+| RV-01 | Major | Test Quality | SC-01, SC-02, SC-04, SC-05, FR-1, FR-2, T-7 | Open |
+| RV-02 | Major | Test Quality | SC-04, FR-2, US-2, T-7 | Open |
+| RV-03 | Major | Test Quality | SC-05, FR-2, TR-2, US-2, T-7 | Open |
+| RV-04 | Minor | Test Quality | SC-02, FR-1, TR-2, US-1, T-7 | Open |
+| RV-05 | Minor | Test Coverage Alignment | SC-01, SC-02, FR-1, T-7 | Open |
+| RV-06 | Note | Test Coverage Alignment | T-7, AD-1, AD-2, FR-1, FR-2 | Acknowledged |
 
 ## 5. Spec Compliance Summary (T-7 Scope)
 
@@ -170,6 +171,52 @@ The unit tests accurately model the planned orchestration sequence. The GameTabl
 | game-table-page.spec.ts (T-7 tests)    | Unit        | ✅ Yes                | Minor: traceability tags overstate coverage                                                    |
 | player-play-capture-animations.feature | E2E Feature | ✅ Yes                | Well-structured Gherkin, appropriate background                                                |
 | player-play-capture-animations.ts      | E2E Steps   | ⚠️ Partial            | 6 of 14 Then steps are duplicate class-check assertions; timing fragile; simultaneity unproven |
+
+=======
+| Finding | Severity | Category | Related Spec | Status |
+|---------|----------|----------|-------------|--------|
+| RV-01 | Major | Test Quality | SC-01, SC-02, SC-04, SC-05, FR-1, FR-2, T-7 | Open |
+| RV-02 | Major | Test Quality | SC-04, FR-2, US-2, T-7 | Open |
+| RV-03 | Major | Test Quality | SC-05, FR-2, TR-2, US-2, T-7 | Open |
+| RV-04 | Minor | Test Quality | SC-02, FR-1, TR-2, US-1, T-7 | Open |
+| RV-05 | Minor | Test Coverage Alignment | SC-01, SC-02, FR-1, T-7 | Open |
+| RV-06 | Note | Test Coverage Alignment | T-7, AD-1, AD-2, FR-1, FR-2 | Acknowledged |
+
+## 5. Spec Compliance Summary (T-7 Scope)
+
+| Requirement                   | Status     | Notes                                                                             |
+| ----------------------------- | ---------- | --------------------------------------------------------------------------------- |
+| FR-1 (Card Play Animation)    | ⚠️ Partial | Orchestrator call tested; arc path and rotation not distinctly verified in E2E    |
+| FR-2 (Card Capture Animation) | ⚠️ Partial | Capture group tested; glow/fade not distinctly verified; DOM removal not asserted |
+| TR-2 (Transform/opacity only) | ⚠️ Partial | Class presence tested but no assertion on actual CSS property constraints         |
+| TR-5 (Responsive pathing)     | ❌ Not Met | No responsive viewport assertions in T-7 test scope                               |
+| US-1                          | ⚠️ Partial | Play orchestration covered; timing, arc, position settle not verified             |
+| US-2                          | ⚠️ Partial | Capture orchestration covered; glow behaviour and DOM removal not verified        |
+
+## 6. Task Completion Summary
+
+| Task | Title                                             | Status                 | Findings                                 |
+| ---- | ------------------------------------------------- | ---------------------- | ---------------------------------------- |
+| T-7  | Implement player play and capture animation flows | ⚠️ Partial (RED tests) | RV-01, RV-02, RV-03, RV-04, RV-05, RV-06 |
+
+## 7. Test Coverage Summary
+
+| Scenario | Step Definitions | Meaningful | Findings                                                               |
+| -------- | ---------------- | ---------- | ---------------------------------------------------------------------- |
+| SC-01    | ✅ Yes           | ⚠️ Partial | RV-01 (arc path step is duplicate class check)                         |
+| SC-02    | ✅ Yes           | ⚠️ Partial | RV-01 (rotation, timing, easing steps are duplicate or fragile), RV-04 |
+| SC-04    | ✅ Yes           | ⚠️ Partial | RV-01 (fade/scale step is duplicate), RV-02 (removal not verified)     |
+| SC-05    | ✅ Yes           | ⚠️ Partial | RV-03 (simultaneity not provable with current assertion approach)      |
+
+## 8. Test Quality Summary
+
+| Test File                              | Type        | Meaningful Assertions | Issues                                                                                         |
+| -------------------------------------- | ----------- | --------------------- | ---------------------------------------------------------------------------------------------- |
+| game-table-page.spec.ts (T-7 tests)    | Unit        | ✅ Yes                | Minor: traceability tags overstate coverage                                                    |
+| player-play-capture-animations.feature | E2E Feature | ✅ Yes                | Well-structured Gherkin, appropriate background                                                |
+| player-play-capture-animations.ts      | E2E Steps   | ⚠️ Partial            | 6 of 14 Then steps are duplicate class-check assertions; timing fragile; simultaneity unproven |
+
+> > > > > > > Stashed changes
 
 ## 9. Security Cross-Reference
 

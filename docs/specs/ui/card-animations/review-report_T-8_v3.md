@@ -108,13 +108,14 @@ No structural drift. The component hierarchy matches design.md section 2.1 and s
 
 ## 4. Traceability Matrix
 
-| Finding | Severity | Category           | Related Spec      | Status                    |
+<<<<<<< Updated upstream
+| Finding | Severity | Category | Related Spec | Status |
 | ------- | -------- | ------------------ | ----------------- | ------------------------- |
-| RV-01   | Minor    | Spec Compliance    | FR-3, TR-2, US-3  | Open (confirmed deferred) |
-| RV-02   | Minor    | Architecture Drift | AD-1, TR-1        | Open (accepted risk)      |
-| RV-03   | Minor    | Test Quality       | SC-12, TR-4, AD-3 | Open                      |
-| RV-04   | Note     | Spec Compliance    | TR-6, NFR-3, AD-5 | Expected (T-11)           |
-| RV-05   | Note     | Code Quality       | TR-7, NFR-1       | Expected (T-14)           |
+| RV-01 | Minor | Spec Compliance | FR-3, TR-2, US-3 | Open (confirmed deferred) |
+| RV-02 | Minor | Architecture Drift | AD-1, TR-1 | Open (accepted risk) |
+| RV-03 | Minor | Test Quality | SC-12, TR-4, AD-3 | Open |
+| RV-04 | Note | Spec Compliance | TR-6, NFR-3, AD-5 | Expected (T-11) |
+| RV-05 | Note | Code Quality | TR-7, NFR-1 | Expected (T-14) |
 
 ## 5. Spec Compliance Summary
 
@@ -139,21 +140,61 @@ No structural drift. The component hierarchy matches design.md section 2.1 and s
 
 **Acceptance Criteria Assessment:**
 
+=======
+| Finding | Severity | Category | Related Spec | Status |
+|---------|----------|----------|-------------|--------|
+| RV-01 | Minor | Spec Compliance | FR-3, TR-2, US-3 | Open (confirmed deferred) |
+| RV-02 | Minor | Architecture Drift | AD-1, TR-1 | Open (accepted risk) |
+| RV-03 | Minor | Test Quality | SC-12, TR-4, AD-3 | Open |
+| RV-04 | Note | Spec Compliance | TR-6, NFR-3, AD-5 | Expected (T-11) |
+| RV-05 | Note | Code Quality | TR-7, NFR-1 | Expected (T-14) |
+
+## 5. Spec Compliance Summary
+
+| Requirement | Status     | Notes                                                                                         |
+| ----------- | ---------- | --------------------------------------------------------------------------------------------- |
+| FR-3        | ⚠️ Partial | Deal animation functional and simultaneous; rotation per spec deferred (RV-01)                |
+| FR-5        | ✅ Met     | AI play animated via opponent-play group; AI deal animated via all-player deal group          |
+| FR-8        | ✅ Met     | AI animations use identical orchestration, timing (1000ms), and cubic-bezier easing as player |
+| TR-2        | ✅ Met     | CSS keyframes use only transform and opacity; cubic-bezier(0.25, 0.1, 0.25, 1) easing         |
+| TR-5        | ✅ Met     | Coordinate-based positioning via translateY offsets from layout positions                     |
+| US-3        | ⚠️ Partial | Deal simultaneous and settles into hand; rotation absent (RV-01)                              |
+| US-5        | ✅ Met     | AI play animated; AI hand replenishment now covered by all-player deal group                  |
+| US-8        | ✅ Met     | AI turn orchestration fully visible with same visual language and timing                      |
+| AD-4        | ✅ Met     | Only transform and opacity animated; no layout-affecting properties                           |
+| AD-7        | ✅ Met     | Opponent animation scope is single-player AI only; `runAiTurn` guards on mode                 |
+
+## 6. Task Completion Summary
+
+| Task | Title                                       | Status     | Findings |
+| ---- | ------------------------------------------- | ---------- | -------- |
+| T-8  | Implement deal and opponent animation flows | ⚠️ Partial | RV-01    |
+
+**Acceptance Criteria Assessment:**
+
+> > > > > > > Stashed changes
+
 - "Deal animations enter hand simultaneously" — ✅ Met. `startDealAnimationForNewHandCards` creates a single group with all dealt card IDs. `animation-delay: 0ms` ensures simultaneous rendering.
 - "Opponent action visuals are clear and consistent with style system" — ✅ Met. `card-opponent-play` keyframe uses same cubic-bezier easing and 1000ms duration as all other animation profiles.
 - "Opponent scope remains single-player AI only" — ✅ Met. `runAiTurn` guards on `configuration?.mode !== 'Single Player'`.
 
 **Previously Reported Findings — Resolution Status:**
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
 
 - **green-v2 RV-01 (Major):** "No deal-to-opponent animation when AI hand is replenished" — **RESOLVED.** `startDealAnimationForNewHandCards` now processes all players in `stateAfterConfirm.players`, detecting newly dealt cards for every player including the AI. Dedicated unit test validates this path.
 
 ## 7. Test Coverage Summary
 
 | Scenario | Step Definitions | Meaningful | Findings |
+<<<<<<< Updated upstream
 | -------- | ---------------- | ---------- | -------- |
-| SC-07    | ✅ Yes           | ✅ Yes     | —        |
-| SC-08    | ✅ Yes           | ✅ Yes     | —        |
-| SC-12    | ✅ Yes           | ✅ Yes     | RV-03    |
+| SC-07 | ✅ Yes | ✅ Yes | — |
+| SC-08 | ✅ Yes | ✅ Yes | — |
+| SC-12 | ✅ Yes | ✅ Yes | RV-03 |
 
 ## 8. Test Quality Summary
 
@@ -166,15 +207,40 @@ No structural drift. The component hierarchy matches design.md section 2.1 and s
 | active-hand-zone.card-visual.spec.ts  | Unit                 | ✅ Yes                | Tests deal animation metadata propagation to hand cards                                                           |
 | card-visual.spec.ts                   | Unit                 | ✅ Yes                | Parametrized test covers deal and opponent animation class rendering                                              |
 
+=======
+|----------|-----------------|------------|----------|
+| SC-07 | ✅ Yes | ✅ Yes | — |
+| SC-08 | ✅ Yes | ✅ Yes | — |
+| SC-12 | ✅ Yes | ✅ Yes | RV-03 |
+
+## 8. Test Quality Summary
+
+| Test File                             | Type                 | Meaningful Assertions | Issues                                                                                                            |
+| ------------------------------------- | -------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| game-table-page.deal-opponent.spec.ts | Unit/Integration     | ✅ Yes                | 8 tests verifying orchestrator group creation, card IDs, timing lifecycle, metadata propagation, and AI deal path |
+| deal-opponent-animations.feature      | E2E Gherkin          | ✅ Yes                | Covers SC-07, SC-08, SC-12                                                                                        |
+| deal-opponent-animations.ts           | E2E Step Definitions | ✅ Yes                | Timing sensitivity on SC-12 (RV-03)                                                                               |
+| opponent-zones.spec.ts                | Unit                 | ✅ Yes                | Tests opponent metadata application, suppression, state isolation; no deal-specific metadata visual test          |
+| active-hand-zone.card-visual.spec.ts  | Unit                 | ✅ Yes                | Tests deal animation metadata propagation to hand cards                                                           |
+| card-visual.spec.ts                   | Unit                 | ✅ Yes                | Parametrized test covers deal and opponent animation class rendering                                              |
+
+> > > > > > > Stashed changes
+
 **Gap noted:** No integration-level test verifies that `opponentAnimationMetadata` propagates a 'deal' visual state to OpponentZones CardVisual instances when the AI receives new cards. The unit test confirms the orchestrator group starts, but the visual path from metadata to rendered CSS class is not asserted for the AI deal scenario specifically.
 
 ## 9. Security Cross-Reference
 
 See `docs/specs/ui/card-animations/security-report_T-8.md` for the full security analysis.
 
-| SEC ID | Severity | OWASP    | Summary                                                 |
+<<<<<<< Updated upstream
+| SEC ID | Severity | OWASP | Summary |
 | ------ | -------- | -------- | ------------------------------------------------------- |
-| SEC-01 | Medium   | A06:2021 | Vulnerable brace-expansion dev dependency (not runtime) |
+=======
+| SEC ID | Severity | OWASP | Summary |
+|--------|----------|-------|---------|
+
+> > > > > > > Stashed changes
+> > > > > > > | SEC-01 | Medium | A06:2021 | Vulnerable brace-expansion dev dependency (not runtime) |
 
 No Critical or High security findings. T-8 introduces no new security surfaces.
 
@@ -182,12 +248,24 @@ No Critical or High security findings. T-8 introduces no new security surfaces.
 
 ### Minor (improvement)
 
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
+
 1. **RV-01:** Add rotation (180–360 degrees) to the `card-deal-slide` keyframe when the confirmed deferral resolves. Track as a follow-up item.
 2. **RV-02:** Document the simultaneous-dealing assumption in a code comment near `opponentAnimationMetadata`. If asymmetric dealing is introduced, refactor to filter card IDs by player ownership.
 3. **RV-03:** Expose a `data-ai-phase` attribute on the game table page template for deterministic E2E synchronization. Alternatively, configure TurnPausePolicy test override to extend the animation observation window in E2E mode.
 4. **Test gap:** Add an integration test to opponent-zones.spec.ts that applies `animationState: 'deal'` metadata and verifies the `card-visual--animation-deal` class renders on AI card elements.
 
 ### Notes (informational)
+
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
 
 1. **RV-04/RV-05:** T-11 and T-14 are expected to close the reduced-motion and performance gaps respectively. No action required for T-8.
 2. **green-v2 RV-01 resolution confirmed:** The all-player deal detection is architecturally sound and aligns with Escobita's dealing rules where all players receive cards simultaneously.

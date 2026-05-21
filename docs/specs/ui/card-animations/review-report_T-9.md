@@ -101,12 +101,13 @@ One behavioral subtlety: the escoba animation group coexists with an already-sta
 
 ## 4. Traceability Matrix
 
-| Finding | Severity | Category           | Related Spec           | Status                  |
+<<<<<<< Updated upstream
+| Finding | Severity | Category | Related Spec | Status |
 | ------- | -------- | ------------------ | ---------------------- | ----------------------- |
-| RV-01   | Minor    | Architecture Drift | AD-6, FR-6, TR-2, AD-2 | Open                    |
-| RV-02   | Minor    | Spec Compliance    | FR-6, US-6, AD-7       | Open (deferred to T-10) |
-| RV-03   | Note     | Code Quality       | AD-2, T-9 AC-3         | Open (no action needed) |
-| RV-04   | Note     | Code Quality       | AD-2, AD-3, TR-4       | Open (informational)    |
+| RV-01 | Minor | Architecture Drift | AD-6, FR-6, TR-2, AD-2 | Open |
+| RV-02 | Minor | Spec Compliance | FR-6, US-6, AD-7 | Open (deferred to T-10) |
+| RV-03 | Note | Code Quality | AD-2, T-9 AC-3 | Open (no action needed) |
+| RV-04 | Note | Code Quality | AD-2, AD-3, TR-4 | Open (informational) |
 
 ## 5. Spec Compliance Summary
 
@@ -121,17 +122,44 @@ One behavioral subtlety: the escoba animation group coexists with an already-sta
 
 ## 6. Task Completion Summary
 
-| Task | Title                                     | Status      | Findings                   |
-| ---- | ----------------------------------------- | ----------- | -------------------------- |
-| T-9  | Implement Escoba mandatory burst emphasis | ✅ Complete | RV-01, RV-02, RV-03, RV-04 |
+| Task | Title | Status | Findings |
+| ---- | ----- | ------ | -------- |
+
+=======
+| Finding | Severity | Category | Related Spec | Status |
+|---------|----------|----------|-------------|--------|
+| RV-01 | Minor | Architecture Drift | AD-6, FR-6, TR-2, AD-2 | Open |
+| RV-02 | Minor | Spec Compliance | FR-6, US-6, AD-7 | Open (deferred to T-10) |
+| RV-03 | Note | Code Quality | AD-2, T-9 AC-3 | Open (no action needed) |
+| RV-04 | Note | Code Quality | AD-2, AD-3, TR-4 | Open (informational) |
+
+## 5. Spec Compliance Summary
+
+| Requirement | Status     | Notes                                                                                  |
+| ----------- | ---------- | -------------------------------------------------------------------------------------- |
+| FR-6        | ⚠️ Partial | Player escoba fully met. AI escoba burst missing (deferred to T-10).                   |
+| TR-2        | ✅ Met     | CSS keyframe uses transform and opacity only. GPU-friendly properties throughout.      |
+| TR-8        | ✅ Met     | Escoba group emits completion via finalizeGroup; turn orchestration can await it.      |
+| NFR-3       | ✅ Met     | Reduced-motion returns null visual state for escoba; no burst class applied.           |
+| NFR-7       | ✅ Met     | Orange/golden glow distinct from yellow capture glow. Burst expansion at 35% keyframe. |
+| US-6        | ⚠️ Partial | All player-facing acceptance criteria met. AI escoba gap per RV-02.                    |
+
+## 6. Task Completion Summary
+
+| Task | Title | Status | Findings |
+| ---- | ----- | ------ | -------- |
+
+> > > > > > > Stashed changes
+> > > > > > > | T-9 | Implement Escoba mandatory burst emphasis | ✅ Complete | RV-01, RV-02, RV-03, RV-04 |
 
 ## 7. Test Coverage Summary
 
 | Scenario | Step Definitions | Meaningful | Findings |
+<<<<<<< Updated upstream
 | -------- | ---------------- | ---------- | -------- |
-| SC-14    | ✅ Yes           | ✅ Yes     | —        |
-| SC-15    | ✅ Yes           | ✅ Yes     | —        |
-| SC-16    | ✅ Yes           | ✅ Yes     | —        |
+| SC-14 | ✅ Yes | ✅ Yes | — |
+| SC-15 | ✅ Yes | ✅ Yes | — |
+| SC-16 | ✅ Yes | ✅ Yes | — |
 
 ## 8. Test Quality Summary
 
@@ -141,13 +169,35 @@ One behavioral subtlety: the escoba animation group coexists with an already-sta
 | center-table-zone.card-visual.spec.ts (escoba section) | Unit | ✅ Yes                | Covers escoba metadata propagation to CardVisual without mutating game state                                             |
 | escoba-burst-emphasis.feature + .ts                    | E2E  | ✅ Yes                | SC-14 asserts class presence; SC-15 validates computed duration; SC-16 validates suppression                             |
 
+=======
+|----------|-----------------|------------|----------|
+| SC-14 | ✅ Yes | ✅ Yes | — |
+| SC-15 | ✅ Yes | ✅ Yes | — |
+| SC-16 | ✅ Yes | ✅ Yes | — |
+
+## 8. Test Quality Summary
+
+| Test File                                              | Type | Meaningful Assertions | Issues                                                                                                                   |
+| ------------------------------------------------------ | ---- | --------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| game-table-page.escoba-burst.spec.ts                   | Unit | ✅ Yes                | None — tests verify orchestrator group creation, timing completion, table reconciliation, and reduced-motion suppression |
+| center-table-zone.card-visual.spec.ts (escoba section) | Unit | ✅ Yes                | Covers escoba metadata propagation to CardVisual without mutating game state                                             |
+| escoba-burst-emphasis.feature + .ts                    | E2E  | ✅ Yes                | SC-14 asserts class presence; SC-15 validates computed duration; SC-16 validates suppression                             |
+
+> > > > > > > Stashed changes
+
 ## 9. Security Cross-Reference
 
 See `docs/specs/ui/card-animations/security-report_T-9.md` for the full security analysis. One Medium finding (SEC-01: vulnerable transitive dependency brace-expansion) exists at the dependency graph level, unrelated to T-9 implementation logic.
 
-| SEC ID | Severity | OWASP    | Summary                                          |
+<<<<<<< Updated upstream
+| SEC ID | Severity | OWASP | Summary |
 | ------ | -------- | -------- | ------------------------------------------------ |
-| SEC-01 | Medium   | A06:2021 | Vulnerable brace-expansion transitive dependency |
+=======
+| SEC ID | Severity | OWASP | Summary |
+|--------|----------|-------|---------|
+
+> > > > > > > Stashed changes
+> > > > > > > | SEC-01 | Medium | A06:2021 | Vulnerable brace-expansion transitive dependency |
 
 No Critical or High security findings relate to T-9 implementation code.
 

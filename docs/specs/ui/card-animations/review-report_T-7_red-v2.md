@@ -130,15 +130,16 @@ No architectural drift detected. The test flow accurately models the planned orc
 
 ## 5. Traceability Matrix
 
-| Finding    | Severity | Category                | Related Spec                           | Status       |
+<<<<<<< Updated upstream
+| Finding | Severity | Category | Related Spec | Status |
 | ---------- | -------- | ----------------------- | -------------------------------------- | ------------ |
-| RV-01 (v1) | Major    | Test Quality            | SC-01, SC-02, SC-04, SC-05, FR-1, FR-2 | ✅ Closed    |
-| RV-02 (v1) | Major    | Test Quality            | SC-04, FR-2, US-2                      | ✅ Closed    |
-| RV-03 (v1) | Major    | Test Quality            | SC-05, FR-2, TR-2, US-2                | ✅ Closed    |
-| RV-04 (v1) | Minor    | Test Quality            | SC-02, FR-1, TR-2                      | ✅ Closed    |
-| RV-05 (v1) | Minor    | Test Coverage Alignment | SC-01, SC-02, FR-1                     | ✅ Closed    |
-| RV-01v2    | Minor    | Test Quality            | SC-02, FR-1, T-7                       | Open         |
-| RV-02v2    | Note     | Test Quality            | SC-01, SC-02, SC-04, SC-05, T-7        | Acknowledged |
+| RV-01 (v1) | Major | Test Quality | SC-01, SC-02, SC-04, SC-05, FR-1, FR-2 | ✅ Closed |
+| RV-02 (v1) | Major | Test Quality | SC-04, FR-2, US-2 | ✅ Closed |
+| RV-03 (v1) | Major | Test Quality | SC-05, FR-2, TR-2, US-2 | ✅ Closed |
+| RV-04 (v1) | Minor | Test Quality | SC-02, FR-1, TR-2 | ✅ Closed |
+| RV-05 (v1) | Minor | Test Coverage Alignment | SC-01, SC-02, FR-1 | ✅ Closed |
+| RV-01v2 | Minor | Test Quality | SC-02, FR-1, T-7 | Open |
+| RV-02v2 | Note | Test Quality | SC-01, SC-02, SC-04, SC-05, T-7 | Acknowledged |
 
 ## 6. Spec Compliance Summary (T-7 Scope)
 
@@ -172,6 +173,52 @@ No architectural drift detected. The test flow accurately models the planned orc
 | game-table-page.spec.ts (T-7 tests)    | Unit        | ✅ Yes                | None                                                     |
 | player-play-capture-animations.feature | E2E Feature | ✅ Yes                | None                                                     |
 | player-play-capture-animations.ts      | E2E Steps   | ✅ Yes                | Minor: rotation breadth; Note: readStyle retry semantics |
+
+=======
+| Finding | Severity | Category | Related Spec | Status |
+|---------|----------|----------|-------------|--------|
+| RV-01 (v1) | Major | Test Quality | SC-01, SC-02, SC-04, SC-05, FR-1, FR-2 | ✅ Closed |
+| RV-02 (v1) | Major | Test Quality | SC-04, FR-2, US-2 | ✅ Closed |
+| RV-03 (v1) | Major | Test Quality | SC-05, FR-2, TR-2, US-2 | ✅ Closed |
+| RV-04 (v1) | Minor | Test Quality | SC-02, FR-1, TR-2 | ✅ Closed |
+| RV-05 (v1) | Minor | Test Coverage Alignment | SC-01, SC-02, FR-1 | ✅ Closed |
+| RV-01v2 | Minor | Test Quality | SC-02, FR-1, T-7 | Open |
+| RV-02v2 | Note | Test Quality | SC-01, SC-02, SC-04, SC-05, T-7 | Acknowledged |
+
+## 6. Spec Compliance Summary (T-7 Scope)
+
+| Requirement                   | Status     | Notes                                                                                          |
+| ----------------------------- | ---------- | ---------------------------------------------------------------------------------------------- |
+| FR-1 (Card Play Animation)    | ⚠️ Partial | Orchestrator contract tested; visual assertions now distinct but rotation specificity is broad |
+| FR-2 (Card Capture Animation) | ✅ Met     | Capture group tested, DOM removal verified, simultaneity proven                                |
+| TR-2 (Transform/opacity only) | ✅ Met     | Assertions now check actual CSS properties (opacity, transform, animation-name)                |
+| US-1                          | ⚠️ Partial | Play orchestration and timing envelope covered; rotation specificity is broad                  |
+| US-2                          | ✅ Met     | Capture orchestration, glow, fade, DOM removal, and simultaneity all verified                  |
+
+## 7. Task Completion Summary
+
+| Task | Title                                                         | Status      | Findings                        |
+| ---- | ------------------------------------------------------------- | ----------- | ------------------------------- |
+| T-7  | Implement player play and capture animation flows (RED tests) | ✅ Complete | RV-01v2 (Minor), RV-02v2 (Note) |
+
+## 8. Test Coverage Summary
+
+| Scenario | Step Definitions | Meaningful | Findings                          |
+| -------- | ---------------- | ---------- | --------------------------------- |
+| SC-01    | ✅ Yes           | ✅ Yes     | —                                 |
+| SC-02    | ✅ Yes           | ✅ Yes     | RV-01v2 (rotation breadth, Minor) |
+| SC-04    | ✅ Yes           | ✅ Yes     | —                                 |
+| SC-05    | ✅ Yes           | ✅ Yes     | —                                 |
+
+## 9. Test Quality Summary
+
+| Test File                              | Type        | Meaningful Assertions | Issues                                                   |
+| -------------------------------------- | ----------- | --------------------- | -------------------------------------------------------- |
+| game-table-page.spec.ts (T-7 tests)    | Unit        | ✅ Yes                | None                                                     |
+| player-play-capture-animations.feature | E2E Feature | ✅ Yes                | None                                                     |
+| player-play-capture-animations.ts      | E2E Steps   | ✅ Yes                | Minor: rotation breadth; Note: readStyle retry semantics |
+
+> > > > > > > Stashed changes
 
 ## 10. Security Cross-Reference
 

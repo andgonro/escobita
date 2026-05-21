@@ -154,14 +154,15 @@ sequenceDiagram
 
 ## 4. Traceability Matrix
 
-| Finding | Severity | Category           | Related Spec                        | Status                      |
+<<<<<<< Updated upstream
+| Finding | Severity | Category | Related Spec | Status |
 | ------- | -------- | ------------------ | ----------------------------------- | --------------------------- |
-| RV-01   | Minor    | Spec Compliance    | FR-1, FR-2, US-1, US-2, SC-02, AD-4 | Open (Documented Deviation) |
-| RV-02   | Minor    | Architecture Drift | AD-2, FR-1, US-1                    | Open (Accepted Risk)        |
-| RV-03   | Minor    | Spec Compliance    | FR-2, US-2, SC-04                   | Open (Documented Deviation) |
-| RV-04   | Minor    | Test Quality       | SC-02, FR-1, US-14                  | Open                        |
-| RV-05   | Note     | Test Quality       | SC-04, FR-2                         | Acknowledged                |
-| RV-06   | Note     | Architecture Drift | AD-2                                | Acknowledged                |
+| RV-01 | Minor | Spec Compliance | FR-1, FR-2, US-1, US-2, SC-02, AD-4 | Open (Documented Deviation) |
+| RV-02 | Minor | Architecture Drift | AD-2, FR-1, US-1 | Open (Accepted Risk) |
+| RV-03 | Minor | Spec Compliance | FR-2, US-2, SC-04 | Open (Documented Deviation) |
+| RV-04 | Minor | Test Quality | SC-02, FR-1, US-14 | Open |
+| RV-05 | Note | Test Quality | SC-04, FR-2 | Acknowledged |
+| RV-06 | Note | Architecture Drift | AD-2 | Acknowledged |
 
 ## 5. Spec Compliance Summary
 
@@ -183,18 +184,51 @@ sequenceDiagram
 
 **Acceptance Criteria Assessment:**
 
+=======
+| Finding | Severity | Category | Related Spec | Status |
+|---------|----------|----------|-------------|--------|
+| RV-01 | Minor | Spec Compliance | FR-1, FR-2, US-1, US-2, SC-02, AD-4 | Open (Documented Deviation) |
+| RV-02 | Minor | Architecture Drift | AD-2, FR-1, US-1 | Open (Accepted Risk) |
+| RV-03 | Minor | Spec Compliance | FR-2, US-2, SC-04 | Open (Documented Deviation) |
+| RV-04 | Minor | Test Quality | SC-02, FR-1, US-14 | Open |
+| RV-05 | Note | Test Quality | SC-04, FR-2 | Acknowledged |
+| RV-06 | Note | Architecture Drift | AD-2 | Acknowledged |
+
+## 5. Spec Compliance Summary
+
+| Requirement | Status     | Notes                                                                                                                                                           |
+| ----------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-1        | ⚠️ Partial | Arc motion and rotation render correctly. Effective visible duration is 600ms, below spec's 800ms minimum. Confirmed intentional — spec text outdated.          |
+| FR-2        | ⚠️ Partial | Golden glow and simultaneous capture work correctly. Keyframe endpoint values deviate from spec text. DOM removal handles disappearance. Confirmed intentional. |
+| TR-2        | ✅ Met     | CSS keyframes use only transform and opacity. GPU-accelerated properties exclusively.                                                                           |
+| TR-5        | ⚠️ Partial | Arc path implemented via CSS translateY offsets, not DOM coordinate calculation. Acceptable for T-7 scope; coordinate pathing is T-14 concern.                  |
+| TR-8        | ✅ Met     | Timer-driven completion fires `completeParticipant` and `finalizeGroup` per group. `lastCompletedGroupId` signal propagates to turn sequencing correctly.       |
+| US-1        | ✅ Met     | Play animation visible via transient retention. Card displays arc motion in hand zone before DOM removal.                                                       |
+| US-2        | ✅ Met     | Capture glow applied with golden/amber color. Multi-card captures start simultaneously. DOM removal after timer fires provides disappearance.                   |
+
+## 6. Task Completion Summary
+
+| Task | Title                                             | Status      | Findings                                 |
+| ---- | ------------------------------------------------- | ----------- | ---------------------------------------- |
+| T-7  | Implement player play and capture animation flows | ✅ Complete | RV-01, RV-02, RV-03, RV-04, RV-05, RV-06 |
+
+**Acceptance Criteria Assessment:**
+
+> > > > > > > Stashed changes
+
 - [x] Player play action renders movement to target zone — Met (CSS arc animation with rotation visible during 600ms window via transient card retention)
 - [x] Capture applies glow and removal behavior — Met (golden glow via `card-capture-fade` keyframe + DOM removal at timer expiry)
 - [x] Multi-card capture starts simultaneously — Met (single capture animation group with all card IDs; E2E verifies same-frame class application and equal animation-delay values)
 
 ## 7. Test Coverage Summary
 
-| Scenario | Step Definitions | Meaningful | Findings                                                   |
+<<<<<<< Updated upstream
+| Scenario | Step Definitions | Meaningful | Findings |
 | -------- | ---------------- | ---------- | ---------------------------------------------------------- |
-| SC-01    | ✅ Yes           | ✅ Yes     | —                                                          |
-| SC-02    | ✅ Yes           | ⚠️ Partial | RV-04 (duration assertion validates CSS, not visible time) |
-| SC-04    | ✅ Yes           | ✅ Yes     | RV-05 (BDD text semantic breadth, Note only)               |
-| SC-05    | ✅ Yes           | ✅ Yes     | —                                                          |
+| SC-01 | ✅ Yes | ✅ Yes | — |
+| SC-02 | ✅ Yes | ⚠️ Partial | RV-04 (duration assertion validates CSS, not visible time) |
+| SC-04 | ✅ Yes | ✅ Yes | RV-05 (BDD text semantic breadth, Note only) |
+| SC-05 | ✅ Yes | ✅ Yes | — |
 
 ## 8. Test Quality Summary
 
@@ -207,13 +241,41 @@ sequenceDiagram
 | player-play-capture-animations.feature | E2E Feature | ✅ Yes                | Covers SC-01, SC-02, SC-04, SC-05 with distinct assertions per step.                                                                                                                |
 | player-play-capture-animations.ts      | E2E Steps   | ⚠️ Partial            | `animation-duration` assertion (RV-04) validates CSS property not visible time. Other assertions (animation-name, timing-function, opacity, transform, DOM removal) are meaningful. |
 
+=======
+| Scenario | Step Definitions | Meaningful | Findings |
+|----------|-----------------|------------|----------|
+| SC-01 | ✅ Yes | ✅ Yes | — |
+| SC-02 | ✅ Yes | ⚠️ Partial | RV-04 (duration assertion validates CSS, not visible time) |
+| SC-04 | ✅ Yes | ✅ Yes | RV-05 (BDD text semantic breadth, Note only) |
+| SC-05 | ✅ Yes | ✅ Yes | — |
+
+## 8. Test Quality Summary
+
+| Test File                              | Type        | Meaningful Assertions | Issues                                                                                                                                                                              |
+| -------------------------------------- | ----------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| game-table-page.spec.ts (T-7 tests)    | Unit        | ✅ Yes                | Orchestrator startGroup spied with correct action types and card IDs. Mock faithfully removes cards. DOM class verification confirms simultaneous metadata propagation.             |
+| card-visual.spec.ts                    | Unit        | ✅ Yes                | Validates each animation state class application and coexistence with selected/focus states.                                                                                        |
+| active-hand-zone.card-visual.spec.ts   | Unit        | ✅ Yes                | Validates zone metadata propagation to CardVisual instances and state isolation from game logic.                                                                                    |
+| center-table-zone.card-visual.spec.ts  | Unit        | ✅ Yes                | Validates capture metadata application to table cards and multi-card simultaneous rendering.                                                                                        |
+| player-play-capture-animations.feature | E2E Feature | ✅ Yes                | Covers SC-01, SC-02, SC-04, SC-05 with distinct assertions per step.                                                                                                                |
+| player-play-capture-animations.ts      | E2E Steps   | ⚠️ Partial            | `animation-duration` assertion (RV-04) validates CSS property not visible time. Other assertions (animation-name, timing-function, opacity, transform, DOM removal) are meaningful. |
+
+> > > > > > > Stashed changes
+
 ## 9. Security Cross-Reference
 
 No Critical or High security findings in `security-report_T-7.md`. One Medium finding exists regarding a transitive dependency vulnerability.
 
-| SEC ID | Severity | OWASP    | Summary                                                                                    |
+<<<<<<< Updated upstream
+| SEC ID | Severity | OWASP | Summary |
 | ------ | -------- | -------- | ------------------------------------------------------------------------------------------ |
-| SEC-01 | Medium   | A06:2021 | Transitive brace-expansion vulnerability (resource exhaustion DoS via large numeric range) |
+| SEC-01 | Medium | A06:2021 | Transitive brace-expansion vulnerability (resource exhaustion DoS via large numeric range) |
+=======
+| SEC ID | Severity | OWASP | Summary |
+|--------|----------|-------|---------|
+| SEC-01 | Medium | A06:2021 | Transitive brace-expansion vulnerability (resource exhaustion DoS via large numeric range) |
+
+> > > > > > > Stashed changes
 
 ## 10. Recommendations
 

@@ -110,13 +110,14 @@ The actual component tree matches the planned hierarchy with no structural devia
 
 ## 4. Traceability Matrix
 
-| Finding | Severity | Category        | Related Spec           | Status                    |
+<<<<<<< Updated upstream
+| Finding | Severity | Category | Related Spec | Status |
 | ------- | -------- | --------------- | ---------------------- | ------------------------- |
-| RV-01   | Minor    | Spec Compliance | FR-3, TR-2, TR-5, US-3 | Open (confirmed deferred) |
-| RV-02   | Minor    | Spec Compliance | FR-5, US-5, US-8       | Open                      |
-| RV-03   | Minor    | Test Quality    | SC-12, TR-4, AD-3      | Open                      |
-| RV-04   | Note     | Spec Compliance | TR-6, NFR-3, AD-5      | Expected (T-11)           |
-| RV-05   | Note     | Code Quality    | TR-7, NFR-1            | Expected (T-14)           |
+| RV-01 | Minor | Spec Compliance | FR-3, TR-2, TR-5, US-3 | Open (confirmed deferred) |
+| RV-02 | Minor | Spec Compliance | FR-5, US-5, US-8 | Open |
+| RV-03 | Minor | Test Quality | SC-12, TR-4, AD-3 | Open |
+| RV-04 | Note | Spec Compliance | TR-6, NFR-3, AD-5 | Expected (T-11) |
+| RV-05 | Note | Code Quality | TR-7, NFR-1 | Expected (T-14) |
 
 ## 5. Spec Compliance Summary
 
@@ -138,6 +139,37 @@ The actual component tree matches the planned hierarchy with no structural devia
 
 **Acceptance Criteria Assessment:**
 
+=======
+| Finding | Severity | Category | Related Spec | Status |
+|---------|----------|----------|-------------|--------|
+| RV-01 | Minor | Spec Compliance | FR-3, TR-2, TR-5, US-3 | Open (confirmed deferred) |
+| RV-02 | Minor | Spec Compliance | FR-5, US-5, US-8 | Open |
+| RV-03 | Minor | Test Quality | SC-12, TR-4, AD-3 | Open |
+| RV-04 | Note | Spec Compliance | TR-6, NFR-3, AD-5 | Expected (T-11) |
+| RV-05 | Note | Code Quality | TR-7, NFR-1 | Expected (T-14) |
+
+## 5. Spec Compliance Summary
+
+| Requirement | Status     | Notes                                                                                                        |
+| ----------- | ---------- | ------------------------------------------------------------------------------------------------------------ |
+| FR-3        | ⚠️ Partial | Deal animation works (simultaneous, correct timing, settles into position) but rotation per spec is deferred |
+| FR-5        | ⚠️ Partial | Opponent-play animation implemented; deal-to-opponent (hand replenishment) not implemented                   |
+| FR-8        | ✅ Met     | AI turn animations execute with same timing and easing as player actions                                     |
+| TR-2        | ✅ Met     | All animations use CSS keyframes with transform/opacity only, cubic-bezier easing                            |
+| TR-5        | ✅ Met     | Card paths use coordinate-based positioning (translateY offsets from source positions)                       |
+| AD-4        | ✅ Met     | Only transform and opacity animated; no layout-affecting properties                                          |
+| AD-7        | ✅ Met     | Opponent animation scope is single-player AI only; no multiplayer paths                                      |
+
+## 6. Task Completion Summary
+
+| Task | Title                                       | Status     | Findings     |
+| ---- | ------------------------------------------- | ---------- | ------------ |
+| T-8  | Implement deal and opponent animation flows | ⚠️ Partial | RV-01, RV-02 |
+
+**Acceptance Criteria Assessment:**
+
+> > > > > > > Stashed changes
+
 - "Deal animations enter hand simultaneously" — ✅ Met. `startDealAnimationForNewHandCards` creates a single group with all dealt card IDs. `animation-delay: 0ms` ensures simultaneous rendering.
 - "Opponent action visuals are clear and consistent with style system" — ✅ Met. `card-opponent-play` keyframe uses same cubic-bezier easing and 1000ms duration as other animation profiles.
 - "Opponent scope remains single-player AI only" — ✅ Met. The `runAiTurn` method guards on `mode === 'Single Player'`.
@@ -145,10 +177,11 @@ The actual component tree matches the planned hierarchy with no structural devia
 ## 7. Test Coverage Summary
 
 | Scenario | Step Definitions | Meaningful | Findings |
+<<<<<<< Updated upstream
 | -------- | ---------------- | ---------- | -------- |
-| SC-07    | ✅ Yes           | ✅ Yes     | —        |
-| SC-08    | ✅ Yes           | ✅ Yes     | —        |
-| SC-12    | ✅ Yes           | ✅ Yes     | RV-03    |
+| SC-07 | ✅ Yes | ✅ Yes | — |
+| SC-08 | ✅ Yes | ✅ Yes | — |
+| SC-12 | ✅ Yes | ✅ Yes | RV-03 |
 
 ## 8. Test Quality Summary
 
@@ -158,6 +191,22 @@ The actual component tree matches the planned hierarchy with no structural devia
 | deal-opponent-animations.feature      | E2E Gherkin | ✅ Yes                | SC-12 timing sensitivity (RV-03)                                                                            |
 | deal-opponent-animations.ts           | E2E Steps   | ✅ Yes                | Asserts CSS classes, computed animation-duration, animation-timing-function, animation-delay uniformity     |
 
+=======
+|----------|-----------------|------------|----------|
+| SC-07 | ✅ Yes | ✅ Yes | — |
+| SC-08 | ✅ Yes | ✅ Yes | — |
+| SC-12 | ✅ Yes | ✅ Yes | RV-03 |
+
+## 8. Test Quality Summary
+
+| Test File                             | Type        | Meaningful Assertions | Issues                                                                                                      |
+| ------------------------------------- | ----------- | --------------------- | ----------------------------------------------------------------------------------------------------------- |
+| game-table-page.deal-opponent.spec.ts | Unit        | ✅ Yes                | None — all 8 tests assert orchestrator group creation, card IDs, timing lifecycle, and metadata propagation |
+| deal-opponent-animations.feature      | E2E Gherkin | ✅ Yes                | SC-12 timing sensitivity (RV-03)                                                                            |
+| deal-opponent-animations.ts           | E2E Steps   | ✅ Yes                | Asserts CSS classes, computed animation-duration, animation-timing-function, animation-delay uniformity     |
+
+> > > > > > > Stashed changes
+
 ## 9. Security Cross-Reference
 
 No security concerns identified for T-8. The implementation is purely presentational animation orchestration consuming immutable game state. No user input processing, no API calls, no data persistence, and no DOM manipulation via innerHTML or similar patterns. No security report generated.
@@ -166,10 +215,22 @@ No security concerns identified for T-8. The implementation is purely presentati
 
 ### Minor (improvement)
 
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
+
 1. **RV-01:** Add `rotate(360deg)` to the `card-deal-slide` keyframe when the rotation deferral resolves. Track as a follow-up item.
 2. **RV-02:** Implement a deal-to-opponent visual cue when AI hand count increases. Consider a brief opacity pulse or scale animation on OpponentZones card slots when replenishment is detected.
 3. **RV-03:** Add a `data-ai-phase` attribute to GameTablePage template to enable deterministic E2E synchronization against AI lifecycle phases.
 
 ### Notes (informational)
+
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
 
 1. **RV-04/RV-05:** T-11 and T-14 are expected to close the reduced-motion and performance gaps respectively. No action required for T-8.

@@ -100,15 +100,16 @@ No structural drift in test architecture. The test topology mirrors the planned 
 
 ## 4. Traceability Matrix
 
-| Finding | Severity  | Category      | Related Spec                   | Status                   |
+<<<<<<< Updated upstream
+| Finding | Severity | Category | Related Spec | Status |
 | ------- | --------- | ------------- | ------------------------------ | ------------------------ |
-| RV-01   | ~~Major~~ | Test Coverage | T-9 AC-3, FR-6, SC-14          | ✅ Closed                |
-| RV-02   | ~~Major~~ | Test Quality  | SC-15, FR-6, T-9 AC-2          | ✅ Closed                |
-| RV-03   | Major     | Test Quality  | SC-16, TR-6, NFR-3, US-6, AD-6 | ⚠️ Tautological selector |
-| RV-03b  | ~~Major~~ | Test Coverage | SC-16, FR-6, US-6              | ✅ Closed                |
-| RV-04   | Minor     | Test Quality  | SC-15, FR-6, TR-2              | Open                     |
-| RV-05   | Minor     | Test Coverage | SC-14, FR-6, NFR-7             | Open                     |
-| RV-06   | Minor     | Test Coverage | FR-6, NFR-7, T-9 AC-1          | Open (informational)     |
+| RV-01 | ~~Major~~ | Test Coverage | T-9 AC-3, FR-6, SC-14 | ✅ Closed |
+| RV-02 | ~~Major~~ | Test Quality | SC-15, FR-6, T-9 AC-2 | ✅ Closed |
+| RV-03 | Major | Test Quality | SC-16, TR-6, NFR-3, US-6, AD-6 | ⚠️ Tautological selector |
+| RV-03b | ~~Major~~ | Test Coverage | SC-16, FR-6, US-6 | ✅ Closed |
+| RV-04 | Minor | Test Quality | SC-15, FR-6, TR-2 | Open |
+| RV-05 | Minor | Test Coverage | SC-14, FR-6, NFR-7 | Open |
+| RV-06 | Minor | Test Coverage | FR-6, NFR-7, T-9 AC-1 | Open (informational) |
 
 ## 5. Spec Compliance Summary (T-9 Scope)
 
@@ -123,17 +124,47 @@ No structural drift in test architecture. The test topology mirrors the planned 
 
 ## 6. Task Completion Summary
 
-| Task | Title                                     | Status                   | Findings                           |
-| ---- | ----------------------------------------- | ------------------------ | ---------------------------------- |
-| T-9  | Implement Escoba mandatory burst emphasis | ⚠️ Partial (RED battery) | RV-03 (Major), RV-04/05/06 (Minor) |
+| Task | Title | Status | Findings |
+| ---- | ----- | ------ | -------- |
+
+=======
+| Finding | Severity | Category | Related Spec | Status |
+|---------|----------|----------|-------------|--------|
+| RV-01 | ~~Major~~ | Test Coverage | T-9 AC-3, FR-6, SC-14 | ✅ Closed |
+| RV-02 | ~~Major~~ | Test Quality | SC-15, FR-6, T-9 AC-2 | ✅ Closed |
+| RV-03 | Major | Test Quality | SC-16, TR-6, NFR-3, US-6, AD-6 | ⚠️ Tautological selector |
+| RV-03b | ~~Major~~ | Test Coverage | SC-16, FR-6, US-6 | ✅ Closed |
+| RV-04 | Minor | Test Quality | SC-15, FR-6, TR-2 | Open |
+| RV-05 | Minor | Test Coverage | SC-14, FR-6, NFR-7 | Open |
+| RV-06 | Minor | Test Coverage | FR-6, NFR-7, T-9 AC-1 | Open (informational) |
+
+## 5. Spec Compliance Summary (T-9 Scope)
+
+| Requirement | Test Coverage Status | Notes                                                                                                         |
+| ----------- | -------------------- | ------------------------------------------------------------------------------------------------------------- |
+| FR-6        | ⚠️ Partial           | Triggering, timing, table clear, state preservation all covered; visual suppression assertion is tautological |
+| TR-2        | ⚠️ Partial           | Burst keyframe depends on CSS environment                                                                     |
+| TR-6        | ⚠️ Partial           | Reduced-motion orchestration and state outcome tested; visual suppression assertion ineffective               |
+| NFR-3       | ⚠️ Partial           | Same gap as TR-6                                                                                              |
+| NFR-7       | ✅ Met               | Class differentiation and metadata propagation covered                                                        |
+| US-6        | ⚠️ Partial           | Single selector typo prevents full coverage                                                                   |
+
+## 6. Task Completion Summary
+
+| Task | Title | Status | Findings |
+| ---- | ----- | ------ | -------- |
+
+> > > > > > > Stashed changes
+> > > > > > > | T-9 | Implement Escoba mandatory burst emphasis | ⚠️ Partial (RED battery) | RV-03 (Major), RV-04/05/06 (Minor) |
 
 ## 7. Test Coverage Summary
 
-| Scenario | Unit Test  | E2E Step Defs | Meaningful | Findings                      |
+<<<<<<< Updated upstream
+| Scenario | Unit Test | E2E Step Defs | Meaningful | Findings |
 | -------- | ---------- | ------------- | ---------- | ----------------------------- |
-| SC-14    | ✅ Yes     | ✅ Yes        | ✅ Yes     | RV-05 (minor)                 |
-| SC-15    | ✅ Yes     | ✅ Yes        | ✅ Yes     | RV-04 (minor)                 |
-| SC-16    | ⚠️ Partial | ✅ Yes        | ⚠️ Partial | RV-03 (tautological selector) |
+| SC-14 | ✅ Yes | ✅ Yes | ✅ Yes | RV-05 (minor) |
+| SC-15 | ✅ Yes | ✅ Yes | ✅ Yes | RV-04 (minor) |
+| SC-16 | ⚠️ Partial | ✅ Yes | ⚠️ Partial | RV-03 (tautological selector) |
 
 ## 8. Test Quality Summary
 
@@ -142,6 +173,23 @@ No structural drift in test architecture. The test topology mirrors the planned 
 | game-table-page.escoba-burst.spec.ts | Unit | ⚠️ Partial            | SC-16 visual suppression uses wrong selector (tautological) |
 | card-visual.spec.ts (escoba section) | Unit | ✅ Yes                | Computed style env concern (Minor)                          |
 | escoba-burst-emphasis.feature + .ts  | E2E  | ✅ Yes                | Correct selector used; SC-14 post-completion gap (Minor)    |
+
+=======
+| Scenario | Unit Test | E2E Step Defs | Meaningful | Findings |
+|----------|-----------|---------------|------------|----------|
+| SC-14 | ✅ Yes | ✅ Yes | ✅ Yes | RV-05 (minor) |
+| SC-15 | ✅ Yes | ✅ Yes | ✅ Yes | RV-04 (minor) |
+| SC-16 | ⚠️ Partial | ✅ Yes | ⚠️ Partial | RV-03 (tautological selector) |
+
+## 8. Test Quality Summary
+
+| Test File                            | Type | Meaningful Assertions | Issues                                                      |
+| ------------------------------------ | ---- | --------------------- | ----------------------------------------------------------- |
+| game-table-page.escoba-burst.spec.ts | Unit | ⚠️ Partial            | SC-16 visual suppression uses wrong selector (tautological) |
+| card-visual.spec.ts (escoba section) | Unit | ✅ Yes                | Computed style env concern (Minor)                          |
+| escoba-burst-emphasis.feature + .ts  | E2E  | ✅ Yes                | Correct selector used; SC-14 post-completion gap (Minor)    |
+
+> > > > > > > Stashed changes
 
 ## 9. Security Cross-Reference
 

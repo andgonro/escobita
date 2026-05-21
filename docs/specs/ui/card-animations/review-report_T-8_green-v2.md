@@ -104,13 +104,14 @@ No meaningful structural drift. The component hierarchy matches the planned desi
 
 ## 4. Traceability Matrix
 
-| Finding | Severity | Category           | Related Spec                 | Status |
+<<<<<<< Updated upstream
+| Finding | Severity | Category | Related Spec | Status |
 | ------- | -------- | ------------------ | ---------------------------- | ------ |
-| RV-01   | Major    | Spec Compliance    | FR-5, FR-8, US-5, US-8, AD-7 | Open   |
-| RV-02   | Minor    | Architecture Drift | AD-1, AD-4, TR-1             | Open   |
-| RV-03   | Minor    | Spec Compliance    | FR-3, TR-2, US-3             | Open   |
-| RV-04   | Minor    | Test Quality       | SC-12, TR-4, AD-3            | Open   |
-| RV-05   | Note     | Code Quality       | TR-1, AD-1                   | Closed |
+| RV-01 | Major | Spec Compliance | FR-5, FR-8, US-5, US-8, AD-7 | Open |
+| RV-02 | Minor | Architecture Drift | AD-1, AD-4, TR-1 | Open |
+| RV-03 | Minor | Spec Compliance | FR-3, TR-2, US-3 | Open |
+| RV-04 | Minor | Test Quality | SC-12, TR-4, AD-3 | Open |
+| RV-05 | Note | Code Quality | TR-1, AD-1 | Closed |
 
 ## 5. Spec Compliance Summary
 
@@ -127,17 +128,47 @@ No meaningful structural drift. The component hierarchy matches the planned desi
 
 ## 6. Task Completion Summary
 
-| Task | Title                                       | Status     | Findings                   |
-| ---- | ------------------------------------------- | ---------- | -------------------------- |
-| T-8  | Implement deal and opponent animation flows | ⚠️ Partial | RV-01, RV-02, RV-03, RV-04 |
+| Task | Title | Status | Findings |
+| ---- | ----- | ------ | -------- |
+
+=======
+| Finding | Severity | Category | Related Spec | Status |
+|---------|----------|----------|-------------|--------|
+| RV-01 | Major | Spec Compliance | FR-5, FR-8, US-5, US-8, AD-7 | Open |
+| RV-02 | Minor | Architecture Drift | AD-1, AD-4, TR-1 | Open |
+| RV-03 | Minor | Spec Compliance | FR-3, TR-2, US-3 | Open |
+| RV-04 | Minor | Test Quality | SC-12, TR-4, AD-3 | Open |
+| RV-05 | Note | Code Quality | TR-1, AD-1 | Closed |
+
+## 5. Spec Compliance Summary
+
+| Requirement | Status     | Notes                                                                      |
+| ----------- | ---------- | -------------------------------------------------------------------------- |
+| FR-3        | ⚠️ Partial | Deal animation present and simultaneous; missing rotation per spec (RV-03) |
+| FR-5        | ⚠️ Partial | AI play animated; AI hand replenishment has no animation (RV-01)           |
+| FR-8        | ✅ Met     | AI play uses same orchestration, timing, and visual language as player     |
+| TR-2        | ✅ Met     | CSS keyframes use transform and opacity only; GPU-friendly                 |
+| TR-5        | ✅ Met     | Coordinate-based paths not required for T-8; positions resolve via layout  |
+| US-3        | ⚠️ Partial | Deal is simultaneous and settles into hand; missing rotation (RV-03)       |
+| US-5        | ⚠️ Partial | AI play path fully animated; replenishment path has no animation (RV-01)   |
+| US-8        | ✅ Met     | AI turn orchestration with animation is visible and follows player timing  |
+
+## 6. Task Completion Summary
+
+| Task | Title | Status | Findings |
+| ---- | ----- | ------ | -------- |
+
+> > > > > > > Stashed changes
+> > > > > > > | T-8 | Implement deal and opponent animation flows | ⚠️ Partial | RV-01, RV-02, RV-03, RV-04 |
 
 ## 7. Test Coverage Summary
 
 | Scenario | Step Definitions | Meaningful | Findings |
+<<<<<<< Updated upstream
 | -------- | ---------------- | ---------- | -------- |
-| SC-07    | ✅ Yes           | ✅ Yes     | —        |
-| SC-08    | ✅ Yes           | ✅ Yes     | —        |
-| SC-12    | ✅ Yes           | ✅ Yes     | RV-04    |
+| SC-07 | ✅ Yes | ✅ Yes | — |
+| SC-08 | ✅ Yes | ✅ Yes | — |
+| SC-12 | ✅ Yes | ✅ Yes | RV-04 |
 
 ## 8. Test Quality Summary
 
@@ -149,13 +180,37 @@ No meaningful structural drift. The component hierarchy matches the planned desi
 | opponent-zones.spec.ts (T-5 tests)     | Unit                 | ✅ Yes                | None — metadata propagation and suppression verified      |
 | card-visual.spec.ts (animation states) | Unit                 | ✅ Yes                | None — parametrized test covers deal and opponent classes |
 
+=======
+|----------|-----------------|------------|----------|
+| SC-07 | ✅ Yes | ✅ Yes | — |
+| SC-08 | ✅ Yes | ✅ Yes | — |
+| SC-12 | ✅ Yes | ✅ Yes | RV-04 |
+
+## 8. Test Quality Summary
+
+| Test File                              | Type                 | Meaningful Assertions | Issues                                                    |
+| -------------------------------------- | -------------------- | --------------------- | --------------------------------------------------------- |
+| game-table-page.deal-opponent.spec.ts  | Unit/Integration     | ✅ Yes                | None — all 8 tests verify real orchestration behavior     |
+| deal-opponent-animations.feature       | E2E Gherkin          | ✅ Yes                | None                                                      |
+| deal-opponent-animations.ts            | E2E Step Definitions | ✅ Yes                | Timing sensitivity on SC-12 (RV-04)                       |
+| opponent-zones.spec.ts (T-5 tests)     | Unit                 | ✅ Yes                | None — metadata propagation and suppression verified      |
+| card-visual.spec.ts (animation states) | Unit                 | ✅ Yes                | None — parametrized test covers deal and opponent classes |
+
+> > > > > > > Stashed changes
+
 ## 9. Security Cross-Reference
 
 See `docs/specs/ui/card-animations/security-report_T-8.md` for the full security analysis.
 
-| SEC ID | Severity | OWASP    | Summary                                                 |
+<<<<<<< Updated upstream
+| SEC ID | Severity | OWASP | Summary |
 | ------ | -------- | -------- | ------------------------------------------------------- |
-| SEC-01 | Medium   | A06:2021 | Vulnerable brace-expansion dev dependency (not runtime) |
+=======
+| SEC ID | Severity | OWASP | Summary |
+|--------|----------|-------|---------|
+
+> > > > > > > Stashed changes
+> > > > > > > | SEC-01 | Medium | A06:2021 | Vulnerable brace-expansion dev dependency (not runtime) |
 
 No Critical or High security findings. The T-8 feature code introduces no new security surfaces.
 
@@ -163,14 +218,30 @@ No Critical or High security findings. The T-8 feature code introduces no new se
 
 ### Major (fix before merge)
 
+<<<<<<< Updated upstream
+
 1. **RV-01:** Implement AI hand replenishment animation. When the AI player's hand grows after a round deal, start a deal animation group targeting OpponentZones so users see dealing motion for both players. This fulfils FR-5 and US-5 acceptance criterion 2.
 
 ### Minor (improvement)
+
+=======
+
+1. **RV-01:** Implement AI hand replenishment animation. When the AI player's hand grows after a round deal, start a deal animation group targeting OpponentZones so users see dealing motion for both players. This fulfils FR-5 and US-5 acceptance criterion 2.
+
+### Minor (improvement)
+
+> > > > > > > Stashed changes
 
 1. **RV-03:** Add rotation (180–360 degrees) to the `card-deal-slide` keyframe to satisfy FR-3's specified dealing motion cue. Compose with existing translate and scale.
 2. **RV-04:** Add deterministic AI phase synchronization to the E2E SC-12 step to eliminate timing sensitivity.
 3. **RV-02:** Document the single-card assumption in the opponent metadata index mapping for future maintainability.
 
 ### Notes (informational)
+
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
 
 1. **RV-05:** Card ID derivation is centralized and consistent. No action needed.

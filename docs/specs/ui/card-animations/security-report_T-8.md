@@ -12,9 +12,16 @@ The scoped T-8 implementation does not introduce a new application-level securit
 
 Results of npm audit:
 
-| Package         | Version | Severity | CVE                                                             | Fix Available                                                     |
+<<<<<<< Updated upstream
+| Package | Version | Severity | CVE | Fix Available |
 | --------------- | ------- | -------- | --------------------------------------------------------------- | ----------------------------------------------------------------- |
-| brace-expansion | 5.0.5   | Moderate | No CVE listed in npm audit output; advisory GHSA-jxxr-4gwj-5jf2 | Yes, a patched release is available through dependency resolution |
+| brace-expansion | 5.0.5 | Moderate | No CVE listed in npm audit output; advisory GHSA-jxxr-4gwj-5jf2 | Yes, a patched release is available through dependency resolution |
+=======
+| Package | Version | Severity | CVE | Fix Available |
+|---------|---------|----------|-----|--------------|
+| brace-expansion | 5.0.5 | Moderate | No CVE listed in npm audit output; advisory GHSA-jxxr-4gwj-5jf2 | Yes, a patched release is available through dependency resolution |
+
+> > > > > > > Stashed changes
 
 Total: 0 Critical, 0 High, 1 Medium, 0 Low
 
@@ -23,6 +30,12 @@ The lockfile records brace-expansion 5.0.5 at [package-lock.json](../../../../pa
 ## 3. Security Findings
 
 ### SEC-01: Transitive brace-expansion dependency is in a vulnerable range [Medium]
+
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
 
 - **OWASP Category:** A06:2021 - Vulnerable and Outdated Components
 - **Severity:** Medium
@@ -36,21 +49,29 @@ The lockfile records brace-expansion 5.0.5 at [package-lock.json](../../../../pa
 
 ## 4. Authentication & Authorisation Summary
 
-| Protected Route / Resource | Guard                                                                                                                                                                             | Token Storage                                        | Session Management                                                 | Status                                             |
+<<<<<<< Updated upstream
+| Protected Route / Resource | Guard | Token Storage | Session Management | Status |
 | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------ | -------------------------------------------------- |
-| /partida route             | Yes, via partidaSessionGuard in [app.routes.ts](../../../../src/app/app.routes.ts#L1) and [partida-session.guard.ts](../../../../src/app/core/guards/partida-session.guard.ts#L1) | No auth token storage observed in the reviewed files | In-memory session configuration gate; no auth changes in T-8 scope | Secure for the current frontend route-gating scope |
+| /partida route | Yes, via partidaSessionGuard in [app.routes.ts](../../../../src/app/app.routes.ts#L1) and [partida-session.guard.ts](../../../../src/app/core/guards/partida-session.guard.ts#L1) | No auth token storage observed in the reviewed files | In-memory session configuration gate; no auth changes in T-8 scope | Secure for the current frontend route-gating scope |
+=======
+| Protected Route / Resource | Guard | Token Storage | Session Management | Status |
+|---------------------------|-------|--------------|-------------------|--------|
+| /partida route | Yes, via partidaSessionGuard in [app.routes.ts](../../../../src/app/app.routes.ts#L1) and [partida-session.guard.ts](../../../../src/app/core/guards/partida-session.guard.ts#L1) | No auth token storage observed in the reviewed files | In-memory session configuration gate; no auth changes in T-8 scope | Secure for the current frontend route-gating scope |
+
+> > > > > > > Stashed changes
 
 The T-8 deal and opponent animation flow does not add a new authentication or authorisation surface.
 
 ## 5. Transport Security Summary
 
-| Control                 | Status                         | Notes                                                                               |
+<<<<<<< Updated upstream
+| Control | Status | Notes |
 | ----------------------- | ------------------------------ | ----------------------------------------------------------------------------------- |
-| HTTPS enforcement       | Not evidenced in scoped files  | No non-TLS resource URLs or HTTP endpoints were observed in the reviewed T-8 files. |
-| Content Security Policy | Not evidenced in scoped files  | No CSP changes were made in the reviewed files.                                     |
-| CORS policy             | Out of scope                   | CORS is backend-controlled and not changed by this frontend task.                   |
-| SameSite cookies        | Not applicable in scoped files | No cookie-based session handling was observed in the reviewed files.                |
-| HSTS                    | Out of scope                   | HSTS is a response-header control and is not evidenced in the reviewed files.       |
+| HTTPS enforcement | Not evidenced in scoped files | No non-TLS resource URLs or HTTP endpoints were observed in the reviewed T-8 files. |
+| Content Security Policy | Not evidenced in scoped files | No CSP changes were made in the reviewed files. |
+| CORS policy | Out of scope | CORS is backend-controlled and not changed by this frontend task. |
+| SameSite cookies | Not applicable in scoped files | No cookie-based session handling was observed in the reviewed files. |
+| HSTS | Out of scope | HSTS is a response-header control and is not evidenced in the reviewed files. |
 
 ## 6. Spec Security Compliance
 
@@ -65,9 +86,35 @@ The T-8 deal and opponent animation flow does not add a new authentication or au
 | ------- | -------- | -------- | ---------------------------------------------------- | ------ |
 | SEC-01  | Medium   | A06:2021 | package-lock.json / brace-expansion dependency chain | Open   |
 
+=======
+| Control | Status | Notes |
+|---------|--------|-------|
+| HTTPS enforcement | Not evidenced in scoped files | No non-TLS resource URLs or HTTP endpoints were observed in the reviewed T-8 files. |
+| Content Security Policy | Not evidenced in scoped files | No CSP changes were made in the reviewed files. |
+| CORS policy | Out of scope | CORS is backend-controlled and not changed by this frontend task. |
+| SameSite cookies | Not applicable in scoped files | No cookie-based session handling was observed in the reviewed files. |
+| HSTS | Out of scope | HSTS is a response-header control and is not evidenced in the reviewed files. |
+
+## 6. Spec Security Compliance
+
+| NFR   | Requirement                                                                              | Status | Findings                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ----- | ---------------------------------------------------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NFR-2 | Keyboard navigation, focus management, and screen reader announcements remain unaffected | Met    | No unsafe template binding, direct DOM mutation, or focus hijacking was observed in [GameTablePage](../../../../src/app/features/game-board/game-table-page/game-table-page.ts#L1), [ActiveHandZone](../../../../src/app/features/game-board/game-table-page/zones/active-hand-zone/active-hand-zone.ts#L1), [OpponentZones](../../../../src/app/features/game-board/game-table-page/zones/opponent-zones/opponent-zones.ts#L1), or [CardVisual](../../../../src/app/features/game-board/game-table-page/components/card-visual/card-visual.ts#L1). |
+| NFR-3 | Reduced-motion handling remains deterministic and safe                                   | Met    | The reviewed T-8 slice does not change reduced-motion behavior or introduce a bypass of the existing animation state flow.                                                                                                                                                                                                                                                                                                                                                                                                                          |
+
+## 7. Traceability Matrix
+
+| Finding | Severity | OWASP    | Affected Component                                   | Status |
+| ------- | -------- | -------- | ---------------------------------------------------- | ------ |
+| SEC-01  | Medium   | A06:2021 | package-lock.json / brace-expansion dependency chain | Open   |
+
+> > > > > > > Stashed changes
+
 ## 8. Prioritised Recommendations
 
 ### Critical (fix before any deployment)
+
+<<<<<<< Updated upstream
 
 None.
 
@@ -81,4 +128,18 @@ None.
 
 ### Low / Info (monitor and address)
 
+1. # Continue routine checks that animation-oriented frontend changes do not introduce DOM-sanitization bypasses, unsafe style handling, or secret exposure.
+   None.
+
+### High (fix before release)
+
+None.
+
+### Medium (fix in next sprint)
+
+1. Remove the vulnerable brace-expansion range from the lockfile and verify the remediation with a fresh npm audit run.
+
+### Low / Info (monitor and address)
+
 1. Continue routine checks that animation-oriented frontend changes do not introduce DOM-sanitization bypasses, unsafe style handling, or secret exposure.
+   > > > > > > > Stashed changes

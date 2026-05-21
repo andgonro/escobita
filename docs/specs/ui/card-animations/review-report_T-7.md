@@ -145,13 +145,14 @@ flowchart LR
 
 ## 4. Traceability Matrix
 
-| Finding | Severity | Category           | Related Spec                         | Status       |
+<<<<<<< Updated upstream
+| Finding | Severity | Category | Related Spec | Status |
 | ------- | -------- | ------------------ | ------------------------------------ | ------------ |
-| RV-01   | Critical | Architecture Drift | AD-2, FR-2, TR-8, US-2, SC-04, SC-05 | Open         |
-| RV-02   | Major    | Test Quality       | FR-2, SC-04, SC-05                   | Open         |
-| RV-03   | Major    | Spec Compliance    | FR-2, US-2, SC-04                    | Open         |
-| RV-04   | Minor    | Test Quality       | SC-02, FR-1                          | Open         |
-| RV-05   | Note     | Test Quality       | SC-01, SC-02, SC-04, SC-05           | Acknowledged |
+| RV-01 | Critical | Architecture Drift | AD-2, FR-2, TR-8, US-2, SC-04, SC-05 | Open |
+| RV-02 | Major | Test Quality | FR-2, SC-04, SC-05 | Open |
+| RV-03 | Major | Spec Compliance | FR-2, US-2, SC-04 | Open |
+| RV-04 | Minor | Test Quality | SC-02, FR-1 | Open |
+| RV-05 | Note | Test Quality | SC-01, SC-02, SC-04, SC-05 | Acknowledged |
 
 ## 5. Spec Compliance Summary (T-7 Scope)
 
@@ -172,18 +173,49 @@ flowchart LR
 
 **Acceptance Criteria Assessment:**
 
+=======
+| Finding | Severity | Category | Related Spec | Status |
+|---------|----------|----------|-------------|--------|
+| RV-01 | Critical | Architecture Drift | AD-2, FR-2, TR-8, US-2, SC-04, SC-05 | Open |
+| RV-02 | Major | Test Quality | FR-2, SC-04, SC-05 | Open |
+| RV-03 | Major | Spec Compliance | FR-2, US-2, SC-04 | Open |
+| RV-04 | Minor | Test Quality | SC-02, FR-1 | Open |
+| RV-05 | Note | Test Quality | SC-01, SC-02, SC-04, SC-05 | Acknowledged |
+
+## 5. Spec Compliance Summary (T-7 Scope)
+
+| Requirement                    | Status     | Notes                                                                                                                                                                              |
+| ------------------------------ | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-1 (Card Play Animation)     | ⚠️ Partial | Place-only scenario: card appears on table with play-arc keyframe. Capture scenario: hand card gets no visual play animation due to immediate removal and activeGroupId overwrite. |
+| FR-2 (Card Capture Animation)  | ❌ Not Met | Captured table cards are removed from DOM before animation classes are applied (RV-01). Additionally, glow color is green instead of yellow/golden (RV-03).                        |
+| TR-2 (CSS Keyframe Animations) | ✅ Met     | Keyframes use transform and opacity only. `card-play-arc` and `card-capture-fade` are properly defined.                                                                            |
+| TR-5 (Coordinate Systems)      | ⚠️ Partial | Arc path is implemented via CSS keyframes (not coordinate-based DOM calculations). Acceptable as a CSS-only approach for T-7.                                                      |
+| US-1 (Player Card Play)        | ⚠️ Partial | Place-only scenario delivers arrival animation. Capture scenario does not deliver hand card animation.                                                                             |
+| US-2 (Table Card Capture)      | ❌ Not Met | Capture glow and fade cannot be observed in production due to state ordering.                                                                                                      |
+
+## 6. Task Completion Summary
+
+| Task | Title                                             | Status     | Findings            |
+| ---- | ------------------------------------------------- | ---------- | ------------------- |
+| T-7  | Implement player play and capture animation flows | ⚠️ Partial | RV-01, RV-02, RV-03 |
+
+**Acceptance Criteria Assessment:**
+
+> > > > > > > Stashed changes
+
 - [ ] Player play action renders movement to target zone — ⚠️ Partial (works for place-only; not for capture scenarios)
 - [ ] Capture applies glow and removal behavior — ❌ Not met (cards removed before glow can display)
 - [ ] Multi-card capture starts simultaneously — ❌ Not met (cannot be observed; cards gone from DOM)
 
 ## 7. Test Coverage Summary
 
-| Scenario | Step Definitions | Meaningful | Findings                                                                                        |
+<<<<<<< Updated upstream
+| Scenario | Step Definitions | Meaningful | Findings |
 | -------- | ---------------- | ---------- | ----------------------------------------------------------------------------------------------- |
-| SC-01    | ✅ Yes           | ⚠️ Partial | E2E asserts on hand card element that may not exist after playCard in production                |
-| SC-02    | ✅ Yes           | ⚠️ Partial | Rotation assertion is broad (RV-04)                                                             |
-| SC-04    | ✅ Yes           | ❌ No      | E2E asserts on table card elements that are removed in production (masked by mock in unit test) |
-| SC-05    | ✅ Yes           | ❌ No      | Same as SC-04 — simultaneity check targets elements that won't exist in production              |
+| SC-01 | ✅ Yes | ⚠️ Partial | E2E asserts on hand card element that may not exist after playCard in production |
+| SC-02 | ✅ Yes | ⚠️ Partial | Rotation assertion is broad (RV-04) |
+| SC-04 | ✅ Yes | ❌ No | E2E asserts on table card elements that are removed in production (masked by mock in unit test) |
+| SC-05 | ✅ Yes | ❌ No | Same as SC-04 — simultaneity check targets elements that won't exist in production |
 
 ## 8. Test Quality Summary
 
@@ -192,13 +224,37 @@ flowchart LR
 | game-table-page.spec.ts (T-7 tests) | Unit | ❌ No                 | Mock does not replicate real engine mutation; tests assert on DOM state that only exists with the simplified mock (RV-02)               |
 | player-play-capture-animations.ts   | E2E  | ⚠️ Partial            | SC-01/SC-02 assertions may work for place-only if cards sum correctly; SC-04/SC-05 assertions target removed DOM elements in production |
 
+=======
+| Scenario | Step Definitions | Meaningful | Findings |
+|----------|-----------------|------------|----------|
+| SC-01 | ✅ Yes | ⚠️ Partial | E2E asserts on hand card element that may not exist after playCard in production |
+| SC-02 | ✅ Yes | ⚠️ Partial | Rotation assertion is broad (RV-04) |
+| SC-04 | ✅ Yes | ❌ No | E2E asserts on table card elements that are removed in production (masked by mock in unit test) |
+| SC-05 | ✅ Yes | ❌ No | Same as SC-04 — simultaneity check targets elements that won't exist in production |
+
+## 8. Test Quality Summary
+
+| Test File                           | Type | Meaningful Assertions | Issues                                                                                                                                  |
+| ----------------------------------- | ---- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| game-table-page.spec.ts (T-7 tests) | Unit | ❌ No                 | Mock does not replicate real engine mutation; tests assert on DOM state that only exists with the simplified mock (RV-02)               |
+| player-play-capture-animations.ts   | E2E  | ⚠️ Partial            | SC-01/SC-02 assertions may work for place-only if cards sum correctly; SC-04/SC-05 assertions target removed DOM elements in production |
+
+> > > > > > > Stashed changes
+
 ## 9. Security Cross-Reference
 
 No Critical or High security findings were identified in the companion `security-report_T-7.md`. One Medium finding exists related to a transitive dependency vulnerability.
 
-| SEC ID | Severity | OWASP    | Summary                                                            |
+<<<<<<< Updated upstream
+| SEC ID | Severity | OWASP | Summary |
 | ------ | -------- | -------- | ------------------------------------------------------------------ |
-| SEC-01 | Medium   | A06:2021 | Transitive brace-expansion vulnerability (resource exhaustion DoS) |
+| SEC-01 | Medium | A06:2021 | Transitive brace-expansion vulnerability (resource exhaustion DoS) |
+=======
+| SEC ID | Severity | OWASP | Summary |
+|--------|----------|-------|---------|
+| SEC-01 | Medium | A06:2021 | Transitive brace-expansion vulnerability (resource exhaustion DoS) |
+
+> > > > > > > Stashed changes
 
 See `docs/specs/ui/card-animations/security-report_T-7.md` for the full security analysis.
 
@@ -206,17 +262,37 @@ See `docs/specs/ui/card-animations/security-report_T-7.md` for the full security
 
 ### Critical (blocks release)
 
+<<<<<<< Updated upstream
+
 1. **Fix state-animation ordering in submitPlay():** Either start animation groups BEFORE calling `playCard()` (so cards are still in DOM when classes are applied, and defer state mutation to `confirmTurn()`), or introduce a visual retention mechanism that keeps card-visual elements rendered during the animation window despite domain state removal. The design's AD-2 principle ("animation completion is source of truth for phase progression") strongly suggests the first approach.
 
 ### Major (fix before merge)
+
+=======
+
+1. **Fix state-animation ordering in submitPlay():** Either start animation groups BEFORE calling `playCard()` (so cards are still in DOM when classes are applied, and defer state mutation to `confirmTurn()`), or introduce a visual retention mechanism that keeps card-visual elements rendered during the animation window despite domain state removal. The design's AD-2 principle ("animation completion is source of truth for phase progression") strongly suggests the first approach.
+
+### Major (fix before merge)
+
+> > > > > > > Stashed changes
 
 1. **Update unit test mock to replicate real engine behavior:** The `playCardSpy` should remove the played card from hand and captured cards from table arrays, matching the real GameEngine's mutation behavior. This will surface the ordering bug at the test level and prevent false confidence.
 2. **Correct capture glow color:** Change the box-shadow in `.card-visual--animation-capture` from green to yellow/golden tones to match FR-2 and US-2 specifications.
 
 ### Minor (improvement)
 
+<<<<<<< Updated upstream
+
 1. **Tighten SC-02 rotation assertion:** Consider verifying the transform matrix includes a rotation component rather than just checking for non-identity.
 
 ### Notes (informational)
+
+=======
+
+1. **Tighten SC-02 rotation assertion:** Consider verifying the transform matrix includes a rotation component rather than just checking for non-identity.
+
+### Notes (informational)
+
+> > > > > > > Stashed changes
 
 1. **readStyle helper fragility:** Document for future maintainers that step ordering within scenarios provides implicit synchronization. If E2E flakiness occurs, refactor to `.should()` retry semantics.

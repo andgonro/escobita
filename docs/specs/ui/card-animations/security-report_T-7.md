@@ -17,15 +17,27 @@ This incremental T-7 review found no new exploitable code-level issues in the sc
 
 Results of npm audit:
 
-| Package         | Version        | Severity | CVE                 | Fix Available                                          |
+<<<<<<< Updated upstream
+| Package | Version | Severity | CVE | Fix Available |
 | --------------- | -------------- | -------- | ------------------- | ------------------------------------------------------ |
-| brace-expansion | 5.0.2 to 5.0.5 | Moderate | GHSA-jxxr-4gwj-5jf2 | Yes (audit indicates a standard fix path is available) |
+=======
+| Package | Version | Severity | CVE | Fix Available |
+|---------|---------|----------|-----|--------------|
+
+> > > > > > > Stashed changes
+> > > > > > > | brace-expansion | 5.0.2 to 5.0.5 | Moderate | GHSA-jxxr-4gwj-5jf2 | Yes (audit indicates a standard fix path is available) |
 
 Total: 0 Critical, 0 High, 1 Medium, 0 Low
 
 ## 3. Security Findings
 
 ### SEC-01: Transitive dependency vulnerable to resource-exhaustion pattern [Medium]
+
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
 
 - **OWASP Category:** A06:2021 - Vulnerable and Outdated Components
 - **Severity:** Medium
@@ -39,10 +51,11 @@ Total: 0 Critical, 0 High, 1 Medium, 0 Low
 
 ## 4. Authentication & Authorisation Summary
 
-| Protected Route / Resource          | Guard                                  | Token Storage                                  | Session Management                   | Status                                         |
+<<<<<<< Updated upstream
+| Protected Route / Resource | Guard | Token Storage | Session Management | Status |
 | ----------------------------------- | -------------------------------------- | ---------------------------------------------- | ------------------------------------ | ---------------------------------------------- |
-| /partida route                      | Yes (partidaSessionGuard via canMatch) | No auth token storage observed in scoped files | In-memory session configuration gate | Secure for current frontend route-gating scope |
-| T-7 play and capture animation flow | Not applicable                         | Not applicable                                 | Not applicable                       | No auth regression observed                    |
+| /partida route | Yes (partidaSessionGuard via canMatch) | No auth token storage observed in scoped files | In-memory session configuration gate | Secure for current frontend route-gating scope |
+| T-7 play and capture animation flow | Not applicable | Not applicable | Not applicable | No auth regression observed |
 
 ## 5. Transport Security Summary
 
@@ -67,9 +80,42 @@ Total: 0 Critical, 0 High, 1 Medium, 0 Low
 | ------- | -------- | -------- | ---------------------------------- | ------ |
 | SEC-01  | Medium   | A06:2021 | Dependency graph (brace-expansion) | Open   |
 
+=======
+| Protected Route / Resource | Guard | Token Storage | Session Management | Status |
+|---------------------------|-------|--------------|-------------------|--------|
+| /partida route | Yes (partidaSessionGuard via canMatch) | No auth token storage observed in scoped files | In-memory session configuration gate | Secure for current frontend route-gating scope |
+| T-7 play and capture animation flow | Not applicable | Not applicable | Not applicable | No auth regression observed |
+
+## 5. Transport Security Summary
+
+| Control                 | Status                         | Notes                                                                                                              |
+| ----------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| HTTPS enforcement       | Partial evidence               | No non-TLS API endpoints were observed in scoped frontend code; final enforcement is server/deployment-controlled. |
+| Content Security Policy | Configured                     | CSP meta policy is present in src/index.html with restrictive directives for script, style, image, and framing.    |
+| CORS policy             | Out of frontend scope          | CORS policy is backend-controlled and cannot be fully verified from this incremental frontend task.                |
+| SameSite cookies        | Not applicable in scoped files | No cookie-based session/token handling observed in reviewed T-7 implementation files.                              |
+| HSTS                    | Out of frontend scope          | HSTS is a server response header and is not evidenced in frontend source files.                                    |
+
+## 6. Spec Security Compliance
+
+| NFR   | Requirement                                                                    | Status | Findings |
+| ----- | ------------------------------------------------------------------------------ | ------ | -------- |
+| NFR-2 | Keyboard navigation and focus behavior remain unaffected by animation behavior | Met    | None     |
+| NFR-3 | Reduced-motion handling remains deterministic and safe                         | Met    | None     |
+
+## 7. Traceability Matrix
+
+| Finding | Severity | OWASP    | Affected Component                 | Status |
+| ------- | -------- | -------- | ---------------------------------- | ------ |
+| SEC-01  | Medium   | A06:2021 | Dependency graph (brace-expansion) | Open   |
+
+> > > > > > > Stashed changes
+
 ## 8. Prioritised Recommendations
 
 ### Critical (fix before any deployment)
+
+<<<<<<< Updated upstream
 
 1. No Critical findings in this incremental review.
 
@@ -82,5 +128,21 @@ Total: 0 Critical, 0 High, 1 Medium, 0 Low
 1. Remove the vulnerable brace-expansion transitive range and verify the remediation with a fresh dependency audit.
 
 ### Low / Info (monitor and address)
+
+=======
+
+1. No Critical findings in this incremental review.
+
+### High (fix before release)
+
+1. No High findings in this incremental review.
+
+### Medium (fix in next sprint)
+
+1. Remove the vulnerable brace-expansion transitive range and verify the remediation with a fresh dependency audit.
+
+### Low / Info (monitor and address)
+
+> > > > > > > Stashed changes
 
 1. Continue periodic verification of server-side transport headers (HSTS, Referrer-Policy, cookie flags) during deployment validation.

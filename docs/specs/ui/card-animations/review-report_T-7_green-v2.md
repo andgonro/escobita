@@ -157,14 +157,15 @@ The play group loses its animation visual state for approximately 100ms (between
 
 ## 5. Traceability Matrix
 
-| Finding             | Severity | Category           | Related Spec                         | Status                      |
+<<<<<<< Updated upstream
+| Finding | Severity | Category | Related Spec | Status |
 | ------------------- | -------- | ------------------ | ------------------------------------ | --------------------------- |
-| RV-01 (v1 Critical) | Critical | Architecture Drift | AD-2, FR-2, TR-8, US-2, SC-04, SC-05 | ✅ Closed                   |
-| RV-02 (v1 Major)    | Major    | Test Quality       | FR-2, SC-04, SC-05                   | ✅ Closed                   |
-| RV-03 (v1 Major)    | Major    | Spec Compliance    | FR-2, US-2, SC-04                    | ✅ Closed                   |
-| RV-01v3             | Minor    | Architecture Drift | AD-2, FR-1, US-1                     | Open                        |
-| RV-02v3             | Minor    | Spec Compliance    | FR-2, US-2, SC-04                    | Open (Documented Deviation) |
-| RV-03v3             | Note     | Test Quality       | SC-04, FR-2                          | Acknowledged                |
+| RV-01 (v1 Critical) | Critical | Architecture Drift | AD-2, FR-2, TR-8, US-2, SC-04, SC-05 | ✅ Closed |
+| RV-02 (v1 Major) | Major | Test Quality | FR-2, SC-04, SC-05 | ✅ Closed |
+| RV-03 (v1 Major) | Major | Spec Compliance | FR-2, US-2, SC-04 | ✅ Closed |
+| RV-01v3 | Minor | Architecture Drift | AD-2, FR-1, US-1 | Open |
+| RV-02v3 | Minor | Spec Compliance | FR-2, US-2, SC-04 | Open (Documented Deviation) |
+| RV-03v3 | Note | Test Quality | SC-04, FR-2 | Acknowledged |
 
 ## 6. Spec Compliance Summary (T-7 Scope)
 
@@ -186,18 +187,51 @@ The play group loses its animation visual state for approximately 100ms (between
 
 **Acceptance Criteria Assessment:**
 
+=======
+| Finding | Severity | Category | Related Spec | Status |
+|---------|----------|----------|-------------|--------|
+| RV-01 (v1 Critical) | Critical | Architecture Drift | AD-2, FR-2, TR-8, US-2, SC-04, SC-05 | ✅ Closed |
+| RV-02 (v1 Major) | Major | Test Quality | FR-2, SC-04, SC-05 | ✅ Closed |
+| RV-03 (v1 Major) | Major | Spec Compliance | FR-2, US-2, SC-04 | ✅ Closed |
+| RV-01v3 | Minor | Architecture Drift | AD-2, FR-1, US-1 | Open |
+| RV-02v3 | Minor | Spec Compliance | FR-2, US-2, SC-04 | Open (Documented Deviation) |
+| RV-03v3 | Note | Test Quality | SC-04, FR-2 | Acknowledged |
+
+## 6. Spec Compliance Summary (T-7 Scope)
+
+| Requirement                         | Status     | Notes                                                                                                                                                                                                                 |
+| ----------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-1 (Card Play Animation)          | ✅ Met     | Arc motion, rotation, 1000ms timing with cubic-bezier easing. Transient retention keeps card visible during animation. Minor: play class lost ~100ms early in capture scenarios (RV-01v3).                            |
+| FR-2 (Card Capture Animation)       | ✅ Met     | Golden glow, simultaneous animation, DOM removal after animation window. Documented deviation: keyframe reaches partial fade (0.65 opacity) not full fade (0); disappearance via DOM removal is deliberate (RV-02v3). |
+| TR-2 (CSS Keyframe Animations)      | ✅ Met     | Keyframes use transform and opacity exclusively. `card-play-arc` provides translateY + rotateY. `card-capture-fade` provides opacity + scale transitions.                                                             |
+| TR-5 (Coordinate Systems)           | ⚠️ Partial | Arc path is CSS keyframe-based (translateY offsets) not DOM coordinate-calculated. Acceptable for T-7 scope; full coordinate-based pathing is a later concern.                                                        |
+| TR-8 (Animation Completion Signals) | ✅ Met     | Timer-based completion fires `completeParticipant` + `finalizeGroup` per group. `lastCompletedGroupId` signal propagates to turn sequencing. Intentional simplification from event-driven to timer-driven.            |
+| US-1 (Player Card Play)             | ✅ Met     | Play animation visible for place-only and capture scenarios via transient retention.                                                                                                                                  |
+| US-2 (Table Card Capture)           | ✅ Met     | Golden glow, simultaneous capture start, DOM removal after animation.                                                                                                                                                 |
+
+## 7. Task Completion Summary
+
+| Task | Title                                             | Status      | Findings                                         |
+| ---- | ------------------------------------------------- | ----------- | ------------------------------------------------ |
+| T-7  | Implement player play and capture animation flows | ✅ Complete | RV-01v3 (Minor), RV-02v3 (Minor), RV-03v3 (Note) |
+
+**Acceptance Criteria Assessment:**
+
+> > > > > > > Stashed changes
+
 - [x] Player play action renders movement to target zone — ✅ Met (arc animation with rotation visible via transient retention)
 - [x] Capture applies glow and removal behavior — ✅ Met (golden glow + DOM removal; deliberate partial-fade approach)
 - [x] Multi-card capture starts simultaneously — ✅ Met (single capture group with all cardIds; E2E verifies same-frame class application and equal animation-delay)
 
 ## 8. Test Coverage Summary
 
-| Scenario | Step Definitions | Meaningful | Findings                                               |
+<<<<<<< Updated upstream
+| Scenario | Step Definitions | Meaningful | Findings |
 | -------- | ---------------- | ---------- | ------------------------------------------------------ |
-| SC-01    | ✅ Yes           | ✅ Yes     | —                                                      |
-| SC-02    | ✅ Yes           | ✅ Yes     | Rotation assertion breadth (from red-v2, accepted)     |
-| SC-04    | ✅ Yes           | ✅ Yes     | RV-03v3 (semantic breadth of "out of view" text, Note) |
-| SC-05    | ✅ Yes           | ✅ Yes     | —                                                      |
+| SC-01 | ✅ Yes | ✅ Yes | — |
+| SC-02 | ✅ Yes | ✅ Yes | Rotation assertion breadth (from red-v2, accepted) |
+| SC-04 | ✅ Yes | ✅ Yes | RV-03v3 (semantic breadth of "out of view" text, Note) |
+| SC-05 | ✅ Yes | ✅ Yes | — |
 
 ## 9. Test Quality Summary
 
@@ -208,13 +242,39 @@ The play group loses its animation visual state for approximately 100ms (between
 | player-play-capture-animations.feature    | E2E Feature | ✅ Yes                | Covers SC-01, SC-02, SC-04, SC-05 with distinct step assertions                                                    |
 | player-play-capture-animations.ts         | E2E Steps   | ✅ Yes                | Asserts computed styles (animation-name, duration, timing-function, opacity, transform) and DOM removal            |
 
+=======
+| Scenario | Step Definitions | Meaningful | Findings |
+|----------|-----------------|------------|----------|
+| SC-01 | ✅ Yes | ✅ Yes | — |
+| SC-02 | ✅ Yes | ✅ Yes | Rotation assertion breadth (from red-v2, accepted) |
+| SC-04 | ✅ Yes | ✅ Yes | RV-03v3 (semantic breadth of "out of view" text, Note) |
+| SC-05 | ✅ Yes | ✅ Yes | — |
+
+## 9. Test Quality Summary
+
+| Test File                                 | Type        | Meaningful Assertions | Issues                                                                                                             |
+| ----------------------------------------- | ----------- | --------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| game-table-page.spec.ts (T-7 tests)       | Unit        | ✅ Yes                | Mock faithfully removes cards; assertions verify orchestrator invocations with correct action types and card IDs   |
+| game-table-page.spec.ts (T-7 render test) | Unit        | ✅ Yes                | Verifies DOM elements have capture animation class; works correctly because transient retention keeps cards in DOM |
+| player-play-capture-animations.feature    | E2E Feature | ✅ Yes                | Covers SC-01, SC-02, SC-04, SC-05 with distinct step assertions                                                    |
+| player-play-capture-animations.ts         | E2E Steps   | ✅ Yes                | Asserts computed styles (animation-name, duration, timing-function, opacity, transform) and DOM removal            |
+
+> > > > > > > Stashed changes
+
 ## 10. Security Cross-Reference
 
 No Critical or High security findings in the companion `security-report_T-7.md`. One Medium finding exists.
 
-| SEC ID | Severity | OWASP    | Summary                                                            |
+<<<<<<< Updated upstream
+| SEC ID | Severity | OWASP | Summary |
 | ------ | -------- | -------- | ------------------------------------------------------------------ |
-| SEC-01 | Medium   | A06:2021 | Transitive brace-expansion vulnerability (resource exhaustion DoS) |
+| SEC-01 | Medium | A06:2021 | Transitive brace-expansion vulnerability (resource exhaustion DoS) |
+=======
+| SEC ID | Severity | OWASP | Summary |
+|--------|----------|-------|---------|
+| SEC-01 | Medium | A06:2021 | Transitive brace-expansion vulnerability (resource exhaustion DoS) |
+
+> > > > > > > Stashed changes
 
 ## 11. Recommendations
 
