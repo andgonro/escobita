@@ -7,7 +7,7 @@ import {
   type CardAnimationState,
 } from '../models/animation-contracts';
 
-// Covers: FR-1, FR-2, FR-3, TR-1, TR-8, US-12, SC-21
+// Covers: FR-1, FR-2, FR-3, TR-1, TR-8, US-12, US-14, SC-20, SC-21
 
 describe('CardAnimationOrchestrator', () => {
   let service: CardAnimationOrchestrator;
@@ -217,6 +217,25 @@ describe('CardAnimationOrchestrator', () => {
 
     expect(group?.status).toBe('canceled');
     expect(state.activeGroupId).toBeNull();
+    expect(state.completedGroupIds).toEqual([]);
+    expect(service.lastCompletedGroupId()).toBeNull();
+  });
+
+  it('does not reconcile canceled groups into completed lifecycle when finalize is called afterwards', () => {
+    const groupId = service.startGroup({
+      actionType: 'capture',
+      cardIds: ['table-1', 'table-2'],
+    });
+
+    service.cancelGroup(groupId);
+    service.finalizeGroup(groupId);
+
+    const state = service.animationState();
+    const group = state.groups.find(
+      (currentGroup: CardAnimationGroup) => currentGroup.id === groupId,
+    );
+
+    expect(group?.status).toBe('canceled');
     expect(state.completedGroupIds).toEqual([]);
     expect(service.lastCompletedGroupId()).toBeNull();
   });

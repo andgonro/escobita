@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { TurnPausePolicy, type TurnPauseStage } from './turn-pause-policy';
 
-// Covers: FR-7, TR-4, TR-6, US-7, US-9, US-14
+// Covers: FR-7, TR-4, TR-6, TR-8, US-7, US-9, US-12, US-14, SC-19, SC-20
 
 describe('TurnPausePolicy', () => {
   let service: TurnPausePolicy;
@@ -35,5 +35,37 @@ describe('TurnPausePolicy', () => {
 
     expect(service.resolvePauseMs('ai-deliberation', { reducedMotion: false })).toBe(0);
     expect(service.resolvePauseMs('ai-capture-preview', { reducedMotion: true })).toBe(0);
+  });
+
+  it('normalizes runtime override to a non-negative integer before resolving stage pause', () => {
+    service.setRuntimeOverrideMs(-12.6);
+
+    expect(service.resolvePauseMs('ai-deliberation', { reducedMotion: false })).toBe(0);
+
+    service.setRuntimeOverrideMs(432.8);
+
+    expect(service.resolvePauseMs('ai-capture-preview', { reducedMotion: false })).toBe(433);
+  });
+
+  it('applies identical normalized override values for reduced-motion and standard timing modes', () => {
+    service.setRuntimeOverrideMs(-7.4);
+
+    expect(service.resolvePauseMs('player-post-play-confirm', { reducedMotion: false })).toBe(0);
+    expect(service.resolvePauseMs('player-post-play-confirm', { reducedMotion: true })).toBe(0);
+
+    service.setRuntimeOverrideMs(250.2);
+
+    expect(service.resolvePauseMs('ai-post-play-confirm', { reducedMotion: false })).toBe(250);
+    expect(service.resolvePauseMs('ai-post-play-confirm', { reducedMotion: true })).toBe(250);
+  });
+
+  it('restores stage defaults after runtime override is cleared back to null', () => {
+    service.setRuntimeOverrideMs(123);
+    expect(service.resolvePauseMs('ai-deliberation', { reducedMotion: false })).toBe(123);
+
+    service.setRuntimeOverrideMs(null);
+
+    expect(service.resolvePauseMs('ai-deliberation', { reducedMotion: false })).toBe(600);
+    expect(service.resolvePauseMs('ai-post-play-confirm', { reducedMotion: false })).toBe(300);
   });
 });

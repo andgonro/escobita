@@ -38,6 +38,10 @@ export class TurnPausePolicy {
   }
 
   setRuntimeOverrideMs(overrideMs: number | null): void {
-    this.runtimeOverrideMs = overrideMs;
+    this.runtimeOverrideMs = overrideMs === null ? null : this.normalizePauseMs(overrideMs);
+  }
+
+  private normalizePauseMs(value: number): number {
+    return Math.max(0, Math.round(value));
   }
 }

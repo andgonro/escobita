@@ -75,8 +75,8 @@ export class CardAnimationOrchestrator {
     let finalized = false;
 
     this.animationStateStore.update((state) => {
-      const groupExists = state.groups.some((group) => group.id === groupId);
-      if (!groupExists) {
+      const targetGroup = state.groups.find((group) => group.id === groupId);
+      if (!targetGroup || targetGroup.status === 'canceled') {
         return state;
       }
 

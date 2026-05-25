@@ -242,6 +242,8 @@ graph LR
 
 ### T-15: Add unit and integration validation suite
 
+- **Status:** ✅ Implemented
+
 - **Description:** Add deterministic tests for orchestrator lifecycle, pause policy, reduced-motion mode, and recovery logic.
 - **Architectural Decision:** AD-2, AD-3, AD-5.
 - **Depends on:** T-13, T-14.
