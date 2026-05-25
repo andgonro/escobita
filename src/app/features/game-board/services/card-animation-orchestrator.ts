@@ -108,6 +108,30 @@ export class CardAnimationOrchestrator {
     }
   }
 
+  cancelGroup(groupId: string): void {
+    this.animationStateStore.update((state) => {
+      const targetGroup = state.groups.find((group) => group.id === groupId);
+      if (!targetGroup || targetGroup.status !== 'running') {
+        return state;
+      }
+
+      return {
+        ...state,
+        groups: state.groups.map((group) => {
+          if (group.id !== groupId) {
+            return group;
+          }
+
+          return {
+            ...group,
+            status: 'canceled',
+          };
+        }),
+        activeGroupId: state.activeGroupId === groupId ? null : state.activeGroupId,
+      };
+    });
+  }
+
   private createGroupId(): string {
     this.groupSequence += 1;
     return `animation-group-${this.groupSequence}`;

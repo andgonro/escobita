@@ -3,6 +3,7 @@ import {
   Injector,
   ChangeDetectorRef,
   NgZone,
+  OnDestroy,
   computed,
   effect,
   inject,
@@ -78,7 +79,7 @@ interface MatchScoreEntry {
   templateUrl: './game-table-page.html',
   styleUrl: './game-table-page.scss',
 })
-export class GameTablePage {
+export class GameTablePage implements OnDestroy {
   private static readonly ANIMATION_COMPLETION_TIMEOUT_MS = 1_500;
   private static readonly PLAY_ANIMATION_DURATION_MS = 1_000;
   private static readonly CAPTURE_ANIMATION_DURATION_MS = 900;
@@ -566,6 +567,18 @@ export class GameTablePage {
     await this.confirmTurnWithSequencing('player-post-play-confirm', false);
   }
 
+  ngOnDestroy(): void {
+    const runningGroupIds = this.animationState()
+      .groups.filter((group) => group.status === 'running')
+      .map((group) => group.id);
+
+    for (const groupId of runningGroupIds) {
+      this.cardAnimationOrchestrator.cancelGroup(groupId);
+    }
+
+    this.resetTransientAnimationState();
+  }
+
   private async confirmTurnWithSequencing(
     stage: TurnPauseStage,
     alwaysApplyPause: boolean,
@@ -574,6 +587,10 @@ export class GameTablePage {
     const playersBeforeConfirm = stateBeforeConfirm?.players ?? [];
 
     const awaitedAnimationCompletion = await this.waitForActiveAnimationGroupCompletion();
+    if (awaitedAnimationCompletion) {
+      this.resetTransientAnimationState();
+    }
+
     if (this.gameEngine.turnPhase() !== 'awaiting-confirmation') {
       return;
     }
@@ -952,6 +969,11 @@ export class GameTablePage {
     }
 
     return [...cards, transientCard];
+  }
+
+  private resetTransientAnimationState(): void {
+    this.transientPlayedHandCardState.set(null);
+    this.transientCapturedTableCardsState.set([]);
   }
 
   private withTransientCards(cards: Card[], transientCards: Card[]): Card[] {

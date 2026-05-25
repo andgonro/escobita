@@ -197,6 +197,8 @@ graph LR
 
 ### T-12: Add resilience for cancellation and completion gaps
 
+- **Status:** ✅ Implemented
+
 - **Description:** Add fallback finalization and cancellation-safe cleanup to prevent deadlocks or orphaned visual state.
 - **Architectural Decision:** AD-2.
 - **Depends on:** T-9, T-10.
