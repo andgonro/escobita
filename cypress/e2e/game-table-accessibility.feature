@@ -20,3 +20,19 @@ Feature: Accessibility Baseline
     Given keyboard-only navigation is used
     When submit confirm or handoff acknowledgement occurs
     Then focus moves to the expected next control without ambiguity
+
+  Scenario: SC-20 - keyboard flow remains stable while animation load is active
+    Given keyboard-only navigation is used
+    When action animations are active during turn sequencing
+    Then keyboard focus remains on operable controls
+    And card controls expose disabled semantics without leaving focus order
+
+  Scenario: SC-21 - focus visibility remains present while animation classes are active
+    Given keyboard-only navigation is used
+    When action animations are active during turn sequencing
+    Then focused controls remain visibly focusable during animation load
+
+  Scenario: SC-21 - reduced-motion keeps selection and capture outcomes distinguishable
+    Given reduced-motion accessibility mode is enabled
+    When selection and capture feedback is exercised without motion
+    Then selection state and capture outcome remain distinguishable without motion

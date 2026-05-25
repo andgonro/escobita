@@ -51,6 +51,7 @@
         [tableCards]="tableCards()"
         [selectedTableCards]="selectedTableCards()"
         [interactionEnabled]="interactionEnabled()"
+        [preserveFocusOrderWhenBlocked]="preserveCardFocusOrderWhenBlocked()"
         [animationMetadata]="centerTableAnimationMetadata()"
         (tableCardToggled)="onTableCardToggled($event)"
       ></app-center-table-zone>
@@ -61,6 +62,7 @@
         [handCards]="activeHandCards()"
         [selectedHandCard]="selectedHandCard()"
         [interactionEnabled]="interactionEnabled()"
+        [preserveFocusOrderWhenBlocked]="preserveCardFocusOrderWhenBlocked()"
         [animationMetadata]="activeHandAnimationMetadata()"
         (handCardSelected)="onHandCardSelected($event)"
       ></app-active-hand-zone>

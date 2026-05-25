@@ -11,7 +11,8 @@
         [attr.data-testid]="'hand-card-' + cardIndex"
         [attr.aria-label]="handCardLabel(card)"
         [attr.aria-pressed]="isSelected(card) ? 'true' : 'false'"
-        [disabled]="!interactionEnabledSignal()"
+        [attr.aria-disabled]="!interactionEnabledSignal() ? 'true' : 'false'"
+        [disabled]="!interactionEnabledSignal() && !preserveFocusOrderWhenBlockedSignal()"
         (click)="selectHandCard(card)"
       >
         <app-card-visual

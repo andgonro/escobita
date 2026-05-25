@@ -212,6 +212,8 @@ graph LR
 
 ### T-13: Verify accessibility behavior under animation load
 
+- **Status:** ✅ Implemented
+
 - **Description:** Validate focus continuity, keyboard usability, and visual distinguishability across animation and reduced-motion modes.
 - **Architectural Decision:** AD-5.
 - **Depends on:** T-11.

@@ -30,6 +30,31 @@ const selectors = {
 let activePlayerBeforeTurnCompletion = '';
 let keyboardFlowPhaseBefore = '';
 let singlePlayerCoreActivePlayerBefore = '';
+let animationLoadFocusTargetBefore = '';
+
+const openSinglePlayerGameWithReducedMotion = (): void => {
+  cy.visit('/', {
+    onBeforeLoad(win) {
+      Object.defineProperty(win, 'matchMedia', {
+        writable: true,
+        value: (query: string) => ({
+          matches: query === '(prefers-reduced-motion: reduce)',
+          media: query,
+          onchange: null,
+          addListener: () => undefined,
+          removeListener: () => undefined,
+          addEventListener: () => undefined,
+          removeEventListener: () => undefined,
+          dispatchEvent: () => false,
+        }),
+      });
+    },
+  });
+
+  cy.get(selectors.modeSingle).click();
+  cy.get(selectors.playButton).click();
+  cy.location('pathname').should('eq', '/partida');
+};
 
 interface IndexedCard {
   index: number;
@@ -141,6 +166,25 @@ const withLegalCaptureSelection = (
       }
 
       withLegalCaptureSelection(onSelection, attemptsRemaining - 1);
+    });
+  });
+};
+
+const withLegalCaptureSelectionOnCurrentBoard = (
+  onSelection: (selection: { handIndex: number; tableIndexes: number[] }) => void,
+): void => {
+  cy.get(selectors.handCards).then(($handCards) => {
+    const handIndexedCards = buildIndexedCards($handCards as JQuery<HTMLElement>);
+
+    cy.get(selectors.tableCards).then(($tableCards) => {
+      const tableIndexedCards = buildIndexedCards($tableCards as JQuery<HTMLElement>);
+      const selection = findLegalCaptureSelection(handIndexedCards, tableIndexedCards);
+
+      if (selection === null) {
+        throw new Error('Could not find a legal capture setup on the current board.');
+      }
+
+      onSelection(selection);
     });
   });
 };
@@ -632,6 +676,73 @@ Then('focus moves to the expected next control without ambiguity', () => {
 
   cy.get('@focusAfterConfirmOrAcknowledge').then((focusAfterConfirmOrAcknowledge) => {
     expect(String(focusAfterConfirmOrAcknowledge)).to.equal('submit-play');
+  });
+});
+
+When('action animations are active during turn sequencing', () => {
+  cy.get(selectors.handCards).first().focus().type('{enter}');
+  cy.get(selectors.submitPlay).focus().type('{enter}');
+  cy.get(selectors.turnPhase).should('contain.text', 'awaiting-confirmation');
+
+  cy.focused()
+    .invoke('attr', 'data-testid')
+    .then((testId) => {
+      animationLoadFocusTargetBefore = (testId ?? '').trim();
+    });
+});
+
+Then('keyboard focus remains on operable controls', () => {
+  cy.get(selectors.submitPlay).focus();
+  cy.focused().should('have.attr', 'data-testid', 'submit-play');
+
+  cy.get(selectors.confirmTurn).focus();
+  cy.focused().should('have.attr', 'data-testid', 'confirm-turn');
+
+  expect(animationLoadFocusTargetBefore.length).to.be.greaterThan(0);
+});
+
+Then('card controls expose disabled semantics without leaving focus order', () => {
+  cy.get(selectors.handCards).first().should('have.attr', 'aria-disabled', 'true');
+  cy.get(selectors.tableCards).first().should('have.attr', 'aria-disabled', 'true');
+
+  cy.get(selectors.handCards).first().should('not.have.attr', 'disabled');
+  cy.get(selectors.tableCards).first().should('not.have.attr', 'disabled');
+});
+
+Then('focused controls remain visibly focusable during animation load', () => {
+  cy.get(selectors.confirmTurn).focus();
+  cy.focused().should('have.attr', 'data-testid', 'confirm-turn');
+  cy.focused().should('match', ':focus-visible');
+});
+
+Given('reduced-motion accessibility mode is enabled', () => {
+  openSinglePlayerGameWithReducedMotion();
+});
+
+When('selection and capture feedback is exercised without motion', () => {
+  withLegalCaptureSelectionOnCurrentBoard((selection) => {
+    cy.wrap(selection.tableIndexes.length).as('reducedMotionCaptureCount');
+
+    cy.get(selectors.handCards).eq(selection.handIndex).focus().type('{enter}');
+    selection.tableIndexes.forEach((tableIndex) => {
+      cy.get(selectors.tableCards).eq(tableIndex).focus().type('{enter}');
+    });
+
+    captureCountsBeforeSubmit();
+    cy.get(selectors.submitPlay).focus().type('{enter}');
+  });
+});
+
+Then('selection state and capture outcome remain distinguishable without motion', () => {
+  cy.get(selectors.handCards).filter('[aria-pressed="true"]').should('have.length', 0);
+
+  cy.get('@reducedMotionCaptureCount').then((captureCount) => {
+    cy.get('@tableCountBeforeSubmit').then((beforeCount) => {
+      cy.get(selectors.tableCards).should(
+        'have.length',
+        Number(beforeCount) - Number(captureCount),
+      );
+    });
   });
 });
 

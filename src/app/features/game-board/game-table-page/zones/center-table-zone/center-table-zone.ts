@@ -16,6 +16,7 @@ export class CenterTableZone {
   private readonly tableCardsState = signal<Card[]>([]);
   private readonly selectedTableCardsState = signal<Card[]>([]);
   private readonly interactionEnabledState = signal(true);
+  private readonly preserveFocusOrderWhenBlockedState = signal(false);
   private readonly animationMetadataState = signal<CenterTableZoneAnimationMetadata | null>(null);
 
   protected readonly tableCardsSignal: Signal<Card[]> = this.tableCardsState.asReadonly();
@@ -23,6 +24,8 @@ export class CenterTableZone {
     this.selectedTableCardsState.asReadonly();
   protected readonly interactionEnabledSignal: Signal<boolean> =
     this.interactionEnabledState.asReadonly();
+  protected readonly preserveFocusOrderWhenBlockedSignal: Signal<boolean> =
+    this.preserveFocusOrderWhenBlockedState.asReadonly();
   protected readonly animationMetadataSignal: Signal<CenterTableZoneAnimationMetadata | null> =
     this.animationMetadataState.asReadonly();
 
@@ -53,6 +56,15 @@ export class CenterTableZone {
 
   get interactionEnabled(): boolean {
     return this.interactionEnabledState();
+  }
+
+  @Input()
+  set preserveFocusOrderWhenBlocked(preserve: boolean) {
+    this.preserveFocusOrderWhenBlockedState.set(preserve ?? false);
+  }
+
+  get preserveFocusOrderWhenBlocked(): boolean {
+    return this.preserveFocusOrderWhenBlockedState();
   }
 
   @Input()

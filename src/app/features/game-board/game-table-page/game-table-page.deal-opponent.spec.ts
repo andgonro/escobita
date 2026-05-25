@@ -19,8 +19,8 @@ import { GameTablePage } from './game-table-page';
 import { ActiveHandZone } from './zones/active-hand-zone/active-hand-zone';
 import { OpponentZones } from './zones/opponent-zones/opponent-zones';
 
-// Covers: FR-3, FR-5, FR-7, FR-8, TR-2, TR-5, TR-8, US-3, US-5, US-8, US-12, US-14
-// BDD Scenarios: SC-07, SC-08, SC-12, SC-17, SC-18, SC-21
+// Covers: FR-3, FR-5, FR-7, FR-8, TR-2, TR-5, TR-8, NFR-2, NFR-3, US-3, US-5, US-8, US-9, US-12, US-14
+// BDD Scenarios: SC-07, SC-08, SC-12, SC-17, SC-18, SC-20, SC-21, SC-23
 
 const handCard: Card = { suit: 'Oros', rank: '7', value: 7 };
 const tableCardA: Card = { suit: 'Copas', rank: '5', value: 5 };
@@ -788,6 +788,51 @@ describe('GameTablePage — deal and opponent animation flows (T-8)', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('T-13 / NFR-2 / SC-20 - hand and table card controls remain in keyboard focus order while animation group is running', async () => {
+    await configureAndCreate('awaiting-confirmation');
+
+    const orchestrator = fixture.componentRef.injector.get(CardAnimationOrchestrator);
+    orchestrator.startGroup({
+      actionType: 'opponent-play',
+      cardIds: ['Oros-1'],
+    });
+
+    await fixture.whenStable();
+
+    const handCardButton = getByTestId<HTMLButtonElement>('hand-card-0');
+    const tableCardButton = getByTestId<HTMLButtonElement>('table-card-0');
+
+    expect(handCardButton.disabled).toBe(false);
+    expect(tableCardButton.disabled).toBe(false);
+    expect(handCardButton.getAttribute('aria-disabled')).toBe('true');
+    expect(tableCardButton.getAttribute('aria-disabled')).toBe('true');
+  });
+
+  it('T-13 / NFR-2 / SC-23 - focus can move predictably to action controls while animation group is running', async () => {
+    await configureAndCreate('awaiting-confirmation');
+
+    const orchestrator = fixture.componentRef.injector.get(CardAnimationOrchestrator);
+    orchestrator.startGroup({
+      actionType: 'capture',
+      cardIds: ['Copas-5'],
+    });
+
+    await fixture.whenStable();
+
+    const handCardButton = getByTestId<HTMLButtonElement>('hand-card-0');
+    const submitPlayButton = getByTestId<HTMLButtonElement>('submit-play');
+    const confirmTurnButton = getByTestId<HTMLButtonElement>('confirm-turn');
+
+    handCardButton.focus();
+    expect(document.activeElement).toBe(handCardButton);
+
+    submitPlayButton.focus();
+    expect(document.activeElement).toBe(submitPlayButton);
+
+    confirmTurnButton.focus();
+    expect(document.activeElement).toBe(confirmTurnButton);
   });
 
   it('T-12 / TR-8 / SC-21 - fallback completion clears transient visual cards after timeout recovery', async () => {

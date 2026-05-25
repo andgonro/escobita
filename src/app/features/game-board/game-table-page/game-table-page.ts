@@ -208,6 +208,9 @@ export class GameTablePage implements OnDestroy {
       !(configuration?.mode === 'Single Player' && activePlayer?.id === this.aiPlayerId())
     );
   });
+  protected readonly preserveCardFocusOrderWhenBlocked = computed(() => {
+    return this.animationState().groups.some((group) => group.status === 'running');
+  });
   protected readonly aiPlayerId = computed(() => {
     return this.gameEngine.state()?.players[1]?.id ?? null;
   });

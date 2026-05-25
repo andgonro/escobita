@@ -13,7 +13,8 @@
       [attr.aria-label]="tableCardLabel(card)"
       role="option"
       [attr.aria-selected]="isSelected(card) ? 'true' : 'false'"
-      [disabled]="!interactionEnabledSignal()"
+      [attr.aria-disabled]="!interactionEnabledSignal() ? 'true' : 'false'"
+      [disabled]="!interactionEnabledSignal() && !preserveFocusOrderWhenBlockedSignal()"
       (click)="toggleTableCard(card)"
     >
       <app-card-visual

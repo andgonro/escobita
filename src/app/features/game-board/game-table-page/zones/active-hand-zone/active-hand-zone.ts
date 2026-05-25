@@ -16,6 +16,7 @@ export class ActiveHandZone {
   private readonly handCardsState = signal<Card[]>([]);
   private readonly selectedHandCardState = signal<Card | null>(null);
   private readonly interactionEnabledState = signal(true);
+  private readonly preserveFocusOrderWhenBlockedState = signal(false);
   private readonly animationMetadataState = signal<ActiveHandZoneAnimationMetadata | null>(null);
 
   protected readonly handCardsSignal: Signal<Card[]> = this.handCardsState.asReadonly();
@@ -23,6 +24,8 @@ export class ActiveHandZone {
     this.selectedHandCardState.asReadonly();
   protected readonly interactionEnabledSignal: Signal<boolean> =
     this.interactionEnabledState.asReadonly();
+  protected readonly preserveFocusOrderWhenBlockedSignal: Signal<boolean> =
+    this.preserveFocusOrderWhenBlockedState.asReadonly();
   protected readonly animationMetadataSignal: Signal<ActiveHandZoneAnimationMetadata | null> =
     this.animationMetadataState.asReadonly();
 
@@ -53,6 +56,15 @@ export class ActiveHandZone {
 
   get interactionEnabled(): boolean {
     return this.interactionEnabledState();
+  }
+
+  @Input()
+  set preserveFocusOrderWhenBlocked(preserve: boolean) {
+    this.preserveFocusOrderWhenBlockedState.set(preserve ?? false);
+  }
+
+  get preserveFocusOrderWhenBlocked(): boolean {
+    return this.preserveFocusOrderWhenBlockedState();
   }
 
   @Input()
