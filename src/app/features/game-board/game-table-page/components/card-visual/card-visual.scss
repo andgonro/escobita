@@ -11,6 +11,8 @@
   height: 100%;
   border-radius: 0.5rem;
   overflow: hidden;
+  contain: strict;
+  will-change: transform, opacity;
   transition:
     transform 120ms ease,
     box-shadow 120ms ease;

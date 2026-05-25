@@ -31,6 +31,16 @@ let activePlayerBeforeTurnCompletion = '';
 let keyboardFlowPhaseBefore = '';
 let singlePlayerCoreActivePlayerBefore = '';
 let animationLoadFocusTargetBefore = '';
+let originalGetBoundingClientRect: typeof HTMLElement.prototype.getBoundingClientRect | null = null;
+
+afterEach(() => {
+  cy.window().then((win) => {
+    if (originalGetBoundingClientRect !== null) {
+      win.HTMLElement.prototype.getBoundingClientRect = originalGetBoundingClientRect;
+      originalGetBoundingClientRect = null;
+    }
+  });
+});
 
 const openSinglePlayerGameWithReducedMotion = (): void => {
   cy.visit('/', {
@@ -299,7 +309,9 @@ Given('viewport width is 320 pixels', () => {
 });
 
 Given('viewport width is {word} range', (viewportRange: string) => {
-  if (viewportRange === 'tablet') {
+  if (viewportRange === 'mobile') {
+    cy.viewport(375, 812);
+  } else if (viewportRange === 'tablet') {
     cy.viewport(768, 1024);
   } else if (viewportRange === 'desktop') {
     cy.viewport(1280, 800);
@@ -308,6 +320,27 @@ Given('viewport width is {word} range', (viewportRange: string) => {
   }
 
   openSinglePlayerGame();
+});
+
+Given('coordinate resolution is forced to fail for animated cards', () => {
+  cy.window().then((win) => {
+    const proto = win.HTMLElement.prototype;
+    originalGetBoundingClientRect = proto.getBoundingClientRect;
+
+    proto.getBoundingClientRect = function getBoundingClientRectFallback() {
+      return {
+        x: 0,
+        y: 0,
+        width: 0,
+        height: 0,
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
+        toJSON: () => undefined,
+      } as DOMRect;
+    };
+  });
 });
 
 When('game table controls are displayed', () => {
@@ -457,6 +490,26 @@ When('submit confirm or handoff acknowledgement occurs', () => {
 
 When('the game table is rendered', () => {
   cy.get(selectors.page).should('be.visible');
+});
+
+When('the player submits a play action to trigger card movement animation', () => {
+  captureCountsBeforeSubmit();
+  cy.get(selectors.handCards).first().focus().type('{enter}');
+  cy.get(selectors.submitPlay).focus().type('{enter}');
+  cy.get(selectors.turnPhase).should('contain.text', 'awaiting-confirmation');
+});
+
+When('repeated play submissions are executed for animation cadence', () => {
+  cy.get(selectors.handCards).first().focus().type('{enter}');
+  cy.get(selectors.submitPlay).focus().type('{enter}');
+  cy.get(selectors.turnPhase).should('contain.text', 'awaiting-confirmation');
+
+  cy.get(selectors.confirmTurn).focus().type('{enter}');
+  cy.get(selectors.turnPhase).should('contain.text', 'awaiting-card-play');
+
+  cy.get(selectors.handCards).first().focus().type('{enter}');
+  cy.get(selectors.submitPlay).focus().type('{enter}');
+  cy.get(selectors.turnPhase).should('contain.text', 'awaiting-confirmation');
 });
 
 Then('handoff toggle is visible and operable', () => {
@@ -789,4 +842,42 @@ Then('card zones do not overlap critical context', () => {
       expect(tableTop).to.be.gte(headerBottom);
     });
   });
+});
+
+Then('the played card remains within the center table bounds', () => {
+  cy.get(selectors.centerTableZone).then(($center) => {
+    const zoneRect = $center[0].getBoundingClientRect();
+
+    cy.get(selectors.tableCards)
+      .last()
+      .then(($card) => {
+        const cardRect = $card[0].getBoundingClientRect();
+
+        expect(cardRect.left).to.be.gte(zoneRect.left);
+        expect(cardRect.right).to.be.lte(zoneRect.right);
+        expect(cardRect.top).to.be.gte(zoneRect.top);
+        expect(cardRect.bottom).to.be.lte(zoneRect.bottom);
+      });
+  });
+});
+
+Then('fallback path keeps action progression valid', () => {
+  cy.get(selectors.turnPhase).should('contain.text', 'awaiting-confirmation');
+  cy.get(selectors.confirmTurn).should('not.be.disabled');
+});
+
+Then('animated card visuals rely on transform or opacity driven states', () => {
+  cy.get(selectors.handCards)
+    .first()
+    .find('[data-testid="card-visual"]')
+    .then(($visual) => {
+      const style = getComputedStyle($visual[0]);
+      const transitionProperty = style.getPropertyValue('transition-property');
+
+      expect(transitionProperty).to.contain('transform');
+      expect(transitionProperty).not.to.contain('top');
+      expect(transitionProperty).not.to.contain('left');
+      expect(transitionProperty).not.to.contain('width');
+      expect(transitionProperty).not.to.contain('height');
+    });
 });

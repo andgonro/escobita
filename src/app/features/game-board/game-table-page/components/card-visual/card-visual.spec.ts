@@ -3,7 +3,7 @@ import { Card } from '../../../../../models/card';
 
 import { CardVisual } from './card-visual';
 
-// Covers: FR-1.5, FR-4, FR-6.2, TR-2, TR-3.1, TR-3.2, TR-6.2, NFR-2, NFR-7, US-1, US-4, US-6
+// Covers: FR-1.5, FR-4, FR-6.2, TR-2, TR-3.1, TR-3.2, TR-6.2, TR-7, NFR-1, NFR-2, NFR-7, US-1, US-4, US-6, US-10
 
 type CardVisualTestState = CardVisual & {
   card: Card | null;
@@ -196,5 +196,36 @@ describe('CardVisual', () => {
     expect(animationName).toContain('card-escoba-burst');
     expect(durationMs).toBeGreaterThanOrEqual(600);
     expect(durationMs).toBeLessThanOrEqual(800);
+  });
+
+  it('T-14 / TR-7 / NFR-1 - isolates card visual paint work with strict containment', async () => {
+    testState.card = sampleCard;
+    testState.animationState = 'play';
+    await fixture.whenStable();
+
+    const visual = fixture.nativeElement.querySelector(
+      '[data-testid="card-visual"]',
+    ) as HTMLElement | null;
+
+    const computedStyle = getComputedStyle(visual as HTMLElement);
+    const contain = computedStyle.getPropertyValue('contain').trim();
+
+    expect(contain).toBe('strict');
+  });
+
+  it('T-14 / TR-7 / NFR-1 - advertises transform and opacity via will-change during animated states', async () => {
+    testState.card = sampleCard;
+    testState.animationState = 'capture';
+    await fixture.whenStable();
+
+    const visual = fixture.nativeElement.querySelector(
+      '[data-testid="card-visual"]',
+    ) as HTMLElement | null;
+
+    const computedStyle = getComputedStyle(visual as HTMLElement);
+    const willChange = computedStyle.getPropertyValue('will-change').replace(/\s+/g, ' ').trim();
+
+    expect(willChange).toContain('transform');
+    expect(willChange).toContain('opacity');
   });
 });

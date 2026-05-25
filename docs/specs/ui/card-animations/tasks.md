@@ -227,6 +227,8 @@ graph LR
 
 ### T-14: Tune performance and responsive path behavior
 
+- **Status:** ✅ Implemented
+
 - **Description:** Validate and tune animation behavior for responsive geometry and mobile frame stability.
 - **Architectural Decision:** AD-4.
 - **Depends on:** T-12.
