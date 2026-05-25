@@ -1,6 +1,7 @@
 <section
   class="opponent-zones"
   data-testid="opponent-zones"
+  data-opponent-animation-scope="single-player-ai-only"
   [class.opponent-zones--one]="opponentsSignal().length === 1"
   [class.opponent-zones--two]="opponentsSignal().length === 2"
   [class.opponent-zones--three]="opponentsSignal().length >= 3"

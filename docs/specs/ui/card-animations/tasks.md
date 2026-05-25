@@ -257,6 +257,8 @@ graph LR
 
 ### T-16: Align and execute E2E scenarios from BDD
 
+- **Status:** ✅ Implemented
+
 - **Description:** Implement and align end-to-end scenarios for player, AI, Escoba, pause sequencing, reduced-motion, responsive behavior, and scope guardrails.
 - **Architectural Decision:** AD-6, AD-7.
 - **Depends on:** T-15.
