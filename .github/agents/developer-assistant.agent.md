@@ -240,9 +240,18 @@ After both the Reviewer Assistant and Security Assistant have returned their fin
 
 **A task is only considered DONE when it passes both the Reviewer and the Security Assistant with no unresolved Critical/Major or Critical/High findings respectively (or the user explicitly defers them).**
 
+**Mandatory completion prompt:**
+
+- After a task is fully complete (no unresolved blocking findings, or user explicitly deferred blockers), you MUST ask:
+  - "Do you need a cleaned commit split before we proceed?"
+- If the user says yes, prepare a non-interactive cleaned split by intent (for example: source+tests in one commit, generated reports/docs in a separate commit), then confirm commit hashes.
+- Ask this question for **every** completed task before moving to Step 9.
+
 ### Step 9: Next Task
 
 After a task is complete and reviewed, ask the user:
+
+- Before asking to proceed to T-{X+1}, confirm Step 8 was executed by explicitly asking whether a cleaned commit split is needed.
 
 - "T-X is complete and reviewed (RED + GREEN). Would you like me to proceed with T-{X+1}: {next task title}?"
 - If the user confirms, loop back to Step 0 with the next task.
