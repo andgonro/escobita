@@ -7,7 +7,7 @@ import {
   type CardAnimationState,
 } from '../models/animation-contracts';
 
-// Covers: FR-1, FR-2, FR-3, TR-1, TR-8, US-12
+// Covers: FR-1, FR-2, FR-3, TR-1, TR-8, US-12, SC-21
 
 describe('CardAnimationOrchestrator', () => {
   let service: CardAnimationOrchestrator;
@@ -196,6 +196,29 @@ describe('CardAnimationOrchestrator', () => {
 
     expect(group?.status).toBe('completed');
     expect(group?.status).not.toBe('canceled');
+  });
+
+  it('marks an active group as canceled and clears active tracking without publishing completion', () => {
+    const groupId = service.startGroup({
+      actionType: 'deal',
+      cardIds: ['deck-1', 'deck-2'],
+    });
+
+    (
+      service as unknown as {
+        cancelGroup: (targetGroupId: string) => void;
+      }
+    ).cancelGroup(groupId);
+
+    const state = service.animationState();
+    const group = state.groups.find(
+      (currentGroup: CardAnimationGroup) => currentGroup.id === groupId,
+    );
+
+    expect(group?.status).toBe('canceled');
+    expect(state.activeGroupId).toBeNull();
+    expect(state.completedGroupIds).toEqual([]);
+    expect(service.lastCompletedGroupId()).toBeNull();
   });
 
   it('ignores participant completion events for unknown cards in existing groups', () => {

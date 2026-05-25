@@ -19,8 +19,8 @@ import { GameTablePage } from './game-table-page';
 import { ActiveHandZone } from './zones/active-hand-zone/active-hand-zone';
 import { OpponentZones } from './zones/opponent-zones/opponent-zones';
 
-// Covers: FR-3, FR-5, FR-8, TR-2, TR-5, US-3, US-5, US-8
-// BDD Scenarios: SC-07, SC-08, SC-12
+// Covers: FR-3, FR-5, FR-7, FR-8, TR-2, TR-5, TR-8, US-3, US-5, US-8, US-12, US-14
+// BDD Scenarios: SC-07, SC-08, SC-12, SC-17, SC-18, SC-21
 
 const handCard: Card = { suit: 'Oros', rank: '7', value: 7 };
 const tableCardA: Card = { suit: 'Copas', rank: '5', value: 5 };
@@ -238,6 +238,23 @@ describe('GameTablePage — deal and opponent animation flows (T-8)', () => {
     component = fixture.componentInstance;
     fixture.autoDetectChanges();
     await fixture.whenStable();
+  };
+
+  const arrangeAiTurn = (captureSubset: Card[] = []) => {
+    const aiCard: Card = { suit: 'Oros', rank: '1', value: 1 };
+    stubs.setAiDecision({ cardToPlay: aiCard, captureSubset });
+    stubs.setState({
+      deck: [],
+      table: [tableCardA],
+      players: [
+        { id: 'p1', name: 'Alice', hand: [handCard], capturedPile: [], escobaCount: 0 },
+        { id: 'p2', name: 'Laia', hand: [aiCard], capturedPile: [], escobaCount: 0 },
+      ],
+      turnIndex: 1,
+      roundNumber: 1,
+      matchScores: { p1: 0, p2: 0 },
+      lastCapturerId: null,
+    });
   };
 
   afterEach(() => {
@@ -516,5 +533,353 @@ describe('GameTablePage — deal and opponent animation flows (T-8)', () => {
     const dealCall = startGroupSpy.mock.calls.find(([req]) => req.actionType === 'deal');
     expect(dealCall).toBeDefined();
     expect(dealCall![0].cardIds.length).toBeGreaterThan(0);
+  });
+
+  it('T-11 / TR-6 / NFR-3 - reduced-motion path suppresses deal animation metadata while preserving confirm outcome', async () => {
+    const originalMatchMedia = window.matchMedia;
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: vi.fn().mockImplementation((query: string) => ({
+        matches: query === '(prefers-reduced-motion: reduce)',
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    });
+
+    try {
+      await configureAndCreate('awaiting-confirmation');
+      const orchestrator = fixture.componentRef.injector.get(CardAnimationOrchestrator);
+
+      getByTestId<HTMLButtonElement>('confirm-turn').click();
+      await fixture.whenStable();
+
+      const runningDealGroups = orchestrator
+        .animationState()
+        .groups.filter((group) => group.actionType === 'deal' && group.status === 'running');
+
+      expect(stubs.confirmTurnSpy).toHaveBeenCalledTimes(1);
+      expect(runningDealGroups.length).toBe(0);
+    } finally {
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: originalMatchMedia,
+      });
+    }
+  });
+
+  it('T-11 / TR-6 / NFR-3 - reduced-motion path bypasses extended AI semantic pauses before decision', async () => {
+    vi.useFakeTimers();
+    const originalMatchMedia = window.matchMedia;
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: vi.fn().mockImplementation((query: string) => ({
+        matches: query === '(prefers-reduced-motion: reduce)',
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    });
+
+    try {
+      await configureAndCreate('awaiting-card-play');
+      arrangeAiTurn();
+
+      void runAiTurnDirectly();
+      await vi.advanceTimersByTimeAsync(20);
+      await fixture.whenStable();
+
+      expect(stubs.decideSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: originalMatchMedia,
+      });
+      vi.useRealTimers();
+    }
+  });
+
+  it('T-11 / SC-13 / TR-6 - reduced-motion path suppresses opponent-play visual metadata during AI resolution', async () => {
+    vi.useFakeTimers();
+    const originalMatchMedia = window.matchMedia;
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: vi.fn().mockImplementation((query: string) => ({
+        matches: query === '(prefers-reduced-motion: reduce)',
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    });
+
+    try {
+      await configureAndCreate('awaiting-card-play');
+      arrangeAiTurn();
+
+      const pausePolicy = fixture.componentRef.injector.get(TurnPausePolicy);
+      pausePolicy.setRuntimeOverrideMs(1);
+
+      void runAiTurnDirectly();
+      await vi.advanceTimersByTimeAsync(30);
+      await fixture.whenStable();
+
+      const opponentZones = getOpponentZonesInstance();
+      const metadata = (opponentZones as unknown as { animationMetadata: unknown })
+        .animationMetadata as {
+        opponent: { cardIndex: number; animationState: string | null }[];
+      } | null;
+
+      const opponentAnimationActive =
+        metadata?.opponent.some((entry) => entry.animationState === 'opponent') ?? false;
+
+      expect(opponentAnimationActive).toBe(false);
+    } finally {
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: originalMatchMedia,
+      });
+      vi.useRealTimers();
+    }
+  });
+
+  it('T-10 / FR-8 / TR-8 - AI run waits for opponent-play group completion before confirm', async () => {
+    vi.useFakeTimers();
+    try {
+      await configureAndCreate('awaiting-card-play');
+      arrangeAiTurn();
+
+      const orchestrator = fixture.componentRef.injector.get(CardAnimationOrchestrator);
+      const pausePolicy = fixture.componentRef.injector.get(TurnPausePolicy);
+      pausePolicy.setRuntimeOverrideMs(500);
+
+      const startGroupSpy = vi.spyOn(orchestrator, 'startGroup');
+
+      void runAiTurnDirectly();
+      await vi.advanceTimersByTimeAsync(50);
+
+      const opponentPlayCall = startGroupSpy.mock.calls.find(
+        ([request]) => request.actionType === 'opponent-play',
+      );
+      expect(opponentPlayCall).toBeDefined();
+
+      // Runtime override keeps AI phase pauses tiny, but confirm still must wait for
+      // opponent-play completion + post-play handoff pause.
+      await vi.advanceTimersByTimeAsync(350);
+      expect(stubs.confirmTurnSpy).not.toHaveBeenCalled();
+
+      await vi.advanceTimersByTimeAsync(700);
+      expect(stubs.confirmTurnSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('T-10 / FR-8 - AI semantic phase remains resolving while opponent-play animation is still running', async () => {
+    vi.useFakeTimers();
+    try {
+      await configureAndCreate('awaiting-card-play');
+      arrangeAiTurn();
+
+      const orchestrator = fixture.componentRef.injector.get(CardAnimationOrchestrator);
+      const pausePolicy = fixture.componentRef.injector.get(TurnPausePolicy);
+      pausePolicy.setRuntimeOverrideMs(700);
+
+      void runAiTurnDirectly();
+      await vi.advanceTimersByTimeAsync(200);
+
+      const runningOpponentGroup = orchestrator
+        .animationState()
+        .groups.find((group) => group.actionType === 'opponent-play' && group.status === 'running');
+      expect(runningOpponentGroup).toBeDefined();
+
+      const aiPhase = (
+        component as unknown as {
+          aiTurnAnimationState: () => { phase: string };
+        }
+      ).aiTurnAnimationState().phase;
+
+      expect(aiPhase).toBe('resolving');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('T-10 / FR-7 / FR-8 - AI handoff applies configured pause after completion before confirm', async () => {
+    vi.useFakeTimers();
+    try {
+      await configureAndCreate('awaiting-confirmation');
+
+      const orchestrator = fixture.componentRef.injector.get(CardAnimationOrchestrator);
+
+      const groupId = orchestrator.startGroup({
+        actionType: 'opponent-play',
+        cardIds: ['Oros-1'],
+      });
+      orchestrator.completeParticipant(groupId, 'Oros-1', 100);
+      setTimeout(() => {
+        orchestrator.finalizeGroup(groupId);
+      }, 1000);
+
+      const pausePolicy = fixture.componentRef.injector.get(TurnPausePolicy);
+      pausePolicy.setRuntimeOverrideMs(600);
+
+      const sequencingPromise = (
+        component as unknown as {
+          confirmTurnWithSequencing: (
+            stage: 'ai-post-play-confirm' | 'player-post-play-confirm',
+            alwaysApplyPause: boolean,
+          ) => Promise<void>;
+        }
+      ).confirmTurnWithSequencing('ai-post-play-confirm', true);
+
+      // Animation completes at 1000ms. With a configured 600ms pause, confirm must not happen before 1600ms.
+      await vi.advanceTimersByTimeAsync(1500);
+      expect(stubs.confirmTurnSpy).not.toHaveBeenCalled();
+
+      await vi.advanceTimersByTimeAsync(200);
+      await sequencingPromise;
+      expect(stubs.confirmTurnSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('T-10 / TR-8 / SC-18 - missing group completion signal does not deadlock confirm sequencing', async () => {
+    vi.useFakeTimers();
+    try {
+      await configureAndCreate('awaiting-confirmation');
+
+      const orchestrator = fixture.componentRef.injector.get(CardAnimationOrchestrator);
+      const pausePolicy = fixture.componentRef.injector.get(TurnPausePolicy);
+      pausePolicy.setRuntimeOverrideMs(0);
+
+      orchestrator.startGroup({
+        actionType: 'opponent-play',
+        cardIds: ['Oros-1'],
+      });
+
+      void (
+        component as unknown as {
+          confirmTurnWithSequencing: (
+            stage: 'ai-post-play-confirm' | 'player-post-play-confirm',
+            alwaysApplyPause: boolean,
+          ) => Promise<void>;
+        }
+      ).confirmTurnWithSequencing('ai-post-play-confirm', true);
+
+      await vi.advanceTimersByTimeAsync(1400);
+      expect(stubs.confirmTurnSpy).not.toHaveBeenCalled();
+
+      await vi.advanceTimersByTimeAsync(200);
+      await vi.runOnlyPendingTimersAsync();
+      expect(stubs.confirmTurnSpy.mock.calls.length).toBeGreaterThanOrEqual(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('T-12 / TR-8 / SC-21 - fallback completion clears transient visual cards after timeout recovery', async () => {
+    vi.useFakeTimers();
+    try {
+      await configureAndCreate('awaiting-confirmation');
+
+      const orchestrator = fixture.componentRef.injector.get(CardAnimationOrchestrator);
+      const pausePolicy = fixture.componentRef.injector.get(TurnPausePolicy);
+      pausePolicy.setRuntimeOverrideMs(0);
+
+      orchestrator.startGroup({
+        actionType: 'opponent-play',
+        cardIds: ['Oros-1'],
+      });
+
+      const transientPlayedCard: Card = { suit: 'Espadas', rank: '6', value: 6 };
+      const transientCapturedCard: Card = { suit: 'Bastos', rank: '4', value: 4 };
+
+      (
+        component as unknown as {
+          transientPlayedHandCardState: { set: (card: Card | null) => void };
+          transientCapturedTableCardsState: { set: (cards: Card[]) => void };
+          activeHandCards: () => Card[];
+          tableCards: () => Card[];
+          confirmTurnWithSequencing: (
+            stage: 'ai-post-play-confirm' | 'player-post-play-confirm',
+            alwaysApplyPause: boolean,
+          ) => Promise<void>;
+        }
+      ).transientPlayedHandCardState.set(transientPlayedCard);
+      (
+        component as unknown as {
+          transientPlayedHandCardState: { set: (card: Card | null) => void };
+          transientCapturedTableCardsState: { set: (cards: Card[]) => void };
+          activeHandCards: () => Card[];
+          tableCards: () => Card[];
+          confirmTurnWithSequencing: (
+            stage: 'ai-post-play-confirm' | 'player-post-play-confirm',
+            alwaysApplyPause: boolean,
+          ) => Promise<void>;
+        }
+      ).transientCapturedTableCardsState.set([transientCapturedCard]);
+
+      const sequencingPromise = (
+        component as unknown as {
+          transientPlayedHandCardState: { set: (card: Card | null) => void };
+          transientCapturedTableCardsState: { set: (cards: Card[]) => void };
+          activeHandCards: () => Card[];
+          tableCards: () => Card[];
+          confirmTurnWithSequencing: (
+            stage: 'ai-post-play-confirm' | 'player-post-play-confirm',
+            alwaysApplyPause: boolean,
+          ) => Promise<void>;
+        }
+      ).confirmTurnWithSequencing('ai-post-play-confirm', true);
+
+      await vi.advanceTimersByTimeAsync(1700);
+      await sequencingPromise;
+
+      const projectedState = component as unknown as {
+        activeHandCards: () => Card[];
+        tableCards: () => Card[];
+      };
+
+      const activeHandCards = projectedState.activeHandCards();
+      const tableCards = projectedState.tableCards();
+
+      expect(activeHandCards.some((card) => card.suit === 'Espadas' && card.rank === '6')).toBe(
+        false,
+      );
+      expect(tableCards.some((card) => card.suit === 'Bastos' && card.rank === '4')).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('T-12 / TR-8 / SC-21 - component teardown cancels active animation groups to avoid orphaned running state', async () => {
+    await configureAndCreate('awaiting-confirmation');
+
+    const orchestrator = fixture.componentRef.injector.get(CardAnimationOrchestrator);
+    const groupId = orchestrator.startGroup({
+      actionType: 'opponent-play',
+      cardIds: ['Oros-1'],
+    });
+
+    fixture.destroy();
+
+    const canceledGroup = orchestrator
+      .animationState()
+      .groups.find((group) => group.id === groupId);
+    expect(canceledGroup?.status).toBe('canceled');
+    expect(orchestrator.animationState().activeGroupId).toBeNull();
   });
 });

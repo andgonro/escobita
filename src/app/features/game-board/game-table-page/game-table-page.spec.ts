@@ -740,6 +740,57 @@ describe('GameTablePage', () => {
     }
   });
 
+  it('T-11 / SC-19 / FR-7 - reduced-motion confirm flow still enforces transition pause after completion', async () => {
+    vi.useFakeTimers();
+    const originalMatchMedia = window.matchMedia;
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: vi.fn().mockImplementation((query: string) => ({
+        matches: query === '(prefers-reduced-motion: reduce)',
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    });
+
+    try {
+      await configureAndCreate('awaiting-confirmation', handCard);
+
+      const pausePolicy = fixture.componentRef.injector.get(TurnPausePolicy);
+      const resolvePauseSpy = vi.spyOn(pausePolicy, 'resolvePauseMs').mockReturnValue(700);
+
+      const sequencingPromise = (
+        component as unknown as {
+          confirmTurnWithSequencing: (
+            stage: 'player-post-play-confirm' | 'ai-post-play-confirm',
+            alwaysApplyPause: boolean,
+          ) => Promise<void>;
+        }
+      ).confirmTurnWithSequencing('player-post-play-confirm', true);
+
+      await vi.advanceTimersByTimeAsync(699);
+      expect(stubs.confirmTurnSpy).not.toHaveBeenCalled();
+
+      await vi.advanceTimersByTimeAsync(1);
+      await sequencingPromise;
+
+      expect(resolvePauseSpy).toHaveBeenCalledWith('player-post-play-confirm', {
+        reducedMotion: true,
+      });
+      expect(stubs.confirmTurnSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: originalMatchMedia,
+      });
+      vi.useRealTimers();
+    }
+  });
+
   it('T-6 / SC-19 / FR-7 / TR-4 - applies completion-driven sequencing in AI flow before confirmTurn', async () => {
     vi.useFakeTimers();
 
@@ -859,6 +910,46 @@ describe('GameTablePage', () => {
 
     expect(tableCardZeroVisual?.classList.contains('card-visual--animation-capture')).toBe(true);
     expect(tableCardOneVisual?.classList.contains('card-visual--animation-capture')).toBe(true);
+  });
+
+  it('T-11 / TR-6 / NFR-3 - reduced-motion submit path suppresses play and capture motion classes', async () => {
+    const originalMatchMedia = window.matchMedia;
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: vi.fn().mockImplementation((query: string) => ({
+        matches: query === '(prefers-reduced-motion: reduce)',
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    });
+
+    try {
+      await configureAndCreate('awaiting-card-play', handCard);
+
+      getByTestId<HTMLButtonElement>('submit-play').click();
+      await fixture.whenStable();
+
+      const playAnimatedCards = fixture.nativeElement.querySelectorAll(
+        '.card-visual--animation-play',
+      );
+      const captureAnimatedCards = fixture.nativeElement.querySelectorAll(
+        '.card-visual--animation-capture',
+      );
+
+      expect(stubs.playCardSpy).toHaveBeenCalledTimes(1);
+      expect(playAnimatedCards.length).toBe(0);
+      expect(captureAnimatedCards.length).toBe(0);
+    } finally {
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: originalMatchMedia,
+      });
+    }
   });
 
   it('SC-15 / FR-4.6 - renders escoba outcome visibility from engine-authoritative state', async () => {

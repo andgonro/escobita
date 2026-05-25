@@ -167,6 +167,8 @@ graph LR
 
 ### T-10: Align AI flow with completion-driven timing
 
+- **Status:** ✅ Implemented
+
 - **Description:** Keep AI semantic phases while making animation completion and pause policy authoritative for turn advancement.
 - **Architectural Decision:** AD-2, AD-7.
 - **Depends on:** T-6.
@@ -179,6 +181,8 @@ graph LR
 - **Spec traceability:** FR-8, TR-8, US-8, US-14.
 
 ### T-11: Implement reduced-motion compatibility path
+
+- **Status:** ✅ Implemented
 
 - **Description:** Ensure instant visual outcomes under reduced-motion while preserving orchestration and pause policy semantics.
 - **Architectural Decision:** AD-5.

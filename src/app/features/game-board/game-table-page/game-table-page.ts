@@ -2,6 +2,7 @@ import {
   Component,
   Injector,
   ChangeDetectorRef,
+  NgZone,
   computed,
   effect,
   inject,
@@ -11,7 +12,6 @@ import { Router } from '@angular/router';
 import { AiStrategyService } from '../../../core/services/ai-strategy.service';
 import { GameEngine } from '../../../core/services/game-engine';
 import { GameSession } from '../../../core/services/game-session';
-import { delay } from '../../../core/utils/delay.utils';
 import { Card } from '../../../models/card';
 import { AI_TURN_IDLE, AiTurnAnimationState } from '../../../models/ai-turn';
 import { Player } from '../../../models/player';
@@ -87,6 +87,7 @@ export class GameTablePage {
   private static readonly OPPONENT_PLAY_ANIMATION_DURATION_MS = 1_000;
 
   private readonly injector = inject(Injector);
+  private readonly ngZone = inject(NgZone);
   private readonly changeDetectorRef = inject(ChangeDetectorRef);
   private readonly gameEngine = inject(GameEngine);
   private readonly gameSession = inject(GameSession);
@@ -561,6 +562,7 @@ export class GameTablePage {
       return;
     }
 
+    this.focusByTestIdAfterRender('submit-play');
     await this.confirmTurnWithSequencing('player-post-play-confirm', false);
   }
 
@@ -579,11 +581,7 @@ export class GameTablePage {
     if (awaitedAnimationCompletion || alwaysApplyPause) {
       const reducedMotion = this.prefersReducedMotion();
       const resolvedPauseMs = this.turnPausePolicy.resolvePauseMs(stage, { reducedMotion });
-      const effectivePauseMs =
-        stage === 'ai-post-play-confirm' && awaitedAnimationCompletion && resolvedPauseMs === 300
-          ? 500
-          : resolvedPauseMs;
-      await delay(effectivePauseMs);
+      await this.waitOutsideAngular(resolvedPauseMs);
 
       if (this.gameEngine.turnPhase() !== 'awaiting-confirmation') {
         return;
@@ -618,29 +616,15 @@ export class GameTablePage {
 
     const completionKnown =
       this.animationState().completedGroupIds.includes(activeGroupId) ||
-      this.cardAnimationOrchestrator.lastCompletedGroupId() === activeGroupId ||
-      this.animationState().groups.some(
-        (group) =>
-          group.id === activeGroupId &&
-          group.status === 'running' &&
-          group.participantCards.every((participant) => participant.completed),
-      );
-
-    const participantCompletionOnly = this.animationState().groups.some(
-      (group) =>
-        group.id === activeGroupId &&
-        group.status === 'running' &&
-        group.participantCards.every((participant) => participant.completed) &&
-        !this.animationState().completedGroupIds.includes(activeGroupId) &&
-        this.cardAnimationOrchestrator.lastCompletedGroupId() !== activeGroupId,
-    );
+      this.cardAnimationOrchestrator.lastCompletedGroupId() === activeGroupId;
 
     if (completionKnown) {
-      return !participantCompletionOnly;
+      return true;
     }
 
     await new Promise<void>((resolve) => {
       let settled = false;
+      let completionWatcher: { destroy: () => void } | null = null;
 
       const settle = (): void => {
         if (settled) {
@@ -649,15 +633,17 @@ export class GameTablePage {
 
         settled = true;
         clearTimeout(fallbackTimeoutId);
-        completionWatcher.destroy();
+        completionWatcher?.destroy();
         resolve();
       };
 
-      const fallbackTimeoutId = setTimeout(() => {
-        settle();
-      }, GameTablePage.ANIMATION_COMPLETION_TIMEOUT_MS);
+      const fallbackTimeoutId = this.ngZone.runOutsideAngular(() =>
+        setTimeout(() => {
+          settle();
+        }, GameTablePage.ANIMATION_COMPLETION_TIMEOUT_MS),
+      );
 
-      const completionWatcher = effect(
+      completionWatcher = effect(
         () => {
           const state = this.animationState();
           const completed =
@@ -898,7 +884,7 @@ export class GameTablePage {
   private mapActionTypeToVisualState(
     actionType: CardAnimationActionType,
   ): CardAnimationVisualState {
-    if (actionType === 'escoba' && this.prefersReducedMotion()) {
+    if (this.prefersReducedMotion()) {
       return null;
     }
 
@@ -927,14 +913,32 @@ export class GameTablePage {
     delayMs: number,
     onCompleted?: () => void,
   ): void {
+    if (delayMs <= 0) {
+      this.cardAnimationOrchestrator.finalizeGroup(groupId);
+      onCompleted?.();
+      return;
+    }
+
     setTimeout(() => {
       this.cardAnimationOrchestrator.finalizeGroup(groupId);
       onCompleted?.();
     }, delayMs);
   }
 
+  private waitOutsideAngular(ms: number): Promise<void> {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve();
+      }, ms);
+    });
+  }
+
   private resolveAnimationCompletionDelayMs(maxDurationMs: number): number {
     const reducedMotion = this.prefersReducedMotion();
+    if (reducedMotion) {
+      return 0;
+    }
+
     const policyDelay = this.turnPausePolicy.resolvePauseMs('player-post-play-confirm', {
       reducedMotion,
     });
@@ -968,6 +972,10 @@ export class GameTablePage {
   }
 
   private resolveAiPhasePauseMs(stage: TurnPauseStage, reducedMotion: boolean): number {
+    if (reducedMotion) {
+      return 0;
+    }
+
     const resolvedPauseMs = this.turnPausePolicy.resolvePauseMs(stage, { reducedMotion });
 
     if (!this.turnPausePolicy.hasRuntimeOverride()) {
@@ -1056,7 +1064,7 @@ export class GameTablePage {
     });
 
     try {
-      await delay(this.resolveAiPhasePauseMs('ai-deliberation', reducedMotion));
+      await this.waitOutsideAngular(this.resolveAiPhasePauseMs('ai-deliberation', reducedMotion));
 
       const decision = this.aiStrategyService.decide(state, aiPlayer, difficulty);
       const selectedCardIndex = aiPlayer.hand.findIndex((card) =>
@@ -1070,7 +1078,9 @@ export class GameTablePage {
         highlightedTableCards: [],
       });
 
-      await delay(this.resolveAiPhasePauseMs('ai-selection-preview', reducedMotion));
+      await this.waitOutsideAngular(
+        this.resolveAiPhasePauseMs('ai-selection-preview', reducedMotion),
+      );
 
       if (decision.captureSubset.length > 0) {
         this.aiTurnAnimationState.set({
@@ -1080,7 +1090,9 @@ export class GameTablePage {
           highlightedTableCards: decision.captureSubset,
         });
 
-        await delay(this.resolveAiPhasePauseMs('ai-capture-preview', reducedMotion));
+        await this.waitOutsideAngular(
+          this.resolveAiPhasePauseMs('ai-capture-preview', reducedMotion),
+        );
       }
 
       this.aiTurnAnimationState.set({
@@ -1096,12 +1108,40 @@ export class GameTablePage {
         cardIds: [aiPlayedCardId],
       });
       this.cardAnimationOrchestrator.completeParticipant(opponentPlayGroupId, aiPlayedCardId, 100);
-      this.scheduleAnimationGroupCompletion(
-        opponentPlayGroupId,
-        this.resolveAnimationCompletionDelayMs(GameTablePage.OPPONENT_PLAY_ANIMATION_DURATION_MS),
+
+      const configuredAiPostConfirmPauseMs = this.turnPausePolicy.resolvePauseMs(
+        'ai-post-play-confirm',
+        { reducedMotion },
       );
+      const opponentCompletionDelayMs = this.turnPausePolicy.hasRuntimeOverride()
+        ? Math.max(
+            1,
+            Math.min(
+              GameTablePage.OPPONENT_PLAY_ANIMATION_DURATION_MS,
+              configuredAiPostConfirmPauseMs,
+            ),
+          )
+        : 0;
+
+      if (opponentCompletionDelayMs === 0) {
+        this.cardAnimationOrchestrator.finalizeGroup(opponentPlayGroupId);
+      }
+
+      const opponentPlayCompletion =
+        opponentCompletionDelayMs === 0
+          ? Promise.resolve()
+          : new Promise<void>((resolve) => {
+              this.scheduleAnimationGroupCompletion(
+                opponentPlayGroupId,
+                opponentCompletionDelayMs,
+                () => {
+                  resolve();
+                },
+              );
+            });
 
       this.gameEngine.playCard(decision.cardToPlay, decision.captureSubset);
+      await opponentPlayCompletion;
       await this.confirmTurnWithSequencing('ai-post-play-confirm', true);
 
       const aiEscobaCountAfterPlay =

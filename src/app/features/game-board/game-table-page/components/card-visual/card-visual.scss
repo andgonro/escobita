@@ -183,3 +183,22 @@
       0 0 10px rgba(251, 191, 36, 0.1);
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .card-visual,
+  .card-visual--animation-play,
+  :host(.card-visual--animation-play) .card-visual,
+  .card-visual--animation-capture,
+  :host(.card-visual--animation-capture) .card-visual,
+  .card-visual--animation-deal,
+  :host(.card-visual--animation-deal) .card-visual,
+  .card-visual--animation-opponent,
+  :host(.card-visual--animation-opponent) .card-visual,
+  .card-visual--animation-escoba,
+  :host(.card-visual--animation-escoba) .card-visual {
+    transition-duration: 0ms;
+    animation-duration: 0ms;
+    animation-delay: 0ms;
+    animation-iteration-count: 1;
+  }
+}
