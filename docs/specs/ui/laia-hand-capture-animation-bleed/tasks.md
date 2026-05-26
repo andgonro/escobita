@@ -20,6 +20,8 @@ graph LR
 
 ### T-1: Confirm stable opponent metadata no-op contract
 
+- Status: ✅ Implemented
+
 - Description: Formalize that ineligible opponent contexts publish an empty opponent metadata collection and never null-like semantics.
 - Architectural Decision: AD-2.
 - Depends on: None.
