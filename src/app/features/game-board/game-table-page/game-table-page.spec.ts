@@ -2143,6 +2143,132 @@ describe('GameTablePage', () => {
     expect(opponentMetadata?.opponent ?? []).toEqual([]);
   });
 
+  it('T-3 / FR-1.4 - publishes opponent metadata when opponent turn phase is explicitly active', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    stubs.setState({
+      deck: [],
+      table: [tableCardA],
+      players: [
+        {
+          id: 'p1',
+          name: 'Alice',
+          hand: [handCard],
+          capturedPile: [],
+          escobaCount: 0,
+        },
+        {
+          id: 'p2',
+          name: 'Laia',
+          hand: [tableCardA],
+          capturedPile: [],
+          escobaCount: 0,
+        },
+      ],
+      turnIndex: 1,
+      roundNumber: 1,
+      matchScores: { p1: 0, p2: 0 },
+      lastCapturerId: null,
+    });
+
+    setProtectedWritableSignal('aiTurnAnimationState', {
+      phase: 'card-selected',
+      selectedCardIndex: 0,
+      revealedCard: tableCardA,
+      highlightedTableCards: [],
+    });
+    await fixture.whenStable();
+
+    const opponentMetadata = readProtectedSignal<{
+      opponent: { cardIndex: number; animationState: string | null }[];
+    }>('opponentAnimationMetadata');
+
+    expect(Array.isArray(opponentMetadata?.opponent)).toBe(true);
+    expect(opponentMetadata?.opponent ?? []).toEqual([
+      {
+        cardIndex: 0,
+        animationState: 'opponent',
+      },
+    ]);
+  });
+
+  it('T-3 / NFR-1.1 - keeps opponent metadata empty in human capture context even with stale non-idle AI phase', async () => {
+    await configureAndCreate('awaiting-confirmation', handCard);
+
+    setProtectedWritableSignal('aiTurnAnimationState', {
+      phase: 'capture-previewing',
+      selectedCardIndex: 0,
+      revealedCard: tableCardA,
+      highlightedTableCards: [tableCardA],
+    });
+
+    const animationOrchestrator = fixture.componentRef.injector.get(CardAnimationOrchestrator);
+    animationOrchestrator.startGroup({
+      actionType: 'capture',
+      cardIds: ['Oros-7', 'Copas-5'],
+    });
+    await fixture.whenStable();
+
+    const opponentMetadata = readProtectedSignal<{ opponent: unknown[] }>(
+      'opponentAnimationMetadata',
+    );
+
+    expect(Array.isArray(opponentMetadata?.opponent)).toBe(true);
+    expect(opponentMetadata?.opponent ?? []).toEqual([]);
+  });
+
+  it('T-3 / FR-1.4 - resets opponent metadata to empty when AI phase returns to idle', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    stubs.setState({
+      deck: [],
+      table: [tableCardA],
+      players: [
+        {
+          id: 'p1',
+          name: 'Alice',
+          hand: [handCard],
+          capturedPile: [],
+          escobaCount: 0,
+        },
+        {
+          id: 'p2',
+          name: 'Laia',
+          hand: [tableCardA],
+          capturedPile: [],
+          escobaCount: 0,
+        },
+      ],
+      turnIndex: 1,
+      roundNumber: 1,
+      matchScores: { p1: 0, p2: 0 },
+      lastCapturerId: null,
+    });
+
+    setProtectedWritableSignal('aiTurnAnimationState', {
+      phase: 'card-selected',
+      selectedCardIndex: 0,
+      revealedCard: tableCardA,
+      highlightedTableCards: [],
+    });
+    await fixture.whenStable();
+
+    const metadataDuringOpponentPhase = readProtectedSignal<{ opponent: unknown[] }>(
+      'opponentAnimationMetadata',
+    );
+    expect((metadataDuringOpponentPhase?.opponent ?? []).length).toBeGreaterThan(0);
+
+    setProtectedWritableSignal('aiTurnAnimationState', AI_TURN_IDLE);
+    await fixture.whenStable();
+
+    const metadataAfterIdle = readProtectedSignal<{ opponent: unknown[] }>(
+      'opponentAnimationMetadata',
+    );
+
+    expect(Array.isArray(metadataAfterIdle?.opponent)).toBe(true);
+    expect(metadataAfterIdle?.opponent ?? []).toEqual([]);
+  });
+
   it('T-5 / AD-1 - propagates structured animation metadata to hand, table, and opponent zones', async () => {
     await configureAndCreate('awaiting-card-play', handCard);
 

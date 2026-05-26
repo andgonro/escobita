@@ -338,12 +338,7 @@ export class GameTablePage implements OnDestroy {
       };
     }
 
-    if (
-      inSinglePlayerMode &&
-      isHumanCaptureConfirmationPhase &&
-      isHumanCaptureVisualState &&
-      aiAnimationState.phase === 'idle'
-    ) {
+    if (inSinglePlayerMode && isHumanCaptureConfirmationPhase && isHumanCaptureVisualState) {
       // Keep a stable no-op contract for opponent visuals during human capture results.
       return {
         opponent: [],
