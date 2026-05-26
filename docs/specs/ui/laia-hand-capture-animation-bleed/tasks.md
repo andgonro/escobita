@@ -50,6 +50,8 @@ graph LR
 
 ### T-3: Preserve opponent-turn explicit animation eligibility
 
+- Status: ✅ Implemented
+
 - Description: Validate that explicit opponent-turn phases still publish allowed opponent visual metadata and exit cleanly to static state.
 - Architectural Decision: AD-3.
 - Depends on: T-2.
