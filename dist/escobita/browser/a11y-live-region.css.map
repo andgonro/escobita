@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["src/app/features/game-board/game-table-page/components/a11y-live-region/a11y-live-region.scss"],
-  "sourcesContent": [".a11y-live-region {\n  position: absolute;\n  width: 1px;\n  height: 1px;\n  padding: 0;\n  margin: -1px;\n  overflow: hidden;\n  clip: rect(0 0 0 0);\n  clip-path: inset(50%);\n  white-space: nowrap;\n  border: 0;\n}\n"],
-  "mappings": ";AAAA,CAAA;AACE,YAAA;AACA,SAAA;AACA,UAAA;AACA,WAAA;AACA,UAAA;AACA,YAAA;AACA,QAAA,KAAA,EAAA,EAAA,EAAA;AACA,aAAA,MAAA;AACA,eAAA;AACA,UAAA;;",
-  "names": []
-}
