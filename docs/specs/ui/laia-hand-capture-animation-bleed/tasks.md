@@ -65,6 +65,8 @@ graph LR
 
 ### T-4: Add unit coverage for capture isolation rules
 
+- Status: ✅ Implemented
+
 - Description: Add focused unit validations for metadata derivation logic across single-card, multi-card, and Escoba capture contexts.
 - Architectural Decision: AD-1, AD-2.
 - Depends on: T-2.
