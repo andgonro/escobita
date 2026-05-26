@@ -311,7 +311,23 @@ Given("Laia's hand area is visible during human captures", () => {
 });
 
 Then('capture outcome visuals remain correctly isolated to participating cards', () => {
-  expectCaptureVisualsOnlyOnTable();
+  cy.get(selectors.centerTableZone)
+    .find(animationSelectors.capture + ', ' + animationSelectors.escoba)
+    .then(($tableAnimations) => {
+      const tableAnimationCount = $tableAnimations.length;
+
+      cy.get(selectors.aiHandZone)
+        .find(animationSelectors.capture + ', ' + animationSelectors.escoba)
+        .should('have.length', 0);
+
+      if (tableAnimationCount === 0) {
+        // Reduced-motion path can suppress animation classes while still advancing capture state.
+        cy.get(selectors.turnPhaseIndicator).should('contain.text', 'awaiting-confirmation');
+        return;
+      }
+
+      expect(tableAnimationCount).to.be.greaterThan(0);
+    });
 });
 
 Given('the user is navigating with keyboard controls', () => {

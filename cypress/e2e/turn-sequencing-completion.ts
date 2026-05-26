@@ -50,6 +50,26 @@ const applyFixture = (
   });
 };
 
+const enableReducedMotionPreference = (): void => {
+  cy.window().then((windowRef) => {
+    Object.defineProperty(windowRef, 'matchMedia', {
+      configurable: true,
+      writable: true,
+      value: (query: string): MediaQueryList =>
+        ({
+          matches: query === '(prefers-reduced-motion: reduce)',
+          media: query,
+          onchange: null,
+          addEventListener: (): void => undefined,
+          removeEventListener: (): void => undefined,
+          addListener: (): void => undefined,
+          removeListener: (): void => undefined,
+          dispatchEvent: (): boolean => false,
+        }) as MediaQueryList,
+    });
+  });
+};
+
 Given(
   'a game session has been configured with two players {string} and {string}',
   (playerA: string, playerB: string) => {
@@ -105,6 +125,7 @@ Then('progression recovers to a valid next phase behavior', () => {
 });
 
 Given('reduced-motion preference is enabled', () => {
+  enableReducedMotionPreference();
   applyFixture('reduced-motion');
 });
 

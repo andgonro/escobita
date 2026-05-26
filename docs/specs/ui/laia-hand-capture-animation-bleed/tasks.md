@@ -108,6 +108,8 @@ graph LR
 
 ### T-7: Run accessibility and performance regression validation
 
+- Status: ✅ Implemented
+
 - Description: Confirm reduced-motion consistency, keyboard and focus continuity, and absence of introduced stutter in capture transitions.
 - Architectural Decision: AD-4.
 - Depends on: T-6.
