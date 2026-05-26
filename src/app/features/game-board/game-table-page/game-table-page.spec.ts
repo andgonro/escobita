@@ -2081,6 +2081,68 @@ describe('GameTablePage', () => {
     expect(opponentMetadata?.opponent ?? []).toEqual([]);
   });
 
+  it('T-2 / TR-1.2 - suppresses opponent metadata in awaiting-card-play despite AI preview phase', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    stubs.setState({
+      deck: [],
+      table: [tableCardA, tableCardB],
+      players: [
+        {
+          id: 'p1',
+          name: 'Alice',
+          hand: [handCard],
+          capturedPile: [],
+          escobaCount: 0,
+        },
+        {
+          id: 'p2',
+          name: 'Laia',
+          hand: [tableCardA, tableCardB],
+          capturedPile: [],
+          escobaCount: 0,
+        },
+      ],
+      turnIndex: 0,
+      roundNumber: 1,
+      matchScores: { p1: 0, p2: 0 },
+      lastCapturerId: null,
+    });
+
+    setProtectedWritableSignal('aiTurnAnimationState', {
+      phase: 'capture-previewing',
+      selectedCardIndex: 1,
+      revealedCard: tableCardB,
+      highlightedTableCards: [tableCardA],
+    });
+    await fixture.whenStable();
+
+    const opponentMetadata = readProtectedSignal<{ opponent: unknown[] }>(
+      'opponentAnimationMetadata',
+    );
+
+    expect(Array.isArray(opponentMetadata?.opponent)).toBe(true);
+    expect(opponentMetadata?.opponent ?? []).toEqual([]);
+  });
+
+  it('T-2 / FR-1.2 - keeps opponent metadata empty for capture groups while human suppression is active', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    const animationOrchestrator = fixture.componentRef.injector.get(CardAnimationOrchestrator);
+    animationOrchestrator.startGroup({
+      actionType: 'capture',
+      cardIds: ['Oros-7', 'Copas-5', 'Bastos-3'],
+    });
+    await fixture.whenStable();
+
+    const opponentMetadata = readProtectedSignal<{ opponent: unknown[] }>(
+      'opponentAnimationMetadata',
+    );
+
+    expect(Array.isArray(opponentMetadata?.opponent)).toBe(true);
+    expect(opponentMetadata?.opponent ?? []).toEqual([]);
+  });
+
   it('T-5 / AD-1 - propagates structured animation metadata to hand, table, and opponent zones', async () => {
     await configureAndCreate('awaiting-card-play', handCard);
 
@@ -2107,7 +2169,7 @@ describe('GameTablePage', () => {
 
     expect((activeHandZone.animationMetadata?.hand ?? []).length).toBeGreaterThan(0);
     expect((centerTableZone.animationMetadata?.table ?? []).length).toBeGreaterThan(0);
-    expect((opponentZones.animationMetadata?.opponent ?? []).length).toBeGreaterThan(0);
+    expect((opponentZones.animationMetadata?.opponent ?? []).length).toBe(0);
   });
 
   it('T-10 / AD-8 - suppresses AI hand cards in Multiplayer mode', async () => {

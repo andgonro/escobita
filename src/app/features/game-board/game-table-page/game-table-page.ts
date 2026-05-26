@@ -310,8 +310,17 @@ export class GameTablePage implements OnDestroy {
     const aiAnimationState = this.aiTurnAnimationState();
     const aiFallbackCardIndex = aiAnimationState.selectedCardIndex ?? 0;
     const inSinglePlayerMode = this.gameSession.configuration()?.mode === 'Single Player';
+    const isHumanTurnActive = this.gameEngine.turnPhase() === 'awaiting-card-play';
     const isHumanCaptureConfirmationPhase = this.gameEngine.turnPhase() === 'awaiting-confirmation';
     const isHumanCaptureVisualState = animationState === 'capture' || animationState === 'escoba';
+    const shouldSuppressOpponentMetadata =
+      inSinglePlayerMode && this.suppressAiCardAnimations() && isHumanTurnActive;
+
+    if (shouldSuppressOpponentMetadata) {
+      return {
+        opponent: [],
+      };
+    }
 
     if (
       animationState === null &&
