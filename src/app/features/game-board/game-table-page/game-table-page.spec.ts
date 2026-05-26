@@ -2269,6 +2269,63 @@ describe('GameTablePage', () => {
     expect(metadataAfterIdle?.opponent ?? []).toEqual([]);
   });
 
+  it('T-4 / FR-1.2 - keeps opponent metadata empty for single-card capture during human awaiting-card-play despite stale AI in-progress state', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    setProtectedWritableSignal('isAiTurnInProgress', true);
+    const animationOrchestrator = fixture.componentRef.injector.get(CardAnimationOrchestrator);
+    animationOrchestrator.startGroup({
+      actionType: 'capture',
+      cardIds: ['Oros-7'],
+    });
+    await fixture.whenStable();
+
+    const opponentMetadata = readProtectedSignal<{ opponent: unknown[] }>(
+      'opponentAnimationMetadata',
+    );
+
+    expect(Array.isArray(opponentMetadata?.opponent)).toBe(true);
+    expect(opponentMetadata?.opponent ?? []).toEqual([]);
+  });
+
+  it('T-4 / FR-1.3 - keeps opponent metadata empty for multi-card capture during human awaiting-card-play despite stale AI in-progress state', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    setProtectedWritableSignal('isAiTurnInProgress', true);
+    const animationOrchestrator = fixture.componentRef.injector.get(CardAnimationOrchestrator);
+    animationOrchestrator.startGroup({
+      actionType: 'capture',
+      cardIds: ['Oros-7', 'Copas-5', 'Bastos-3'],
+    });
+    await fixture.whenStable();
+
+    const opponentMetadata = readProtectedSignal<{ opponent: unknown[] }>(
+      'opponentAnimationMetadata',
+    );
+
+    expect(Array.isArray(opponentMetadata?.opponent)).toBe(true);
+    expect(opponentMetadata?.opponent ?? []).toEqual([]);
+  });
+
+  it('T-4 / US-3 - keeps opponent metadata empty for Escoba capture during human awaiting-card-play despite stale AI in-progress state', async () => {
+    await configureAndCreate('awaiting-card-play', handCard);
+
+    setProtectedWritableSignal('isAiTurnInProgress', true);
+    const animationOrchestrator = fixture.componentRef.injector.get(CardAnimationOrchestrator);
+    animationOrchestrator.startGroup({
+      actionType: 'escoba',
+      cardIds: ['Copas-5', 'Bastos-3'],
+    });
+    await fixture.whenStable();
+
+    const opponentMetadata = readProtectedSignal<{ opponent: unknown[] }>(
+      'opponentAnimationMetadata',
+    );
+
+    expect(Array.isArray(opponentMetadata?.opponent)).toBe(true);
+    expect(opponentMetadata?.opponent ?? []).toEqual([]);
+  });
+
   it('T-5 / AD-1 - propagates structured animation metadata to hand, table, and opponent zones', async () => {
     await configureAndCreate('awaiting-card-play', handCard);
 

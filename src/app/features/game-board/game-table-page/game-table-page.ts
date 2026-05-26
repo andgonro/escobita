@@ -310,11 +310,25 @@ export class GameTablePage implements OnDestroy {
     const aiAnimationState = this.aiTurnAnimationState();
     const aiFallbackCardIndex = aiAnimationState.selectedCardIndex ?? 0;
     const inSinglePlayerMode = this.gameSession.configuration()?.mode === 'Single Player';
+    const activePlayer = this.gameEngine.activePlayer();
+    const aiPlayerId = this.aiPlayerId();
     const isHumanTurnActive = this.gameEngine.turnPhase() === 'awaiting-card-play';
     const isHumanCaptureConfirmationPhase = this.gameEngine.turnPhase() === 'awaiting-confirmation';
     const isHumanCaptureVisualState = animationState === 'capture' || animationState === 'escoba';
+    const isHumanPlayerTurn =
+      activePlayer !== null && aiPlayerId !== null && activePlayer.id !== aiPlayerId;
+    const shouldEnforceHumanCaptureIsolation =
+      inSinglePlayerMode &&
+      isHumanCaptureVisualState &&
+      ((isHumanTurnActive && isHumanPlayerTurn) || isHumanCaptureConfirmationPhase);
     const shouldSuppressOpponentMetadata =
       inSinglePlayerMode && this.suppressAiCardAnimations() && isHumanTurnActive;
+
+    if (shouldEnforceHumanCaptureIsolation) {
+      return {
+        opponent: [],
+      };
+    }
 
     if (shouldSuppressOpponentMetadata) {
       return {
@@ -335,13 +349,6 @@ export class GameTablePage implements OnDestroy {
             animationState: 'opponent',
           },
         ],
-      };
-    }
-
-    if (inSinglePlayerMode && isHumanCaptureConfirmationPhase && isHumanCaptureVisualState) {
-      // Keep a stable no-op contract for opponent visuals during human capture results.
-      return {
-        opponent: [],
       };
     }
 
