@@ -2027,6 +2027,60 @@ describe('GameTablePage', () => {
     expect(opponentZones.aiTurnAnimationState.phase).toBe('capture-previewing');
   });
 
+  it('T-1 / TR-1.2 - publishes empty opponent metadata during human single-card capture groups', async () => {
+    await configureAndCreate('awaiting-confirmation', handCard);
+
+    const animationOrchestrator = fixture.componentRef.injector.get(CardAnimationOrchestrator);
+    animationOrchestrator.startGroup({
+      actionType: 'capture',
+      cardIds: ['Oros-7'],
+    });
+    await fixture.whenStable();
+
+    const opponentMetadata = readProtectedSignal<{ opponent: unknown[] }>(
+      'opponentAnimationMetadata',
+    );
+
+    expect(Array.isArray(opponentMetadata?.opponent)).toBe(true);
+    expect(opponentMetadata?.opponent ?? []).toEqual([]);
+  });
+
+  it('T-1 / NFR-1.2 - keeps opponent metadata empty during human multi-card capture groups', async () => {
+    await configureAndCreate('awaiting-confirmation', handCard);
+
+    const animationOrchestrator = fixture.componentRef.injector.get(CardAnimationOrchestrator);
+    animationOrchestrator.startGroup({
+      actionType: 'capture',
+      cardIds: ['Oros-7', 'Copas-5', 'Bastos-3'],
+    });
+    await fixture.whenStable();
+
+    const opponentMetadata = readProtectedSignal<{ opponent: unknown[] }>(
+      'opponentAnimationMetadata',
+    );
+
+    expect(Array.isArray(opponentMetadata?.opponent)).toBe(true);
+    expect(opponentMetadata?.opponent ?? []).toEqual([]);
+  });
+
+  it('T-1 / FR-1.3 - keeps opponent metadata empty during human Escoba animation groups', async () => {
+    await configureAndCreate('awaiting-confirmation', handCard);
+
+    const animationOrchestrator = fixture.componentRef.injector.get(CardAnimationOrchestrator);
+    animationOrchestrator.startGroup({
+      actionType: 'escoba',
+      cardIds: ['Copas-5', 'Bastos-3'],
+    });
+    await fixture.whenStable();
+
+    const opponentMetadata = readProtectedSignal<{ opponent: unknown[] }>(
+      'opponentAnimationMetadata',
+    );
+
+    expect(Array.isArray(opponentMetadata?.opponent)).toBe(true);
+    expect(opponentMetadata?.opponent ?? []).toEqual([]);
+  });
+
   it('T-5 / AD-1 - propagates structured animation metadata to hand, table, and opponent zones', async () => {
     await configureAndCreate('awaiting-card-play', handCard);
 
