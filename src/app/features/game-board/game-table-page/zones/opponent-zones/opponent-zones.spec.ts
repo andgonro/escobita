@@ -452,4 +452,110 @@ describe('OpponentZones', () => {
     expect(testState.aiHandCardCount).toBe(aiHandCountBeforeMetadata);
     expect(testState.aiTurnAnimationState).toEqual(aiTurnStateBeforeMetadata);
   });
+
+  it('T-5 / FR-1.2 - renders static AI hand visuals when metadata is null during human capture handoff', async () => {
+    testState.opponents = [
+      {
+        id: 'p-laia',
+        name: 'Laia',
+        hand: [],
+        capturedPile: [],
+        escobaCount: 0,
+      },
+    ];
+    testState.aiHandCardCount = 3;
+    testState.aiTurnAnimationState = {
+      ...defaultAiTurnAnimationState,
+      phase: 'capture-previewing',
+      selectedCardIndex: 1,
+      revealedCard,
+    };
+    testState.animationMetadata = null;
+    await fixture.whenStable();
+
+    const aiHandZone = fixture.nativeElement.querySelector(
+      '[data-testid="ai-hand-zone"]',
+    ) as HTMLElement | null;
+    const selectedCard = fixture.nativeElement.querySelector(
+      '[data-testid="ai-hand-card-1"]',
+    ) as HTMLElement | null;
+    const animatedCards = fixture.nativeElement.querySelectorAll(
+      '.card-visual--animation-opponent',
+    );
+
+    expect(aiHandZone?.classList.contains('ai-hand-zone--active')).toBe(false);
+    expect(selectedCard?.classList.contains('card-visual--selected')).toBe(false);
+    expect(animatedCards.length).toBe(0);
+  });
+
+  it('T-5 / NFR-1.2 - renders static AI hand visuals when metadata publishes empty opponent list', async () => {
+    testState.opponents = [
+      {
+        id: 'p-laia',
+        name: 'Laia',
+        hand: [],
+        capturedPile: [],
+        escobaCount: 0,
+      },
+    ];
+    testState.aiHandCardCount = 3;
+    testState.aiTurnAnimationState = {
+      ...defaultAiTurnAnimationState,
+      phase: 'capture-previewing',
+      selectedCardIndex: 1,
+      revealedCard,
+    };
+    testState.animationMetadata = {
+      opponent: [],
+    };
+    await fixture.whenStable();
+
+    const aiHandZone = fixture.nativeElement.querySelector(
+      '[data-testid="ai-hand-zone"]',
+    ) as HTMLElement | null;
+    const selectedCard = fixture.nativeElement.querySelector(
+      '[data-testid="ai-hand-card-1"]',
+    ) as HTMLElement | null;
+    const animatedCards = fixture.nativeElement.querySelectorAll(
+      '.card-visual--animation-opponent',
+    );
+
+    expect(aiHandZone?.classList.contains('ai-hand-zone--active')).toBe(false);
+    expect(selectedCard?.classList.contains('card-visual--selected')).toBe(false);
+    expect(animatedCards.length).toBe(0);
+  });
+
+  it('T-5 / FR-1.4 - preserves eligible opponent-turn visuals when opponent metadata is present', async () => {
+    testState.opponents = [
+      {
+        id: 'p-laia',
+        name: 'Laia',
+        hand: [],
+        capturedPile: [],
+        escobaCount: 0,
+      },
+    ];
+    testState.aiHandCardCount = 3;
+    testState.aiTurnAnimationState = {
+      ...defaultAiTurnAnimationState,
+      phase: 'card-selected',
+      selectedCardIndex: 1,
+      revealedCard,
+    };
+    testState.animationMetadata = {
+      opponent: [{ cardIndex: 1, animationState: 'opponent' }],
+    };
+    await fixture.whenStable();
+
+    const aiHandZone = fixture.nativeElement.querySelector(
+      '[data-testid="ai-hand-zone"]',
+    ) as HTMLElement | null;
+    const selectedCard = fixture.nativeElement.querySelector(
+      '[data-testid="ai-hand-card-1"]',
+    ) as HTMLElement | null;
+
+    expect(aiHandZone?.classList.contains('ai-hand-zone--active')).toBe(true);
+    expect(selectedCard?.classList.contains('card-visual--selected')).toBe(true);
+    expect(selectedCard?.classList.contains('card-visual--animation-opponent')).toBe(true);
+  });
 });

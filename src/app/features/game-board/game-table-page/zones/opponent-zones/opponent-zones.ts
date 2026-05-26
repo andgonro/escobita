@@ -125,11 +125,20 @@ export class OpponentZones {
   }
 
   protected isAiHandActive(): boolean {
-    return this.aiTurnAnimationStateSignal().phase !== 'idle';
+    const phase = this.aiTurnAnimationStateSignal().phase;
+    if (phase === 'idle') {
+      return false;
+    }
+
+    if (phase !== 'capture-previewing') {
+      return true;
+    }
+
+    return !this.isOpponentMetadataNoop();
   }
 
   protected isAiCardSelected(index: number): boolean {
-    return this.aiTurnAnimationStateSignal().selectedCardIndex === index;
+    return this.isAiHandActive() && this.aiTurnAnimationStateSignal().selectedCardIndex === index;
   }
 
   protected aiCardAt(index: number): Card | null {
@@ -155,6 +164,19 @@ export class OpponentZones {
     }
 
     return metadata.opponent.find((entry) => entry.cardIndex === index)?.animationState ?? null;
+  }
+
+  private isOpponentMetadataNoop(): boolean {
+    if (this.suppressAiAnimationsSignal()) {
+      return true;
+    }
+
+    const metadata = this.animationMetadataSignal();
+    if (metadata === null) {
+      return true;
+    }
+
+    return metadata.opponent.every((entry) => entry.animationState === null);
   }
 
   private isAiCardRevealed(index: number): boolean {
