@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["src/app/features/game-board/game-board-placeholder/game-board-placeholder.scss"],
+  "sourcesContent": [".placeholder {\n  min-height: 100dvh;\n  display: grid;\n  place-content: center;\n  gap: 0.75rem;\n  padding: 2rem;\n  text-align: center;\n}\n\nh1 {\n  margin: 0;\n  font-family: var(--font-display);\n  font-size: clamp(2rem, 3vw, 2.8rem);\n  color: var(--color-ink);\n}\n\np {\n  margin: 0;\n  color: var(--color-muted);\n}\n"],
+  "mappings": ";AAAA,CAAA;AACE,cAAA;AACA,WAAA;AACA,iBAAA;AACA,OAAA;AACA,WAAA;AACA,cAAA;;AAGF;AACE,UAAA;AACA,eAAA,IAAA;AACA,aAAA,MAAA,IAAA,EAAA,GAAA,EAAA;AACA,SAAA,IAAA;;AAGF;AACE,UAAA;AACA,SAAA,IAAA;;",
+  "names": []
+}
