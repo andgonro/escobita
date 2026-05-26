@@ -35,6 +35,8 @@ graph LR
 
 ### T-2: Enforce suppression and phase guard at metadata generation boundary
 
+- Status: ✅ Implemented
+
 - Description: Ensure opponent metadata derivation checks human-turn suppression and opponent-phase eligibility before publishing visual entries.
 - Architectural Decision: AD-1, AD-3.
 - Depends on: T-1.
