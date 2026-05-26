@@ -127,7 +127,12 @@ export type EngineE2eFixture =
   | 'pre-final-turn-no-winner'
   | 'ai-turn-escoba'
   | 'ai-turn-capture'
-  | 'ai-turn-placement';
+  | 'ai-turn-placement'
+  | 'human-turn-single-capture'
+  | 'human-turn-multi-capture'
+  | 'human-turn-escoba'
+  | 'human-turn-post-deal-capture'
+  | 'human-turn-consecutive-captures';
 
 export interface EngineE2eFixtureResult {
   escobaPlayerName?: string;
@@ -175,6 +180,62 @@ export class GameEngine {
     if (!state) {
       throw new Error('[GameEngine] applyE2eFixture requires an initialized game state.');
     }
+
+    const buildHumanTurnFixtureState = (
+      humanHand: Card[],
+      aiHand: Card[],
+      table: Card[],
+    ): GameState => {
+      const humanPlayer = state.players[0] ?? null;
+      const aiPlayer = state.players[1] ?? null;
+      if (!humanPlayer || !aiPlayer) {
+        throw new Error('[GameEngine] human-turn fixtures require at least two players.');
+      }
+
+      const players: Player[] = state.players.map((player, index): Player => {
+        if (index === 0) {
+          return {
+            ...player,
+            hand: humanHand,
+            capturedPile: [],
+            escobaCount: 0,
+          };
+        }
+
+        if (index === 1) {
+          return {
+            ...player,
+            name: 'Laia',
+            hand: aiHand,
+            capturedPile: [],
+            escobaCount: 0,
+          };
+        }
+
+        return {
+          ...player,
+          hand: [],
+          capturedPile: [],
+          escobaCount: 0,
+        };
+      });
+
+      const matchScores = players.reduce<Record<string, number>>((scoreMap, player) => {
+        scoreMap[player.id] = 0;
+        return scoreMap;
+      }, {});
+
+      return {
+        ...state,
+        deck: [],
+        table,
+        players,
+        turnIndex: 0,
+        roundNumber: 1,
+        matchScores,
+        lastCapturerId: null,
+      };
+    };
 
     switch (fixture) {
       case 'escoba-visibility': {
@@ -673,6 +734,142 @@ export class GameEngine {
 
         return {
           roundNumber: placementTurnState.roundNumber,
+        };
+      }
+
+      case 'human-turn-single-capture': {
+        const singleCaptureTurnState = buildHumanTurnFixtureState(
+          [
+            { suit: 'Bastos', rank: '5', value: 5 },
+            { suit: 'Copas', rank: '2', value: 2 },
+          ],
+          [
+            { suit: 'Oros', rank: 'Sota', value: 8 },
+            { suit: 'Espadas', rank: 'Caballo', value: 9 },
+            { suit: 'Bastos', rank: '3', value: 3 },
+          ],
+          [
+            { suit: 'Oros', rank: '7', value: 10 },
+            { suit: 'Copas', rank: '4', value: 4 },
+            { suit: 'Espadas', rank: '1', value: 1 },
+          ],
+        );
+
+        this._state.set(freezeGameState(singleCaptureTurnState));
+        this._roundResult.set(null);
+        this._matchWinner.set(null);
+        this._turnPhase.set('awaiting-card-play');
+
+        return {
+          roundNumber: singleCaptureTurnState.roundNumber,
+        };
+      }
+
+      case 'human-turn-multi-capture': {
+        const multiCaptureTurnState = buildHumanTurnFixtureState(
+          [
+            { suit: 'Copas', rank: '7', value: 7 },
+            { suit: 'Bastos', rank: '2', value: 2 },
+          ],
+          [
+            { suit: 'Oros', rank: '4', value: 4 },
+            { suit: 'Espadas', rank: '6', value: 6 },
+            { suit: 'Copas', rank: '3', value: 3 },
+          ],
+          [
+            { suit: 'Bastos', rank: '4', value: 4 },
+            { suit: 'Oros', rank: '4', value: 4 },
+            { suit: 'Copas', rank: '1', value: 1 },
+          ],
+        );
+
+        this._state.set(freezeGameState(multiCaptureTurnState));
+        this._roundResult.set(null);
+        this._matchWinner.set(null);
+        this._turnPhase.set('awaiting-card-play');
+
+        return {
+          roundNumber: multiCaptureTurnState.roundNumber,
+        };
+      }
+
+      case 'human-turn-escoba': {
+        const escobaTurnState = buildHumanTurnFixtureState(
+          [
+            { suit: 'Bastos', rank: '6', value: 6 },
+            { suit: 'Copas', rank: '1', value: 1 },
+          ],
+          [
+            { suit: 'Oros', rank: '5', value: 5 },
+            { suit: 'Espadas', rank: '4', value: 4 },
+            { suit: 'Copas', rank: '2', value: 2 },
+          ],
+          [
+            { suit: 'Bastos', rank: '3', value: 3 },
+            { suit: 'Oros', rank: '2', value: 2 },
+            { suit: 'Espadas', rank: '4', value: 4 },
+          ],
+        );
+
+        this._state.set(freezeGameState(escobaTurnState));
+        this._roundResult.set(null);
+        this._matchWinner.set(null);
+        this._turnPhase.set('awaiting-card-play');
+
+        return {
+          roundNumber: escobaTurnState.roundNumber,
+        };
+      }
+
+      case 'human-turn-post-deal-capture': {
+        const postDealCaptureTurnState = buildHumanTurnFixtureState(
+          [
+            { suit: 'Bastos', rank: 'Caballo', value: 9 },
+            { suit: 'Copas', rank: '6', value: 6 },
+            { suit: 'Oros', rank: '3', value: 3 },
+          ],
+          [
+            { suit: 'Espadas', rank: '7', value: 10 },
+            { suit: 'Copas', rank: '4', value: 4 },
+          ],
+          [
+            { suit: 'Bastos', rank: '6', value: 6 },
+            { suit: 'Oros', rank: '5', value: 5 },
+            { suit: 'Espadas', rank: '2', value: 2 },
+          ],
+        );
+
+        this._state.set(freezeGameState(postDealCaptureTurnState));
+        this._roundResult.set(null);
+        this._matchWinner.set(null);
+        this._turnPhase.set('awaiting-card-play');
+
+        return {
+          roundNumber: postDealCaptureTurnState.roundNumber,
+        };
+      }
+
+      case 'human-turn-consecutive-captures': {
+        const consecutiveCapturesTurnState = buildHumanTurnFixtureState(
+          [
+            { suit: 'Bastos', rank: '5', value: 5 },
+            { suit: 'Copas', rank: '7', value: 7 },
+          ],
+          [{ suit: 'Espadas', rank: '1', value: 1 }],
+          [
+            { suit: 'Oros', rank: '7', value: 10 },
+            { suit: 'Bastos', rank: '4', value: 4 },
+            { suit: 'Copas', rank: '4', value: 4 },
+          ],
+        );
+
+        this._state.set(freezeGameState(consecutiveCapturesTurnState));
+        this._roundResult.set(null);
+        this._matchWinner.set(null);
+        this._turnPhase.set('awaiting-card-play');
+
+        return {
+          roundNumber: consecutiveCapturesTurnState.roundNumber,
         };
       }
 
