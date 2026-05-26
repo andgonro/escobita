@@ -80,6 +80,8 @@ graph LR
 
 ### T-5: Add integration coverage for zone-level rendering contract
 
+- Status: ✅ Implemented
+
 - Description: Validate that zone components consume stable metadata and do not show bleed effects under human capture state changes.
 - Architectural Decision: AD-2, AD-4.
 - Depends on: T-3.
