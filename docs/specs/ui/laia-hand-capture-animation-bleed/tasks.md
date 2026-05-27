@@ -46,7 +46,7 @@ graph LR
   - [ ] Opponent metadata is no-op for ineligible contexts.
   - [ ] Table capture visuals remain unaffected for participating cards.
 - Estimation hint: S.
-- Spec traceability: FR-1.2, FR-1.4, TR-1.1, TR-1.2, TR-1.3, US-1, US-2.
+- Spec traceability: FR-1.2, FR-1.4, TR-1.1, TR-1.2, TR-1.3, NFR-1.1, US-1, US-2.
 
 ### T-3: Preserve opponent-turn explicit animation eligibility
 
@@ -95,6 +95,8 @@ graph LR
 
 ### T-6: Extend end-to-end scenarios from BDD
 
+- Status: ✅ Implemented
+
 - Description: Implement scenario coverage aligned with SC-01 through SC-13 for isolation, eligibility, repetition, and non-functional behavior.
 - Architectural Decision: AD-1, AD-3, AD-4.
 - Depends on: T-4, T-5.
@@ -104,7 +106,7 @@ graph LR
   - [ ] Opponent eligibility scenarios pass for explicit opponent-turn contexts.
   - [ ] Repeated capture and post-deal scenarios pass without bleed.
 - Estimation hint: L.
-- Spec traceability: FR-1.1, FR-1.2, FR-1.3, FR-1.4, US-1, US-2, US-3.
+- Spec traceability: FR-1.1, FR-1.2, FR-1.3, FR-1.4, TR-1.1, TR-1.3, NFR-1.2, US-1, US-2, US-3.
 
 ### T-7: Run accessibility and performance regression validation
 
@@ -123,6 +125,8 @@ graph LR
 
 ### T-8: Finalize documentation traceability and release handoff
 
+- Status: ✅ Implemented
+
 - Description: Update references so requirements, stories, BDD scenarios, and implementation tasks remain fully traceable for review and sign-off.
 - Architectural Decision: AD-4.
 - Depends on: T-7.
@@ -132,7 +136,7 @@ graph LR
   - [ ] BDD scenarios map clearly to implementation tasks.
   - [ ] Handoff materials capture risks, mitigations, and test evidence expectations.
 - Estimation hint: XS.
-- Spec traceability: TR-1.4, FR-1.3, US-3, US-4.
+- Spec traceability: TR-1.4, FR-1.3, NFR-1.4, US-3, US-4.
 
 ## Implementation Order
 
@@ -144,3 +148,24 @@ graph LR
 6. T-6: Extend end-to-end scenarios from BDD — verifies user-visible behavior in realistic flows.
 7. T-7: Run accessibility and performance regression validation — confirms non-functional requirements remain satisfied.
 8. T-8: Finalize documentation traceability and release handoff — closes review readiness with complete traceability.
+
+## Consolidated Requirement-to-Task Mapping (T-8)
+
+| Requirement | Implementing Tasks      |
+| ----------- | ----------------------- |
+| FR-1.1      | T-6                     |
+| FR-1.2      | T-2, T-4, T-5, T-6      |
+| FR-1.3      | T-4, T-6, T-8           |
+| FR-1.4      | T-2, T-3, T-5, T-6      |
+| TR-1.1      | T-2, T-4, T-6           |
+| TR-1.2      | T-1, T-2                |
+| TR-1.3      | T-2, T-6                |
+| TR-1.4      | T-8                     |
+| NFR-1.1     | T-2, T-3                |
+| NFR-1.2     | T-1, T-5, T-6           |
+| NFR-1.3     | T-7                     |
+| NFR-1.4     | T-7, T-8                |
+| US-1        | T-2, T-4, T-5, T-6      |
+| US-2        | T-1, T-2, T-3, T-5, T-6 |
+| US-3        | T-4, T-6, T-8           |
+| US-4        | T-7, T-8                |

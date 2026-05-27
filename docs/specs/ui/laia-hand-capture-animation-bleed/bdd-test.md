@@ -5,21 +5,21 @@
 
 ## Traceability Matrix
 
-| Scenario ID | Requirement             | User Story | Category         |
-| ----------- | ----------------------- | ---------- | ---------------- |
-| SC-01       | FR-1.1, FR-1.2          | US-1       | Happy Path       |
-| SC-02       | FR-1.2, FR-1.3          | US-1, US-3 | Happy Path       |
-| SC-03       | FR-1.3                  | US-1       | Happy Path       |
-| SC-04       | FR-1.4                  | US-2       | Alternative Path |
-| SC-05       | FR-1.4                  | US-2       | Alternative Path |
-| SC-06       | TR-1.1, TR-1.2, NFR-1.1 | US-1, US-2 | Error/Negative   |
-| SC-07       | FR-1.2, TR-1.1          | US-1       | Error/Negative   |
-| SC-08       | FR-1.3, NFR-1.2         | US-3       | Edge Case        |
-| SC-09       | TR-1.3, NFR-1.2         | US-3       | Edge Case        |
-| SC-10       | FR-1.3, TR-1.3          | US-3       | Edge Case        |
-| SC-11       | NFR-1.3                 | US-4       | Non-Functional   |
-| SC-12       | NFR-1.3                 | US-4       | Non-Functional   |
-| SC-13       | NFR-1.4                 | US-4       | Non-Functional   |
+| Scenario ID | Requirement             | User Story | Implementing Tasks | Category         |
+| ----------- | ----------------------- | ---------- | ------------------ | ---------------- |
+| SC-01       | FR-1.1, FR-1.2          | US-1       | T-4, T-6           | Happy Path       |
+| SC-02       | FR-1.2, FR-1.3          | US-1, US-3 | T-4, T-6           | Happy Path       |
+| SC-03       | FR-1.3                  | US-1       | T-4, T-6           | Happy Path       |
+| SC-04       | FR-1.4                  | US-2       | T-3, T-5, T-6      | Alternative Path |
+| SC-05       | FR-1.4                  | US-2       | T-3, T-5, T-6      | Alternative Path |
+| SC-06       | TR-1.1, TR-1.2, NFR-1.1 | US-1, US-2 | T-2, T-6           | Error/Negative   |
+| SC-07       | FR-1.2, TR-1.1          | US-1       | T-2, T-6           | Error/Negative   |
+| SC-08       | FR-1.3, NFR-1.2         | US-3       | T-4, T-6           | Edge Case        |
+| SC-09       | TR-1.3, NFR-1.2         | US-3       | T-4, T-6           | Edge Case        |
+| SC-10       | FR-1.3, TR-1.3          | US-3       | T-4, T-6           | Edge Case        |
+| SC-11       | NFR-1.3                 | US-4       | T-7, T-6           | Non-Functional   |
+| SC-12       | NFR-1.3                 | US-4       | T-7, T-6           | Non-Functional   |
+| SC-13       | NFR-1.4                 | US-4       | T-7, T-6           | Non-Functional   |
 
 ---
 
